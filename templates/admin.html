@@ -21,7 +21,7 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
         <div>
-            <h3 class="fw-bold text-danger mb-0"><i class="fa-solid fa-shield-halved"></i> E-Pin Yönetici Paneli</h3>
+            <h3 class="fw-bold text-danger mb-0"><i class="fa-solid fa-shield-halved"></i> E-Pin & SMM Yönetici Paneli</h3>
             <small class="text-secondary">
                 Oturum: <strong>{{ username }}</strong> 
                 {% if is_super %}
@@ -42,15 +42,14 @@
       {% endif %}
     {% endwith %}
 
-    <!-- 1. KULLANICI LİSTESİ & ADMİN YÖNETİMİ (SİLME + RANDOM HESAP OLUŞTURMA) -->
+    <!-- 1. KULLANICI LİSTESİ (SİLME & RANDOM HESAP) -->
     <div class="card card-custom p-4 mb-4 shadow border-info">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-users"></i> Kayıtlı Kullanıcılar & Hesap Yönetimi ({{ users|length }})</h5>
+            <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-users"></i> Kayıtlı Kullanıcılar ({{ users|length }})</h5>
             
-            <!-- RASTGELE HESAP OLUŞTUR BUTONU -->
             <form action="/admin/user/generate-random" method="POST">
                 <button type="submit" class="btn btn-outline-info btn-sm fw-bold">
-                    <i class="fa-solid fa-shuffle"></i> 🎲 Rastgele Hesap Oluştur
+                    <i class="fa-solid fa-shuffle"></i> 🎲 Rastgele Test Hesabı Oluştur
                 </button>
             </form>
         </div>
@@ -82,21 +81,19 @@
                         </td>
                         <td class="text-end">
                             <div class="d-flex justify-content-end gap-1">
-                                <!-- Yetki Değiştir (Sadece Süper Admin) -->
                                 {% if is_super and u.username != super_admin_name %}
                                     <form action="/admin/user/toggle-admin/{{ u.id }}" method="POST" style="display:inline;">
                                         {% if u.is_admin %}
-                                            <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2" title="Adminliği Kaldır">Adminliği Al</button>
+                                            <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2">Adminliği Al</button>
                                         {% else %}
-                                            <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2" title="Admin Yap">Admin Yap</button>
+                                            <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2">Admin Yap</button>
                                         {% endif %}
                                     </form>
                                 {% endif %}
 
-                                <!-- Kullanıcı Sil (Süper Admin Harici Herkes Silinebilir) -->
                                 {% if u.username != super_admin_name %}
                                     <form action="/admin/user/delete/{{ u.id }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Bu kullanıcıyı ve tüm siparişlerini silmek istediğinize emin misiniz?')" title="Kullanıcıyı Sil">
+                                        <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Bu kullanıcıyı ve tüm siparişlerini silmek istediğinize emin misiniz?')">
                                             <i class="fa-solid fa-trash-can"></i> Sil
                                         </button>
                                     </form>
@@ -158,32 +155,63 @@
         </div>
     </div>
 
-    <!-- 3. ÜRÜN YÖNETİMİ & BAKİYE -->
+    <!-- 3. ÜRÜN YÖNETİMİ & RASTGELE İLAN OLUŞTURMA -->
     <div class="row g-4">
         <!-- Sol: Ürün Ekle & Bakiye -->
         <div class="col-lg-5">
             <div class="card card-custom p-4 mb-4 shadow">
-                <h5 class="fw-bold text-info mb-3"><i class="fa-solid fa-plus"></i> Yeni E-Pin Ürünü Ekle</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-plus"></i> Yeni İlan / Ürün Ekle</h5>
+                    
+                    <!-- RASTGELE İLAN BUTONU -->
+                    <form action="/admin/product/generate-random" method="POST">
+                        <button type="submit" class="btn btn-warning btn-sm fw-bold">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> 🎲 Rastgele İlan Yap
+                        </button>
+                    </form>
+                </div>
+                
                 <form action="/admin/product/add" method="POST">
                     <div class="mb-2">
-                        <label class="form-label small text-secondary">Ürün Başlığı</label>
-                        <input type="text" name="title" class="form-control" required placeholder="Örn: Valorant 2480 VP">
+                        <label class="form-label small text-secondary">İlan / Ürün Başlığı</label>
+                        <input type="text" name="title" class="form-control" required placeholder="Örn: Instagram 5.000 Türk Takipçi">
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small text-secondary">Ana Kategori</label>
+                            <select name="main_category" class="form-select" required>
+                                <option value="oyun">Oyun E-Pin</option>
+                                <option value="sosyal">Sosyal Medya</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-secondary">Alt Kategori / Platform</label>
+                            <select name="sub_category" class="form-select" required>
+                                <option value="instagram">Instagram</option>
+                                <option value="tiktok">TikTok</option>
+                                <option value="youtube">YouTube</option>
+                                <option value="twitter">Twitter / X</option>
+                                <option value="valorant">Valorant</option>
+                                <option value="pubg">PUBG</option>
+                                <option value="steam">Steam</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="row g-2 mb-2">
                         <div class="col-6">
                             <label class="form-label small text-secondary">Fiyat (TL)</label>
-                            <input type="number" step="0.01" name="price" class="form-control" required placeholder="300.00">
+                            <input type="number" step="0.01" name="price" class="form-control" required placeholder="75.00">
                         </div>
                         <div class="col-6">
                             <label class="form-label small text-secondary">Stok</label>
-                            <input type="number" name="stock" class="form-control" value="100" required>
+                            <input type="number" name="stock" class="form-control" value="500" required>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small text-secondary">Görsel URL</label>
                         <input type="url" name="image" class="form-control" required placeholder="https://...">
                     </div>
-                    <button type="submit" class="btn btn-info text-white w-100 fw-bold">Ürünü Kaydet</button>
+                    <button type="submit" class="btn btn-info text-white w-100 fw-bold">İlanı Yayınla</button>
                 </form>
             </div>
 
@@ -210,14 +238,14 @@
         <!-- Sağ: Ürün Güncelleme ve Siparişler -->
         <div class="col-lg-7">
             <div class="card card-custom p-4 shadow mb-4">
-                <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-tags"></i> Ürün Fiyat & Stok Güncelleme</h5>
-                <div class="table-responsive">
+                <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-tags"></i> Yayındaki İlanlar ({{ products|length }})</h5>
+                <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
                     <table class="table table-dark-custom small mb-0">
                         <thead>
                             <tr>
-                                <th>Ürün Adı</th>
-                                <th style="width: 110px;">Fiyat (TL)</th>
-                                <th style="width: 90px;">Stok</th>
+                                <th>İlan Adı</th>
+                                <th style="width: 100px;">Fiyat</th>
+                                <th style="width: 80px;">Stok</th>
                                 <th class="text-end">İşlemler</th>
                             </tr>
                         </thead>
@@ -236,7 +264,7 @@
                                         <button type="submit" class="btn btn-primary btn-sm py-0 px-2" title="Kaydet"><i class="fa-solid fa-floppy-disk"></i></button>
                                 </form>
                                         <form action="/admin/product/delete/{{ p.id }}" method="POST" style="display:inline;">
-                                            <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Bu ürünü silmek istediğinize emin misiniz?')" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                                            <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Bu ilanı silmek istediğinize emin misiniz?')" title="Sil"><i class="fa-solid fa-trash"></i></button>
                                         </form>
                                     </td>
                             </tr>
