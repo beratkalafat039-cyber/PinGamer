@@ -6,6 +6,7 @@ import re
 import requests
 import datetime
 import random
+import string
 import sqlite3
 
 app = Flask(__name__)
@@ -210,7 +211,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- BANKA VE POS STANDARTLARINDA KART DOĞRULAMA (BIN + LUHN) ---
+# --- BANKA VE POS KART DOĞRULAMA (BIN + LUHN) ---
 TURKISH_BINS = {
     "454671": ("Ziraat Bankası", "Visa"),
     "542374": ("Ziraat Bankası", "Mastercard"),
@@ -367,7 +368,6 @@ def register():
 
     return render_template("register.html")
 
-# --- GİRİŞ SAYFASI (3 HATALI DENEME SAYACI İLE) ---
 @app.route("/login", methods=["GET", "POST"])
 def login():
     user = get_current_user()
@@ -407,7 +407,6 @@ def login():
 
     return render_template("login.html", failed_attempts=failed_attempts)
 
-# --- ŞİFRE SIFIRLAMA TALEBİ ROTASI ---
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -709,7 +708,59 @@ def admin_panel():
                            orders=all_orders,
                            reset_requests=reset_reqs)
 
-# --- ŞİFRE SIFIRLAMA TALEBİNİ İŞLEME (YENİ ŞİFRE BELİRLEME) ---
+# --- RASTGELE HESAP OLUŞTURMA ---
+@app.route("/admin/user/generate-random", methods=["POST"])
+@admin_required
+def admin_generate_random_user():
+    random_id = random.randint(1000, 9999)
+    random_username = f"user_{random_id}"
+    random_raw_password = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+    hashed_pw = generate_password_hash(random_raw_password)
+    test_balance = 500.0  # Rastgele açılan hesaba 500 TL test bakiyesi
+
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    
+    try:
+        cursor.execute(f"INSERT INTO users (username, password, balance, is_admin) VALUES ({p}, {p}, {p}, 0)",
+                       (random_username, hashed_pw, test_balance))
+        conn.commit()
+        flash(f"🎲 Rastgele Hesap Oluşturuldu! Kullanıcı: '{random_username}' | Şifre: '{random_raw_password}' | Bakiye: 500 TL", "success")
+    except Exception as e:
+        flash(f"Hesap oluşturulurken hata: {e}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for("admin_panel"))
+
+# --- KULLANICI SİLME ---
+@app.route("/admin/user/delete/<int:user_id>", methods=["POST"])
+@admin_required
+def admin_delete_user(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    
+    cursor.execute(f"SELECT username FROM users WHERE id = {p}", (user_id,))
+    target = cursor.fetchone()
+    
+    if target:
+        if target["username"] == SUPER_ADMIN_USERNAME:
+            flash("⛔ Ana Süper Yönetici (Lvbelc5baba) hesabı silinemez!", "danger")
+        else:
+            # Kullanıcının siparişlerini ve kendisini sil
+            cursor.execute(f"DELETE FROM orders WHERE user_id = {p}", (user_id,))
+            cursor.execute(f"DELETE FROM users WHERE id = {p}", (user_id,))
+            conn.commit()
+            flash(f"'{target['username']}' kullanıcısı başarıyla silindi.", "info")
+
+    cursor.close()
+    conn.close()
+    return redirect(url_for("admin_panel"))
+
+# --- ŞİFRE SIFIRLAMA TALEBİNİ İŞLEME ---
 @app.route("/admin/user/reset-password", methods=["POST"])
 @admin_required
 def admin_reset_user_password():
@@ -734,7 +785,7 @@ def admin_reset_user_password():
     cursor.close()
     conn.close()
 
-    flash(f"'{target_username}' kullanıcısının şifresi başarıyla güncellendi! Yeni şifre: {new_password}", "success")
+    flash(f"'{target_username}' kullanıcısının şifresi güncellendi! Yeni şifre: {new_password}", "success")
     return redirect(url_for("admin_panel"))
 
 # --- SADECE Lvbelc5baba KULLANABİLİR: ADMIN EKLE / ÇIKAR ---
