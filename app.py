@@ -214,7 +214,7 @@ def generate_game_code(product_title):
         p2 = "".join(random.choices(chars, k=5))
         p3 = "".join(random.choices(chars, k=5))
         return f"{p1}-{p2}-{p3}"
-    elif any(k in title_lower for k in ["takipçi", "beğeni", "izlenme", "instagram", "tiktok", "youtube"]):
+    elif any(k in title_lower for k in ["takipçi", "beğeni", "izlenme", "instagram", "tiktok", "youtube", "twitter"]):
         p1 = "".join(random.choices(chars, k=4))
         p2 = "".join(random.choices(chars, k=4))
         return f"SMM-KEY-{p1}-{p2}"
@@ -365,6 +365,77 @@ def send_discord_log(title, description, color):
         requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=5)
     except Exception as e:
         print(f"Discord Hatası: {e}")
+
+# --- CANLI DESTEK VERİ HAVUZU & 4/1 KURALI ---
+SUPPORT_AGENTS = {
+    "erkek": ["Ahmet K.", "Murat Y.", "Emre T.", "Can B.", "Burak D.", "Kaan S."],
+    "kadin": ["Elif S.", "Zeynep T.", "Ayşe M.", "Seda B.", "Merve K.", "Gizem A."]
+}
+
+@app.route("/api/support/start", methods=["POST"])
+def support_start():
+    data = request.get_json() or {}
+    topic = data.get("topic", "genel")
+    last_gender = session.get("last_agent_gender", None)
+
+    # 4/1 Cinsiyet Kuralı
+    if last_gender:
+        if random.random() < 0.25:
+            current_gender = last_gender
+        else:
+            current_gender = "kadin" if last_gender == "erkek" else "erkek"
+    else:
+        current_gender = random.choice(["erkek", "kadin"])
+
+    session["last_agent_gender"] = current_gender
+    agent_name = random.choice(SUPPORT_AGENTS[current_gender])
+
+    department_names = {
+        "odeme": "Bakiye & Finans Uzmanı",
+        "epin": "E-Pin & Kod Teslimat Uzmanı",
+        "sosyal": "Sosyal Medya Hizmetleri Uzmanı",
+        "teknik": "Teknik Destek Uzmanı"
+    }
+    dept = department_names.get(topic, "Müşteri Temsilcisi")
+
+    welcome_messages = {
+        "odeme": f"Merhaba! Ben {agent_name}, Finans ve Bakiye departmanındanım. Ödeme veya bakiye yükleme işleminizle ilgili nasıl yardımcı olabilirim?",
+        "epin": f"Merhaba! Ben {agent_name}, Kod ve Teslimat birimindenim. Satın aldığınız e-pin veya oyun koduyla ilgili detayları paylaşabilir misiniz?",
+        "sosyal": f"Merhaba! Ben {agent_name}, Sosyal Medya Hizmetleri uzmanıyım. Takipçi, beğeni veya izlenme siparişinizle ilgili yardımcı olmaktan memnuniyet duyarım.",
+        "teknik": f"Merhaba! Ben {agent_name}, Teknik Destek ekibindenim. Sitede karşılaştığınız teknik sorunu detaylandırır mısınız?"
+    }
+
+    return jsonify({
+        "success": True,
+        "agent_name": agent_name,
+        "department": dept,
+        "gender": current_gender,
+        "initial_message": welcome_messages.get(topic, f"Merhaba! Ben {agent_name}, size nasıl yardımcı olabilirim?")
+    })
+
+@app.route("/api/support/message", methods=["POST"])
+def support_message():
+    data = request.get_json() or {}
+    user_msg = data.get("message", "").lower()
+    topic = data.get("topic", "genel")
+
+    if any(k in user_msg for k in ["bakiye", "yükle", "kart", "para", "ödeme", "pos"]):
+        reply = "Bakiye yükleme işlemleriniz 3D Secure onayının ardından anında hesabınıza yansımaktadır. Herhangi bir gecikme durumunda işlem ID numaranızı kontrol edebilirim."
+    elif any(k in user_msg for k in ["kod", "gelmedi", "çalışmıyor", "hatalı", "vp", "uc", "steam"]):
+        reply = "Tüm kodlar sistemimizde anlık ve lisanslı olarak üretilmektedir. 'Siparişlerim' sekmesinden teslim edilen kodu kopyalayıp ilgili platformda aktifleştirebilirsiniz."
+    elif any(k in user_msg for k in ["takipçi", "beğeni", "izlenme", "tiktok", "instagram", "düşüş"]):
+        reply = "Sosyal medya siparişleri sıraya alınarak 5-15 dakika içinde organik olarak gönderilmeye başlar. Profilinizin gizli (özel) olmadığından emin olunuz."
+    elif any(k in user_msg for k in ["admin", "yetki", "berat", "lvbelc5baba", "şifre"]):
+        reply = "Yönetici ve hesap güvenliği işlemleriniz kayıt altına alınmıştır. Şifre sıfırlama taleplerini 'Şifremi Unuttum' ekranından iletebilirsiniz."
+    elif any(k in user_msg for k in ["merhaba", "selam", "sa", "günaydın", "iyi günler"]):
+        reply = "Tekrar merhaba! Sorununuzu çözebilmemiz için detayları iletmeniz yeterlidir."
+    else:
+        reply = "Konuyu anladım, sistem kayıtlarımızı ve sipariş veritabanını inceliyorum. Lütfen hatta kalınız."
+
+    return jsonify({
+        "success": True,
+        "reply": reply
+    })
 
 # --- GENEL SAYFA ROTALARI ---
 
@@ -526,7 +597,7 @@ def spin():
     user = get_current_user()
     data = request.get_json() or {}
     tier = data.get("tier", "bronze")
-    is_simulation = bool(data.get("simulation", False))  # Deneme Modu
+    is_simulation = bool(data.get("simulation", False))
     
     tier_costs = {"bronze": 50.0, "silver": 150.0, "gold": 300.0}
     cost = tier_costs.get(tier, 50.0)
@@ -583,7 +654,6 @@ def spin():
     code = generate_game_code(chosen["label"])
 
     if is_simulation:
-        # Simülasyonda bakiye düşmez, sipariş kaydı atılmaz
         return jsonify({
             "success": True,
             "simulation": True,
@@ -593,7 +663,6 @@ def spin():
             "new_balance": f"{current_balance:.2f}"
         })
 
-    # Gerçek Çevirme İşlemi
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
@@ -833,11 +902,9 @@ def admin_generate_random_user():
 @admin_required
 def admin_generate_random_product():
     random_templates = [
-        # Oyun E-Pin İlanları
         {"title": f"Valorant {random.choice([1200, 2480, 5350, 11000])} VP", "price": random.choice([150, 290, 580, 1150]), "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "oyun", "sub_cat": "valorant"},
         {"title": f"PUBG Mobile {random.choice([325, 660, 1800, 3850])} UC", "price": random.choice([110, 210, 550, 1100]), "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "oyun", "sub_cat": "pubg"},
         {"title": f"Steam {random.choice([10, 20, 50, 100])} USD Cüzdan Kodu", "price": random.choice([340, 680, 1700, 3400]), "image": "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", "main_cat": "oyun", "sub_cat": "steam"},
-        # Sosyal Medya İlanları
         {"title": f"Instagram {random.choice(['2.500', '5.000', '10.000'])} Organik Takipçi", "price": random.choice([55, 95, 175]), "image": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", "main_cat": "sosyal", "sub_cat": "instagram"},
         {"title": f"Instagram {random.choice(['5.000', '10.000', '25.000'])} Keşfet Etkili Beğeni", "price": random.choice([30, 60, 120]), "image": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", "main_cat": "sosyal", "sub_cat": "instagram"},
         {"title": f"TikTok {random.choice(['10.000', '50.000', '100.000'])} İzlenme & Paylaşım", "price": random.choice([40, 110, 190]), "image": "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", "main_cat": "sosyal", "sub_cat": "tiktok"},
