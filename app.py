@@ -59,12 +59,16 @@ def init_db():
 init_db()
 
 def get_current_user():
-    if "user_id" not in session:
+    user_id = session.get("user_id")
+    if not user_id:
         return None
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],))
-        return cursor.fetchone()
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+            return cursor.fetchone()
+    except Exception:
+        return None
 
 def send_discord_log(title, description, color):
     if not DISCORD_WEBHOOK_URL or "BURAYA" in DISCORD_WEBHOOK_URL:
@@ -137,8 +141,10 @@ def login():
             user = cursor.fetchone()
 
         if user and check_password_hash(user["password"], password):
+            session.clear()
             session["user_id"] = user["id"]
             session["username"] = user["username"]
+            session.permanent = True
             flash(f"Giriş başarılı! Hoş geldin, {user['username']}", "success")
             return redirect(url_for("home"))
         else:
@@ -164,7 +170,7 @@ def wheel():
 def spin():
     user = get_current_user()
     if not user:
-        return jsonify({"success": False, "error": "Çevirmek için lütfen önce giriş yapın veya kayıt olun!"}), 401
+        return jsonify({"success": False, "error": "Çevirmek için lütfen önce giriş yapın!"}), 401
 
     data = request.get_json() or {}
     tier = data.get("tier", "bronze")
@@ -224,7 +230,7 @@ def spin():
 def deposit():
     user = get_current_user()
     if not user:
-        flash("Bakiye yüklemek için lütfen önce giriş yapın veya kayıt olun!", "warning")
+        flash("Bakiye yüklemek için lütfen önce giriş yapın!", "warning")
         return redirect(url_for("login"))
 
     if request.method == "POST":
@@ -260,7 +266,7 @@ def deposit():
 def buy(product_id):
     user = get_current_user()
     if not user:
-        flash("Satın alma işlemi yapabilmek için lütfen giriş yapın veya kayıt olun!", "warning")
+        flash("Satın alma işlemi yapabilmek için lütfen giriş yapın!", "warning")
         return redirect(url_for("login"))
 
     with get_db() as conn:
