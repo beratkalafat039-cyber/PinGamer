@@ -173,6 +173,32 @@ def init_db():
 
 init_db()
 
+# --- STANDART E-PIN KOD ÜRETİM MOTORU ---
+def generate_game_code(product_title):
+    title_lower = product_title.lower()
+    chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    
+    if "valorant" in title_lower or "vp" in title_lower:
+        # Valorant Points: RA-XXXX-XXXX-XXXX
+        p1 = "".join(random.choices(chars, k=4))
+        p2 = "".join(random.choices(chars, k=4))
+        p3 = "".join(random.choices(chars, k=4))
+        return f"RA-{p1}-{p2}-{p3}"
+    elif "pubg" in title_lower or "uc" in title_lower:
+        # PUBG Mobile UC: 14 haneli harf ve rakam dizisi
+        return "".join(random.choices(chars, k=14))
+    elif "steam" in title_lower:
+        # Steam Cüzdan: XXXXX-XXXXX-XXXXX
+        p1 = "".join(random.choices(chars, k=5))
+        p2 = "".join(random.choices(chars, k=5))
+        p3 = "".join(random.choices(chars, k=5))
+        return f"{p1}-{p2}-{p3}"
+    else:
+        # Genel E-Pin Formatı: EPIN-XXXX-XXXX
+        p1 = "".join(random.choices(chars, k=4))
+        p2 = "".join(random.choices(chars, k=4))
+        return f"EPIN-{p1}-{p2}"
+
 def get_current_user():
     user_id = session.get("user_id")
     if not user_id:
@@ -368,7 +394,6 @@ def register():
 
     return render_template("register.html")
 
-# --- GİRİŞ SAYFASI (3 HATALI DENEME SAYACI) ---
 @app.route("/login", methods=["GET", "POST"])
 def login():
     user = get_current_user()
@@ -408,7 +433,6 @@ def login():
 
     return render_template("login.html", failed_attempts=failed_attempts)
 
-# --- ŞİFRE SIFIRLAMA TALEBİ ROTASI ---
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -471,7 +495,7 @@ def wheel():
     is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
     return render_template("wheel.html", balance=balance, username=username, is_admin=is_admin)
 
-# --- ŞANS ÇARKI (VIP KASASINDA PUBG UC DAHİL) ---
+# --- ŞANS ÇARKI (VP & PUBG UC STANDART KOD ÜRETİMİ) ---
 @app.route("/spin", methods=["POST"])
 @login_required
 def spin():
@@ -486,43 +510,39 @@ def spin():
         return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen önce bakiye yükleyin."}), 400
 
     if tier == "gold":
-        # VIP KASA ÖDÜLLERİ (PUBG UC + VALORANT VP)
         options = [
-            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC", "prefix": "UC"},
-            {"reward": "2480 VP", "label": "2480 Valorant Points", "prefix": "VP"},
-            {"reward": "1800 PUBG UC", "label": "PUBG Mobile 1800 UC", "prefix": "UC"},
-            {"reward": "5350 VP", "label": "5350 Valorant Points", "prefix": "VP"},
-            {"reward": "3850 PUBG UC", "label": "PUBG Mobile 3850 UC (Nadir)", "prefix": "UC"},
-            {"reward": "8100 PUBG UC", "label": "PUBG Mobile 8100 UC (BÜYÜK ÖDÜL)", "prefix": "UC"},
-            {"reward": "11000 VP", "label": "11000 Valorant Points (BÜYÜK ÖDÜL)", "prefix": "VP"}
+            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC", "type": "pubg"},
+            {"reward": "2480 VP", "label": "2480 Valorant Points", "type": "valorant"},
+            {"reward": "1800 PUBG UC", "label": "PUBG Mobile 1800 UC", "type": "pubg"},
+            {"reward": "5350 VP", "label": "5350 Valorant Points", "type": "valorant"},
+            {"reward": "3850 PUBG UC", "label": "PUBG Mobile 3850 UC (Nadir)", "type": "pubg"},
+            {"reward": "8100 PUBG UC", "label": "PUBG Mobile 8100 UC (BÜYÜK ÖDÜL)", "type": "pubg"},
+            {"reward": "11000 VP", "label": "11000 Valorant Points (BÜYÜK ÖDÜL)", "type": "valorant"}
         ]
         weights = [35, 25, 20, 12, 5, 2, 1]
     elif tier == "silver":
         options = [
-            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC", "prefix": "UC"},
-            {"reward": "600 VP", "label": "600 Valorant Points", "prefix": "VP"},
-            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC", "prefix": "UC"},
-            {"reward": "1200 VP", "label": "1200 Valorant Points", "prefix": "VP"},
-            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC", "prefix": "UC"},
-            {"reward": "2480 VP", "label": "2480 Valorant Points", "prefix": "VP"}
+            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC", "type": "pubg"},
+            {"reward": "600 VP", "label": "600 Valorant Points", "type": "valorant"},
+            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC", "type": "pubg"},
+            {"reward": "1200 VP", "label": "1200 Valorant Points", "type": "valorant"},
+            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC", "type": "pubg"},
+            {"reward": "2480 VP", "label": "2480 Valorant Points", "type": "valorant"}
         ]
         weights = [30, 30, 20, 14, 5, 1]
     else:  # Bronze Kasa
         options = [
-            {"reward": "150 VP", "label": "150 Valorant Points", "prefix": "VP"},
-            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC", "prefix": "UC"},
-            {"reward": "600 VP", "label": "600 Valorant Points", "prefix": "VP"},
-            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC", "prefix": "UC"},
-            {"reward": "1200 VP", "label": "1200 Valorant Points", "prefix": "VP"},
-            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC (Büyük)", "prefix": "UC"}
+            {"reward": "150 VP", "label": "150 Valorant Points", "type": "valorant"},
+            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC", "type": "pubg"},
+            {"reward": "600 VP", "label": "600 Valorant Points", "type": "valorant"},
+            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC", "type": "pubg"},
+            {"reward": "1200 VP", "label": "1200 Valorant Points", "type": "valorant"},
+            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC (Büyük)", "type": "pubg"}
         ]
         weights = [45, 30, 15, 6, 3, 1]
 
     chosen = random.choices(options, weights=weights, k=1)[0]
-    
-    p1 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
-    p2 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
-    code = f"{chosen['prefix']}-{p1}-{p2}"
+    code = generate_game_code(chosen["label"])
 
     conn = get_db()
     cursor = conn.cursor()
@@ -618,6 +638,7 @@ def deposit():
     is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
     return render_template("deposit.html", balance=balance, username=user["username"], is_admin=is_admin)
 
+# --- MAĞAZADAN E-PIN SATIN ALMA (OTOMATİK FORMATLI KOD TESLİMATI) ---
 @app.route("/buy/<int:product_id>", methods=["POST"])
 @login_required
 def buy(product_id):
@@ -642,11 +663,8 @@ def buy(product_id):
         flash("Yetersiz bakiye! Lütfen önce bakiye yükleyin.", "danger")
         return redirect(url_for("home"))
 
-    raw_prefix = "".join([c for c in product["title"][:4] if c.isalnum()]).upper()
-    prefix = raw_prefix if raw_prefix else "EPIN"
-    part1 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
-    part2 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
-    delivered_code = f"{prefix}-{part1}-{part2}"
+    # Ürün tipine göre standart kod üretilir
+    delivered_code = generate_game_code(product["title"])
 
     cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (product["price"], user["id"]))
     cursor.execute(f"UPDATE products SET stock = stock - 1 WHERE id = {p}", (product_id,))
