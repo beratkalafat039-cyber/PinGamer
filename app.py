@@ -93,8 +93,8 @@ def init_db():
 
             urunler = [
                 ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
-                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234),
-                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234)
+                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234),
+                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234)
             ]
             for title, price, img, stock in urunler:
                 cursor.execute("SELECT id FROM products WHERE title = %s", (title,))
@@ -154,8 +154,8 @@ def init_db():
 
             urunler = [
                 ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
-                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234),
-                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234)
+                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234),
+                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234)
             ]
             for title, price, img, stock in urunler:
                 cursor.execute("SELECT id FROM products WHERE title = ?", (title,))
@@ -368,6 +368,7 @@ def register():
 
     return render_template("register.html")
 
+# --- GİRİŞ SAYFASI (3 HATALI DENEME SAYACI) ---
 @app.route("/login", methods=["GET", "POST"])
 def login():
     user = get_current_user()
@@ -407,6 +408,7 @@ def login():
 
     return render_template("login.html", failed_attempts=failed_attempts)
 
+# --- ŞİFRE SIFIRLAMA TALEBİ ROTASI ---
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -469,6 +471,7 @@ def wheel():
     is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
     return render_template("wheel.html", balance=balance, username=username, is_admin=is_admin)
 
+# --- ŞANS ÇARKI (VIP KASASINDA PUBG UC DAHİL) ---
 @app.route("/spin", methods=["POST"])
 @login_required
 def spin():
@@ -482,21 +485,44 @@ def spin():
     if current_balance < cost:
         return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen önce bakiye yükleyin."}), 400
 
-    options = [
-        {"vp": "150 VP", "label": "150 Valorant Points"},
-        {"vp": "600 VP", "label": "600 Valorant Points"},
-        {"vp": "1200 VP", "label": "1200 Valorant Points"},
-        {"vp": "2480 VP", "label": "2480 Valorant Points"},
-        {"vp": "5350 VP", "label": "5350 Valorant Points"},
-        {"vp": "11000 VP", "label": "11000 Valorant Points (BÜYÜK ÖDÜL)"}
-    ]
+    if tier == "gold":
+        # VIP KASA ÖDÜLLERİ (PUBG UC + VALORANT VP)
+        options = [
+            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC", "prefix": "UC"},
+            {"reward": "2480 VP", "label": "2480 Valorant Points", "prefix": "VP"},
+            {"reward": "1800 PUBG UC", "label": "PUBG Mobile 1800 UC", "prefix": "UC"},
+            {"reward": "5350 VP", "label": "5350 Valorant Points", "prefix": "VP"},
+            {"reward": "3850 PUBG UC", "label": "PUBG Mobile 3850 UC (Nadir)", "prefix": "UC"},
+            {"reward": "8100 PUBG UC", "label": "PUBG Mobile 8100 UC (BÜYÜK ÖDÜL)", "prefix": "UC"},
+            {"reward": "11000 VP", "label": "11000 Valorant Points (BÜYÜK ÖDÜL)", "prefix": "VP"}
+        ]
+        weights = [35, 25, 20, 12, 5, 2, 1]
+    elif tier == "silver":
+        options = [
+            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC", "prefix": "UC"},
+            {"reward": "600 VP", "label": "600 Valorant Points", "prefix": "VP"},
+            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC", "prefix": "UC"},
+            {"reward": "1200 VP", "label": "1200 Valorant Points", "prefix": "VP"},
+            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC", "prefix": "UC"},
+            {"reward": "2480 VP", "label": "2480 Valorant Points", "prefix": "VP"}
+        ]
+        weights = [30, 30, 20, 14, 5, 1]
+    else:  # Bronze Kasa
+        options = [
+            {"reward": "150 VP", "label": "150 Valorant Points", "prefix": "VP"},
+            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC", "prefix": "UC"},
+            {"reward": "600 VP", "label": "600 Valorant Points", "prefix": "VP"},
+            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC", "prefix": "UC"},
+            {"reward": "1200 VP", "label": "1200 Valorant Points", "prefix": "VP"},
+            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC (Büyük)", "prefix": "UC"}
+        ]
+        weights = [45, 30, 15, 6, 3, 1]
 
-    weights = [55, 30, 10, 4, 0.9, 0.1] if tier == "bronze" else ([15, 35, 30, 14, 5, 1] if tier == "silver" else [5, 15, 35, 25, 15, 5])
     chosen = random.choices(options, weights=weights, k=1)[0]
     
     p1 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
     p2 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
-    code = f"VP-{p1}-{p2}"
+    code = f"{chosen['prefix']}-{p1}-{p2}"
 
     conn = get_db()
     cursor = conn.cursor()
@@ -518,7 +544,7 @@ def spin():
         description=(
             f"**Kullanıcı:** `{user['username']}`\n"
             f"**Kasa:** {tier.upper()} ({cost:.2f} TL)\n"
-            f"**Kazanılan:** 🎉 {chosen['vp']}\n"
+            f"**Kazanılan:** 🎉 {chosen['reward']}\n"
             f"**Kod:** `{code}`\n"
             f"**Kalan Bakiye:** {new_balance:.2f} TL"
         ),
@@ -527,7 +553,7 @@ def spin():
 
     return jsonify({
         "success": True,
-        "reward": chosen["vp"],
+        "reward": chosen["reward"],
         "reward_label": chosen["label"],
         "code": code,
         "new_balance": f"{new_balance:.2f}"
@@ -716,7 +742,7 @@ def admin_generate_random_user():
     random_username = f"user_{random_id}"
     random_raw_password = "".join(random.choices(string.ascii_letters + string.digits, k=8))
     hashed_pw = generate_password_hash(random_raw_password)
-    test_balance = 500.0  # Rastgele açılan hesaba 500 TL test bakiyesi
+    test_balance = 500.0
 
     conn = get_db()
     cursor = conn.cursor()
@@ -750,7 +776,6 @@ def admin_delete_user(user_id):
         if target["username"] == SUPER_ADMIN_USERNAME:
             flash("⛔ Ana Süper Yönetici (Lvbelc5baba) hesabı silinemez!", "danger")
         else:
-            # Kullanıcının siparişlerini ve kendisini sil
             cursor.execute(f"DELETE FROM orders WHERE user_id = {p}", (user_id,))
             cursor.execute(f"DELETE FROM users WHERE id = {p}", (user_id,))
             conn.commit()
