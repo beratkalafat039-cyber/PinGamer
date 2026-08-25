@@ -3,38 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giriş Yap - E-Pin Pazaryeri</title>
+    <title>Giriş Yap - E-Pin Pazarı</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0b1120; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card-custom { background-color: #1e293b; border: 1px solid #334155; border-radius: 16px; }
+        .form-control { background-color: #0f172a; border: 1px solid #334155; color: #fff; }
+        .form-control:focus { background-color: #0f172a; border-color: #3b82f6; color: #fff; }
+        
+        .reset-highlight-box {
+            background-color: rgba(234, 179, 8, 0.1);
+            border: 2px solid #eab308;
+            border-radius: 12px;
+            animation: pulse-border 1.8s infinite;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+    </style>
 </head>
-<body class="bg-dark text-white d-flex align-items-center" style="min-height: 100vh;">
+<body class="d-flex align-items-center justify-content-center py-5" style="min-height: 100vh;">
 
-<div class="container" style="max-width: 400px;">
-    <div class="card bg-secondary text-white p-4 shadow-lg border-0 rounded-4">
-        <h3 class="text-center fw-bold text-danger mb-4">🎮 GİRİŞ YAP</h3>
+<div class="container" style="max-width: 420px;">
+    <div class="card card-custom p-4 shadow-lg">
+        <div class="text-center mb-4">
+            <h4 class="fw-bold text-primary mb-1"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</h4>
+            <small class="text-secondary">E-Pin Pazarı Hesabınıza Erişin</small>
+        </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ category }} p-2 small">{{ message }}</div>
+              <div class="alert alert-{{ category }} p-2 small mb-3">{{ message }}</div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
         <form action="/login" method="POST">
             <div class="mb-3">
-                <label class="form-label small">Kullanıcı Adı</label>
-                <input type="text" name="username" class="form-control" required placeholder="Kullanıcı adınız">
+                <label class="form-label small text-secondary">Kullanıcı Adı</label>
+                <input type="text" name="username" class="form-control" required placeholder="Kullanıcı adınızı girin">
             </div>
+
             <div class="mb-4">
-                <label class="form-label small">Şifre</label>
-                <input type="password" name="password" class="form-control" required placeholder="Şifreniz">
+                <label class="form-label small text-secondary">Şifre</label>
+                <input type="password" name="password" class="form-control" required placeholder="••••••••">
             </div>
-            <button type="submit" class="btn btn-danger w-100 fw-bold py-2">Giriş Yap</button>
+
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">Giriş Yap</button>
+            
+            <div class="text-center mt-3">
+                <small class="text-secondary">Hesabınız yok mu? <a href="/register" class="text-info text-decoration-none fw-bold">Kayıt Olun</a></small>
+            </div>
         </form>
 
-        <div class="text-center mt-3 small">
-            Hesabın yok mu? <a href="/register" class="text-warning text-decoration-none fw-bold">Hemen Kayıt Ol</a>
-        </div>
+        <hr class="border-secondary my-4">
+
+        <!-- EN ALT ALAN: ŞİFRE SIFIRLAMA BÖLÜMÜ -->
+        {% if failed_attempts >= 3 %}
+            <div class="p-3 reset-highlight-box text-center">
+                <div class="text-warning fw-bold mb-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Şifrenizi mi Unuttunuz?
+                </div>
+                <small class="text-light d-block mb-3">
+                    3 defa yanlış şifre girdiniz. Hesabınıza erişemiyorsanız yöneticiye sıfırlama talebi gönderebilirsiniz.
+                </small>
+                <a href="/forgot-password" class="btn btn-warning btn-sm w-100 fw-bold text-dark shadow">
+                    <i class="fa-solid fa-key"></i> Şifre Sıfırlama Talebi Gönder
+                </a>
+            </div>
+        {% else %}
+            <div class="text-center">
+                <small class="text-secondary">
+                    Şifrenizi hatırlamıyor musunuz? 
+                    <a href="/forgot-password" class="text-warning text-decoration-none ms-1">Şifre Sıfırla</a>
+                </small>
+            </div>
+        {% endif %}
+
     </div>
 </div>
 
