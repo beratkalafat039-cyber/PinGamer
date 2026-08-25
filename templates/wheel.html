@@ -54,20 +54,17 @@
         </div>
     </div>
 
-    <!-- ÇARK / SLOT EKRANI -->
+    <!-- ÇARK EKRANI -->
     <div class="slot-box p-4 text-center shadow-lg mb-4">
         <div id="reward-display" class="display-wheel d-flex align-items-center justify-content-center text-warning shadow-inner mb-4">
             🎰 Çevirmeye Hazır
         </div>
 
         <div class="d-flex justify-content-center gap-2">
-            <!-- GERÇEK ÇEVİRME BUTONU -->
             <button id="spin-btn" class="btn btn-warning btn-lg fw-bold px-4 py-3 shadow" onclick="spinWheel(false)">
                 <i class="fa-solid fa-play"></i> ÇARKI ÇEVİR (<span id="btn-cost">50</span> TL)
             </button>
-
-            <!-- SİMÜLASYON / DENEME BUTONU -->
-            <button id="sim-btn" class="btn btn-outline-info btn-lg fw-bold px-3 py-3" onclick="spinWheel(true)" title="Bakiyeniz Düşmez">
+            <button id="sim-btn" class="btn btn-outline-info btn-lg fw-bold px-3 py-3" onclick="spinWheel(true)">
                 <i class="fa-solid fa-flask"></i> 🎮 Deneme Çevir (Ücretsiz)
             </button>
         </div>
@@ -86,14 +83,11 @@
     <!-- KAZANMA İHTİMALLERİ TABLOSU -->
     <div class="card prob-table p-4 border-secondary">
         <h6 class="fw-bold text-warning mb-3"><i class="fa-solid fa-percent"></i> Seçili Kasa Çıkma İhtimal Oranları (<span id="tier-name-display">Bronz Kasa</span>)</h6>
-        <div id="prob-list" class="row g-2 small">
-            <!-- Dinamik İhtimaller JS ile Buraya Doldurulacak -->
-        </div>
+        <div id="prob-list" class="row g-2 small"></div>
     </div>
 </div>
 
 <script>
-// --- WEB AUDIO API İLE DAHİLİ SES MOTORU (HARİCİ MP3 İSTEMEZ) ---
 let audioCtx;
 function initAudio() {
     if (!audioCtx) {
@@ -101,7 +95,6 @@ function initAudio() {
     }
 }
 
-// Çark Döndükçe Mekanik Tık Sesi
 function playTickSound() {
     try {
         initAudio();
@@ -119,11 +112,10 @@ function playTickSound() {
     } catch (e) {}
 }
 
-// Kazanınca Zafer Melodisi
 function playWinSound() {
     try {
         initAudio();
-        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        const notes = [523.25, 659.25, 783.99, 1046.50];
         notes.forEach((freq, idx) => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
@@ -139,7 +131,6 @@ function playWinSound() {
     } catch (e) {}
 }
 
-// --- KASA SEÇİMİ VE İHTİMALLER ---
 const PROBABILITIES = {
     bronze: [
         { item: "1$ Steam USD", rate: "%30.0" },
@@ -222,7 +213,6 @@ function spinWheel(isSim = false) {
     const items = ['1$ Steam USD', '150 VP', '5$ Steam USD', '60 PUBG UC', '10$ Steam USD', '1200 VP', '25$ Steam USD', '660 PUBG UC', '50$ Steam USD', '5350 VP', '100$ Steam USD', '11000 VP'];
     let counter = 0;
     
-    // Tık sesi eşliğinde animasyon
     const interval = setInterval(() => {
         display.innerText = items[counter % items.length];
         playTickSound();
