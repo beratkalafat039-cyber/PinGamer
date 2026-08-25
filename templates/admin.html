@@ -37,12 +37,82 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          <div class="alert alert-{{ category }} p-2 small mb-3">{{ message }}</div>
+          <div class="alert alert-{{ category }} p-3 small mb-4 shadow-sm">{{ message }}</div>
         {% endfor %}
       {% endif %}
     {% endwith %}
 
-    <!-- 1. ŞİFRE SIFIRLAMA TALEPLERİ -->
+    <!-- 1. KULLANICI LİSTESİ & ADMİN YÖNETİMİ (SİLME + RANDOM HESAP OLUŞTURMA) -->
+    <div class="card card-custom p-4 mb-4 shadow border-info">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-users"></i> Kayıtlı Kullanıcılar & Hesap Yönetimi ({{ users|length }})</h5>
+            
+            <!-- RASTGELE HESAP OLUŞTUR BUTONU -->
+            <form action="/admin/user/generate-random" method="POST">
+                <button type="submit" class="btn btn-outline-info btn-sm fw-bold">
+                    <i class="fa-solid fa-shuffle"></i> 🎲 Rastgele Hesap Oluştur
+                </button>
+            </form>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-dark-custom small mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kullanıcı Adı</th>
+                        <th>Bakiye</th>
+                        <th>Rol</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>#{{ u.id }}</td>
+                        <td class="fw-bold">{{ u.username }}</td>
+                        <td>{{ "%.2f"|format(u.balance) }} TL</td>
+                        <td>
+                            {% if u.username == super_admin_name %}
+                                <span class="badge bg-danger"><i class="fa-solid fa-crown"></i> Süper Admin</span>
+                            {% elif u.is_admin %}
+                                <span class="badge bg-warning text-dark"><i class="fa-solid fa-user-shield"></i> Admin</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Kullanıcı</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-1">
+                                <!-- Yetki Değiştir (Sadece Süper Admin) -->
+                                {% if is_super and u.username != super_admin_name %}
+                                    <form action="/admin/user/toggle-admin/{{ u.id }}" method="POST" style="display:inline;">
+                                        {% if u.is_admin %}
+                                            <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2" title="Adminliği Kaldır">Adminliği Al</button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2" title="Admin Yap">Admin Yap</button>
+                                        {% endif %}
+                                    </form>
+                                {% endif %}
+
+                                <!-- Kullanıcı Sil (Süper Admin Harici Herkes Silinebilir) -->
+                                {% if u.username != super_admin_name %}
+                                    <form action="/admin/user/delete/{{ u.id }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Bu kullanıcıyı ve tüm siparişlerini silmek istediğinize emin misiniz?')" title="Kullanıcıyı Sil">
+                                            <i class="fa-solid fa-trash-can"></i> Sil
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small">Ana Kurucu</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. ŞİFRE SIFIRLAMA TALEPLERİ -->
     <div class="card card-custom p-4 mb-4 shadow border-warning">
         <h5 class="fw-bold text-warning mb-3"><i class="fa-solid fa-envelope-open-text"></i> Gelen Şifre Sıfırlama Talepleri ({{ reset_requests|length }})</h5>
         <div class="table-responsive">
@@ -88,62 +158,9 @@
         </div>
     </div>
 
-    <!-- 2. SÜPER ADMİN (Lvbelc5baba) ÖZEL: ADMİN EKLE / ÇIKAR -->
-    {% if is_super %}
-    <div class="card card-custom p-4 mb-4 shadow border-danger">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold text-danger mb-0"><i class="fa-solid fa-crown"></i> Süper Yönetici Özel: Admin Ekle / Çıkar</h5>
-            <span class="badge bg-dark text-warning border border-warning">Sadece Lvbelc5baba Yetkilidir</span>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-dark-custom small mb-0">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Kullanıcı Adı</th>
-                        <th>Bakiye</th>
-                        <th>Rol</th>
-                        <th class="text-end">Yetkilendirme</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for u in users %}
-                    <tr>
-                        <td>#{{ u.id }}</td>
-                        <td class="fw-bold">{{ u.username }}</td>
-                        <td>{{ "%.2f"|format(u.balance) }} TL</td>
-                        <td>
-                            {% if u.username == super_admin_name %}
-                                <span class="badge bg-danger"><i class="fa-solid fa-crown"></i> Süper Admin</span>
-                            {% elif u.is_admin %}
-                                <span class="badge bg-warning text-dark"><i class="fa-solid fa-user-shield"></i> Admin</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Kullanıcı</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end">
-                            {% if u.username != super_admin_name %}
-                                <form action="/admin/user/toggle-admin/{{ u.id }}" method="POST" style="display:inline;">
-                                    {% if u.is_admin %}
-                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="return confirm('Bu kullanıcının adminliğini kaldırmak istiyor musunuz?')">Adminliği Kaldır</button>
-                                    {% else %}
-                                        <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2" onclick="return confirm('Bu kullanıcıyı admin yapmak istiyor musunuz?')">Admin Yap</button>
-                                    {% endif %}
-                                </form>
-                            {% else %}
-                                <span class="text-muted">Ana Kurucu</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- 3. TÜM ADMİNLERİN KULLANABİLECEĞİ ÜRÜN & FİYAT YÖNETİMİ -->
+    <!-- 3. ÜRÜN YÖNETİMİ & BAKİYE -->
     <div class="row g-4">
+        <!-- Sol: Ürün Ekle & Bakiye -->
         <div class="col-lg-5">
             <div class="card card-custom p-4 mb-4 shadow">
                 <h5 class="fw-bold text-info mb-3"><i class="fa-solid fa-plus"></i> Yeni E-Pin Ürünü Ekle</h5>
@@ -190,6 +207,7 @@
             </div>
         </div>
 
+        <!-- Sağ: Ürün Güncelleme ve Siparişler -->
         <div class="col-lg-7">
             <div class="card card-custom p-4 shadow mb-4">
                 <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-tags"></i> Ürün Fiyat & Stok Güncelleme</h5>
