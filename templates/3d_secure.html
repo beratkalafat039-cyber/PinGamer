@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Secure Doğrulama</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-light d-flex align-items-center" style="min-height: 100vh;">
+
+<div class="container" style="max-width: 440px;">
+    <div class="card shadow-lg border-0 p-4 rounded-4">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+            <h5 class="fw-bold m-0 text-primary"><i class="fa-solid fa-building-columns"></i> BANKA ONAYI</h5>
+            <span class="badge bg-secondary">3D Secure</span>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} p-2 small mb-3">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Test Amaçlı SMS Kodu Göstergesi -->
+        <div class="alert alert-warning border-warning p-2 text-center small mb-3">
+            📲 <strong>Test SMS Kodunuz:</strong> <span class="badge bg-dark fs-6">{{ payment.sms_code }}</span>
+        </div>
+
+        <p class="small text-muted mb-3">
+            <strong>**** {{ payment.card_last4 }}</strong> numaralı kartınızdan çekilecek <strong>{{ "%.2f"|format(payment.amount) }} TL</strong> tutarındaki işlem için yukarıda gösterilen 6 haneli test onay kodunu giriniz.
+        </p>
+
+        <form action="/3d-secure" method="POST">
+            <div class="mb-3">
+                <input type="text" name="sms_code" maxlength="6" class="form-control form-control-lg text-center fw-bold letter-spacing" style="letter-spacing: 5px; font-size: 24px;" required placeholder="------" autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                <i class="fa-solid fa-check-circle"></i> Onayla ve Bakiyeyi Yükle
+            </button>
+            <a href="/deposit" class="btn btn-link w-100 text-muted btn-sm mt-2 text-decoration-none">İşlemi İptal Et</a>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
