@@ -15,6 +15,30 @@
         .nav-pills .nav-link { color: #94a3b8; border-radius: 8px; font-weight: bold; }
         .nav-pills .nav-link.active { background-color: #eab308; color: #000; }
         .sub-filter-btn { border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        
+        /* Yazıyor... Baloncuğu Animasyonu */
+        .typing-bubble {
+            background-color: #334155;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 14px;
+            border-radius: 14px;
+            width: fit-content;
+        }
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #94a3b8;
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -112,7 +136,7 @@
     </div>
 </div>
 
-<!-- CANLI DESTEK BUTONU (SAĞ ALT) -->
+<!-- CANLI DESTEK BUTONU -->
 <div id="live-support-btn" style="position: fixed; bottom: 25px; right: 25px; z-index: 1000;">
     <button class="btn btn-warning rounded-circle p-3 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 60px; height: 60px;">
         <i class="fa-solid fa-headset fa-xl text-dark"></i>
@@ -129,7 +153,7 @@
         <button class="btn-close btn-close-white" onclick="closeSupport()"></button>
     </div>
 
-    <!-- GİRİŞ ANKETİ EKRANI -->
+    <!-- ANKET EKRANI -->
     <div id="support-survey" class="p-4 text-white">
         <h6 class="fw-bold mb-2">Destek Talebi Başlatın</h6>
         <p class="small text-secondary mb-3">Doğru uzmanın bağlanabilmesi için lütfen konuyu seçiniz.</p>
@@ -158,13 +182,19 @@
     <div id="support-chat" style="display: none;">
         <div id="chat-messages" style="height: 300px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;"></div>
 
-        <div id="typing-indicator" class="px-3 py-1 text-secondary small" style="display: none;">
-            <i class="fa-solid fa-ellipsis fa-fade"></i> <span id="typing-agent-name">Temsilci</span> yazıyor...
+        <!-- YAZIYOR GÖSTERGESİ -->
+        <div id="typing-indicator" class="px-3 py-1 mb-2" style="display: none;">
+            <div class="typing-bubble shadow-sm">
+                <span class="text-secondary small me-2" id="typing-agent-name" style="font-size: 0.75rem;">Temsilci</span>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
         </div>
 
         <div class="p-2 bg-dark border-top border-secondary d-flex gap-2">
             <input type="text" id="chat-input" class="form-control form-control-sm bg-secondary text-white border-0" placeholder="Mesajınızı yazın..." onkeydown="handleInputKey(event)">
-            <button class="btn btn-warning btn-sm" onclick="sendUserMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+            <button id="send-btn" class="btn btn-warning btn-sm" onclick="sendUserMessage()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 </div>
@@ -214,7 +244,7 @@ function applyFilters() {
     });
 }
 
-// --- CANLI DESTEK & 30sn ZAMAN AŞIMI ---
+// --- CANLI DESTEK & GERÇEKÇİ GECİKMELİ YAZMA MOTORU ---
 let currentAgent = null;
 let currentTopic = null;
 let inactivityTimer = null;
@@ -229,8 +259,17 @@ function resetInactivityTimer() {
     inactivityTimer = setTimeout(() => {
         appendSystemMessage("⚠️ 30 saniye boyunca işlem yapılmadığı için görüşme güvenlik nedeniyle sonlandırılmıştır.");
         document.getElementById('chat-input').disabled = true;
+        document.getElementById('send-btn').disabled = true;
         document.getElementById('agent-subtext').innerText = "Görüşme Sonlandırıldı";
     }, 30000);
+}
+
+function calculateTypingDelay(text) {
+    // 1.0 - 2.5 saniye düşünme/okuma payı + karakter başına 30ms-45ms yazma süresi
+    const readingTime = Math.floor(Math.random() * 1500) + 1000;
+    const charDelay = Math.floor(Math.random() * 15) + 30;
+    const typingTime = text.length * charDelay;
+    return Math.min(readingTime + typingTime, 6500); // Maksimum 6.5 saniye
 }
 
 function startSupportChat() {
@@ -252,10 +291,16 @@ function startSupportChat() {
 
             appendSystemMessage(`🔔 ${data.agent_name} sohbete katıldı.`);
             
+            // Gerçekçi ilk mesaj yazma gecikmesi
             setTimeout(() => {
-                appendAgentMessage(data.initial_message);
-                resetInactivityTimer();
-            }, 600);
+                showTyping();
+                const delay = calculateTypingDelay(data.initial_message);
+                setTimeout(() => {
+                    hideTyping();
+                    appendAgentMessage(data.initial_message);
+                    resetInactivityTimer();
+                }, delay);
+            }, 800);
         }
     });
 }
@@ -269,21 +314,41 @@ function sendUserMessage() {
     input.value = '';
     resetInactivityTimer();
 
-    document.getElementById('typing-indicator').style.display = 'block';
+    // Kullanıcı yazdıktan 1-2 sn sonra okuma payıyla yazıyor gösterilir
+    const readDelay = Math.floor(Math.random() * 1000) + 800;
     
-    fetch('/api/support/message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, topic: currentTopic })
-    })
-    .then(res => res.json())
-    .then(data => {
-        setTimeout(() => {
-            document.getElementById('typing-indicator').style.display = 'none';
-            appendAgentMessage(data.reply);
-            resetInactivityTimer();
-        }, 1200);
-    });
+    setTimeout(() => {
+        showTyping();
+        
+        fetch('/api/support/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg, topic: currentTopic })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const typingDuration = calculateTypingDelay(data.reply);
+            setTimeout(() => {
+                hideTyping();
+                appendAgentMessage(data.reply);
+                resetInactivityTimer();
+            }, typingDuration);
+        })
+        .catch(() => {
+            hideTyping();
+        });
+    }, readDelay);
+}
+
+function showTyping() {
+    const typing = document.getElementById('typing-indicator');
+    typing.style.display = 'block';
+    const area = document.getElementById('chat-messages');
+    area.scrollTop = area.scrollHeight;
+}
+
+function hideTyping() {
+    document.getElementById('typing-indicator').style.display = 'none';
 }
 
 function handleInputKey(e) {
@@ -304,7 +369,7 @@ function appendAgentMessage(text) {
     const area = document.getElementById('chat-messages');
     area.innerHTML += `
         <div class="align-self-start text-white p-2 rounded-3 shadow-sm" style="max-width: 80%; background-color: #334155;">
-            <strong class="text-warning small d-block">${currentAgent}</strong>
+            <strong class="text-warning small d-block" style="font-size: 0.75rem;">${currentAgent}</strong>
             ${text}
         </div>
     `;
@@ -323,11 +388,13 @@ function appendSystemMessage(text) {
 
 function closeSupport() {
     clearTimeout(inactivityTimer);
+    hideTyping();
     document.getElementById('support-modal').style.display = 'none';
     document.getElementById('support-survey').style.display = 'block';
     document.getElementById('support-chat').style.display = 'none';
     document.getElementById('chat-messages').innerHTML = '';
     document.getElementById('chat-input').disabled = false;
+    document.getElementById('send-btn').disabled = false;
 }
 </script>
 
