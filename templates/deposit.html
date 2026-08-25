@@ -3,99 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bakiye Yükle - Sandbox Test</title>
+    <title>Bakiye Yükle - 3D Secure</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .credit-card-preview {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border-radius: 16px;
-            color: #fff;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card-custom { background-color: #1e293b; border: 1px solid #334155; border-radius: 16px; }
+        .form-control { background-color: #0f172a; border: 1px solid #334155; color: #fff; }
+        .form-control:focus { background-color: #0f172a; border-color: #3b82f6; color: #fff; box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25); }
     </style>
 </head>
-<body class="bg-light">
+<body class="d-flex align-items-center py-5" style="min-height: 100vh;">
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <a href="/" class="btn btn-outline-secondary btn-sm">← Mağazaya Dön</a>
-                <span class="text-muted">Mevcut Bakiye: <strong>{{ "%.2f"|format(balance) }} TL</strong></span>
-            </div>
+<div class="container" style="max-width: 480px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağazaya Dön</a>
+        <span class="badge bg-primary px-3 py-2 fs-6">Mevcut: {{ "%.2f"|format(balance) }} TL</span>
+    </div>
 
-            <!-- Kart Önizleme Kartı -->
-            <div class="credit-card-preview">
-                <div class="d-flex justify-content-between mb-4">
-                    <span class="fw-bold fs-5 text-warning">TEST KART SİMÜLATÖRÜ</span>
-                    <span class="badge bg-danger">SANDBOX</span>
-                </div>
-                <div class="fs-4 font-monospace mb-3 tracking-wide" id="cardDisplay">•••• •••• •••• ••••</div>
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <small class="text-secondary d-block">Kart Sahibi</small>
-                        <span id="nameDisplay" class="fw-bold">AD SOYAD</span>
-                    </div>
-                    <div>
-                        <small class="text-secondary d-block">SKT</small>
-                        <span id="dateDisplay" class="fw-bold">12/28</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ödeme Formu -->
-            <div class="card border-0 shadow-sm p-4">
-                <h4 class="fw-bold mb-3">Güvenli Bakiye Yükle</h4>
-
-                <form action="/deposit" method="POST">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Yüklenecek Tutar (TL)</label>
-                        <input type="number" step="0.01" name="amount" class="form-control form-control-lg" placeholder="100.00" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Ad Soyad</label>
-                        <input type="text" name="user_name" id="cardHolder" class="form-control" placeholder="Ad Soyad" required oninput="document.getElementById('nameDisplay').innerText = this.value.toUpperCase() || 'AD SOYAD'">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Test Kart Numarası</label>
-                        <input type="text" name="card_number" id="cardNumber" class="form-control font-monospace" placeholder="4543 0000 0000 0000" maxlength="19" required oninput="updateCardNumber(this)">
-                        <small class="text-muted">İstediğin 16 haneli test kart numarasını yazabilirsin.</small>
-                    </div>
-
-                    <div class="row mb-4">
-                        <div class="col-6">
-                            <label class="form-label fw-semibold">SKT</label>
-                            <input type="text" id="cardDate" class="form-control text-center" placeholder="12/28" maxlength="5" required oninput="document.getElementById('dateDisplay').innerText = this.value || '12/28'">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label fw-semibold">CVV</label>
-                            <input type="password" class="form-control text-center" placeholder="•••" maxlength="3" required>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">
-                        Ödemeyi Tamamla ve Yükle
-                    </button>
-                </form>
-            </div>
-
+    <div class="card card-custom p-4 shadow-lg">
+        <div class="text-center mb-4">
+            <h4 class="fw-bold text-warning mb-1"><i class="fa-solid fa-shield-halved"></i> Güvenli Bakiye Yükleme</h4>
+            <small class="text-secondary">3D Secure Korumalı Ödeme Simülasyonu</small>
         </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} p-2 small mb-3">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="/deposit" method="POST">
+            <div class="mb-3">
+                <label class="form-label small text-secondary">Yüklenecek Tutar (TL)</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-white">₺</span>
+                    <input type="number" step="0.01" name="amount" class="form-control" required placeholder="100.00">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small text-secondary">Kart Üzerindeki İsim</label>
+                <input type="text" name="card_holder" class="form-control" required placeholder="Ad Soyad">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small text-secondary">Kart Numarası</label>
+                <input type="text" name="card_number" maxlength="19" class="form-control" required placeholder="4543 1234 5678 9010">
+                <div class="form-text text-secondary small">Luhn algoritması kontrolü aktiftir.</div>
+            </div>
+
+            <div class="row g-2 mb-4">
+                <div class="col-6">
+                    <label class="form-label small text-secondary">Son Kullanma (AA/YY)</label>
+                    <input type="text" name="exp_date" maxlength="5" class="form-control" required placeholder="12/28">
+                </div>
+                <div class="col-6">
+                    <label class="form-label small text-secondary">CVV</label>
+                    <input type="password" name="cvv" maxlength="4" class="form-control" required placeholder="123">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-warning w-100 fw-bold py-2 shadow-sm">
+                <i class="fa-solid fa-lock"></i> 3D Secure ile Öde
+            </button>
+        </form>
     </div>
 </div>
-
-<script>
-function updateCardNumber(input) {
-    let value = input.value.replace(/\D/g, '');
-    let formatted = value.match(/.{1,4}/g)?.join(' ') || '';
-    input.value = formatted;
-    document.getElementById('cardDisplay').innerText = formatted || '•••• •••• •••• ••••';
-}
-</script>
 
 </body>
 </html>
