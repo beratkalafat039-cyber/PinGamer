@@ -14,8 +14,8 @@ app.secret_key = "epin-super-gizli-anahtar-12345"
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1525268830635429930/Lwnf7QQj43IMSHJDrGgj68YpQc0ZKLZ5BF_0nPNQYTMegtVC0ZqlTcfROtV5iZtTmw98"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Yönetici yetkisine sahip kullanıcı adları
-ADMIN_USERNAMES = ["admin", "berat"]
+# --- TEK ANA SÜPER YÖNETİCİ ---
+SUPER_ADMIN_USERNAME = "Lvbelc5baba"
 
 HAS_POSTGRES = False
 if DATABASE_URL:
@@ -48,9 +48,16 @@ def init_db():
                     id SERIAL PRIMARY KEY,
                     username TEXT UNIQUE,
                     password TEXT,
-                    balance REAL DEFAULT 0.0
+                    balance REAL DEFAULT 0.0,
+                    is_admin INTEGER DEFAULT 0
                 );
             ''')
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin INTEGER DEFAULT 0;")
+                conn.commit()
+            except Exception:
+                pass
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
                     id SERIAL PRIMARY KEY,
@@ -91,9 +98,16 @@ def init_db():
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE,
                     password TEXT,
-                    balance REAL DEFAULT 0.0
+                    balance REAL DEFAULT 0.0,
+                    is_admin INTEGER DEFAULT 0
                 )
             ''')
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
+                conn.commit()
+            except Exception:
+                pass
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -136,7 +150,23 @@ def init_db():
 
 init_db()
 
-# --- YETKİLENDİRME VE GÜVENLİK DEKORATÖRLERİ ---
+def get_current_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+        cursor.execute(f"SELECT * FROM users WHERE id = {p}", (user_id,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return user
+    except Exception as e:
+        print(f"Kullanıcı getirme hatası: {e}")
+        return None
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -150,8 +180,10 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user = get_current_user()
-        if not user or user["username"] not in ADMIN_USERNAMES:
-            flash("⛔ Yetkisiz Erişim: Bu sayfayı sadece yöneticiler görüntüleyebilir!", "danger")
+        is_super = (user and user["username"] == SUPER_ADMIN_USERNAME)
+        is_adm = (user and bool(user.get("is_admin")))
+        if not (is_super or is_adm):
+            flash("⛔ Yetkisiz Erişim: Bu alana yalnızca yöneticiler erişebilir!", "danger")
             return redirect(url_for("home"))
         return f(*args, **kwargs)
     return decorated_function
@@ -237,33 +269,13 @@ def validate_credit_card(card_holder, card_number, exp_date, cvv):
     month, year = int(parts[0]), int(f"20{parts[1]}")
     
     now = datetime.datetime.now()
-    current_year = now.year
-    current_month = now.month
-
-    if year < current_year or (year == current_year and month < current_month):
+    if year < now.year or (year == now.year and month < now.month):
         return False, "Kartınızın son kullanma tarihi dolmuştur.", None, None
 
     if not (cvv.isdigit() and len(cvv) == 3):
         return False, "CVV güvenlik kodu 3 haneli sayı olmalıdır.", None, None
 
     return True, "Geçerli", bank_name, card_brand
-
-def get_current_user():
-    user_id = session.get("user_id")
-    if not user_id:
-        return None
-    try:
-        conn = get_db()
-        cursor = conn.cursor()
-        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-        cursor.execute(f"SELECT * FROM users WHERE id = {p}", (user_id,))
-        user = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        return user
-    except Exception as e:
-        print(f"Kullanıcı getirme hatası: {e}")
-        return None
 
 def send_discord_log(title, description, color):
     if not DISCORD_WEBHOOK_URL or "BURAYA" in DISCORD_WEBHOOK_URL:
@@ -281,14 +293,16 @@ def send_discord_log(title, description, color):
     except Exception as e:
         print(f"Discord Hatası: {e}")
 
-# --- KULLANICI ARAYÜZÜ ROTALARI ---
+# --- GENEL SAYFA ROTALARI ---
 
 @app.route("/")
 def home():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
-    is_admin = username in ADMIN_USERNAMES if username else False
+    
+    # Süper Admin veya Atanmış Adminler Paneli Görebilir
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or user.get("is_admin")))
 
     conn = get_db()
     cursor = conn.cursor()
@@ -318,7 +332,10 @@ def register():
         cursor = conn.cursor()
         p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
         try:
-            cursor.execute(f"INSERT INTO users (username, password, balance) VALUES ({p}, {p}, 0.0)", (username, hashed_pw))
+            # Lvbelc5baba kayıt olduğunda otomatik Süper Admin olur
+            is_adm = 1 if username == SUPER_ADMIN_USERNAME else 0
+            cursor.execute(f"INSERT INTO users (username, password, balance, is_admin) VALUES ({p}, {p}, 0.0, {p})", 
+                           (username, hashed_pw, is_adm))
             conn.commit()
             flash("Kayıt başarılı! Şimdi giriş yapabilirsiniz.", "success")
             return redirect(url_for("login"))
@@ -374,7 +391,7 @@ def wheel():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
-    is_admin = username in ADMIN_USERNAMES if username else False
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or user.get("is_admin")))
     return render_template("wheel.html", balance=balance, username=username, is_admin=is_admin)
 
 @app.route("/spin", methods=["POST"])
@@ -497,7 +514,7 @@ def deposit():
         return redirect(url_for("home"))
 
     balance = float(user["balance"] or 0.0)
-    is_admin = user["username"] in ADMIN_USERNAMES
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or user.get("is_admin")))
     return render_template("deposit.html", balance=balance, username=user["username"], is_admin=is_admin)
 
 @app.route("/buy/<int:product_id>", methods=["POST"])
@@ -570,7 +587,7 @@ def buy(product_id):
 def orders():
     user = get_current_user()
     balance = float(user["balance"] or 0.0)
-    is_admin = user["username"] in ADMIN_USERNAMES
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or user.get("is_admin")))
     
     conn = get_db()
     cursor = conn.cursor()
@@ -582,7 +599,7 @@ def orders():
     
     return render_template("orders.html", balance=balance, username=user["username"], is_admin=is_admin, orders=order_list)
 
-# --- YÖNETİCİ (ADMIN) ROTALARI ---
+# --- SÜPER ADMIN & YÖNETİCİ PANELİ ---
 
 @app.route("/admin")
 @admin_required
@@ -591,7 +608,7 @@ def admin_panel():
     conn = get_db()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT id, username, balance FROM users ORDER BY id DESC")
+    cursor.execute("SELECT id, username, balance, is_admin FROM users ORDER BY id DESC")
     all_users = cursor.fetchall()
     
     cursor.execute("SELECT * FROM products ORDER BY id ASC")
@@ -603,8 +620,48 @@ def admin_panel():
     cursor.close()
     conn.close()
     
-    return render_template("admin.html", username=user["username"], users=all_users, products=products, orders=all_orders)
+    is_super = (user["username"] == SUPER_ADMIN_USERNAME)
+    return render_template("admin.html", 
+                           username=user["username"], 
+                           is_super=is_super, 
+                           super_admin_name=SUPER_ADMIN_USERNAME,
+                           users=all_users, 
+                           products=products, 
+                           orders=all_orders)
 
+# --- SADECE Lvbelc5baba KULLANABİLİR: ADMIN EKLE / ÇIKAR ---
+@app.route("/admin/user/toggle-admin/<int:user_id>", methods=["POST"])
+@admin_required
+def admin_toggle_role(user_id):
+    current = get_current_user()
+    
+    # Lvbelc5baba haricinde hiç kimse bu işlemi yapamaz
+    if current["username"] != SUPER_ADMIN_USERNAME:
+        flash("⛔ Admin yetkisi verme veya kaldırma yetkisi yalnızca Süper Admin'e (Lvbelc5baba) aittir!", "danger")
+        return redirect(url_for("admin_panel"))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    
+    cursor.execute(f"SELECT is_admin, username FROM users WHERE id = {p}", (user_id,))
+    target = cursor.fetchone()
+    
+    if target:
+        if target["username"] == SUPER_ADMIN_USERNAME:
+            flash("Ana Süper Yöneticinin yetkisi değiştirilemez!", "warning")
+        else:
+            new_role = 0 if target["is_admin"] else 1
+            cursor.execute(f"UPDATE users SET is_admin = {p} WHERE id = {p}", (new_role, user_id))
+            conn.commit()
+            status_text = "Yönetici yapıldı 👑" if new_role == 1 else "Yöneticilik yetkisi alındı ❌"
+            flash(f"'{target['username']}' kullanıcısı {status_text}.", "success")
+
+    cursor.close()
+    conn.close()
+    return redirect(url_for("admin_panel"))
+
+# --- TÜM ADMİNLERİN YAPABİLECEĞİ: ÜRÜN EKLEME ---
 @app.route("/admin/product/add", methods=["POST"])
 @admin_required
 def admin_add_product():
@@ -627,6 +684,25 @@ def admin_add_product():
         flash("Ürün adı ve fiyatı zorunludur!", "danger")
     return redirect(url_for("admin_panel"))
 
+# --- TÜM ADMİNLERİN YAPABİLECEĞİ: FİYAT VE STOK GÜNCELLEME ---
+@app.route("/admin/product/update/<int:product_id>", methods=["POST"])
+@admin_required
+def admin_update_product(product_id):
+    price = float(request.form.get("price", 0.0))
+    stock = int(request.form.get("stock", 0))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"UPDATE products SET price = {p}, stock = {p} WHERE id = {p}", (price, stock, product_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash("Ürün fiyatı ve stoğu başarıyla güncellendi.", "success")
+    return redirect(url_for("admin_panel"))
+
+# --- TÜM ADMİNLERİN YAPABİLECEĞİ: ÜRÜN SİLME ---
 @app.route("/admin/product/delete/<int:product_id>", methods=["POST"])
 @admin_required
 def admin_delete_product(product_id):
@@ -640,6 +716,7 @@ def admin_delete_product(product_id):
     flash("Ürün sistemden silindi.", "info")
     return redirect(url_for("admin_panel"))
 
+# --- SADECE SÜPER ADMIN VEYA ADMİNLERİN MANUEL BAKİYE YÜKLEMESİ ---
 @app.route("/admin/user/set-balance", methods=["POST"])
 @admin_required
 def admin_set_balance():
