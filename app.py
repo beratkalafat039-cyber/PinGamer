@@ -79,7 +79,6 @@ def init_db():
                     created_at TEXT
                 );
             ''')
-            # Şifre Sıfırlama Talepleri Tablosu
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS reset_requests (
                     id SERIAL PRIMARY KEY,
@@ -141,7 +140,6 @@ def init_db():
                     created_at TEXT
                 )
             ''')
-            # Şifre Sıfırlama Talepleri Tablosu
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS reset_requests (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -212,7 +210,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- BANKA VE POS STANDARTLARINDA KART DOĞRULAMA ---
+# --- BANKA VE POS STANDARTLARINDA KART DOĞRULAMA (BIN + LUHN) ---
 TURKISH_BINS = {
     "454671": ("Ziraat Bankası", "Visa"),
     "542374": ("Ziraat Bankası", "Mastercard"),
@@ -369,11 +367,14 @@ def register():
 
     return render_template("register.html")
 
+# --- GİRİŞ SAYFASI (3 HATALI DENEME SAYACI İLE) ---
 @app.route("/login", methods=["GET", "POST"])
 def login():
     user = get_current_user()
     if user:
         return redirect(url_for("home"))
+
+    failed_attempts = session.get("failed_attempts", 0)
 
     if request.method == "POST":
         username = request.form.get("username", "").strip()
@@ -395,12 +396,18 @@ def login():
             flash(f"Giriş başarılı! Hoş geldin, {user_record['username']}", "success")
             return redirect(url_for("home"))
         else:
-            flash("Kullanıcı adı veya şifre hatalı!", "danger")
+            failed_attempts += 1
+            session["failed_attempts"] = failed_attempts
+            
+            if failed_attempts >= 3:
+                flash(f"⚠️ {failed_attempts} defa hatalı giriş yaptınız! Şifrenizi unuttuysanız aşağıdaki alandan sıfırlama talebinde bulunabilirsiniz.", "warning")
+            else:
+                flash("Kullanıcı adı veya şifre hatalı!", "danger")
             return redirect(url_for("login"))
 
-    return render_template("login.html")
+    return render_template("login.html", failed_attempts=failed_attempts)
 
-# --- ŞİFRE SIFIRLAMA TALEBİ SAYFASI ---
+# --- ŞİFRE SIFIRLAMA TALEBİ ROTASI ---
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if request.method == "POST":
@@ -415,7 +422,6 @@ def forgot_password():
         cursor = conn.cursor()
         p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
         
-        # Kullanıcının varlığını kontrol et
         cursor.execute(f"SELECT id FROM users WHERE username = {p}", (username,))
         user_exists = cursor.fetchone()
 
@@ -425,7 +431,6 @@ def forgot_password():
             flash("Bu kullanıcı adına sahip bir hesap bulunamadı!", "danger")
             return redirect(url_for("forgot_password"))
 
-        # Talebi kaydet
         now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
         cursor.execute(f"INSERT INTO reset_requests (username, email, status, created_at) VALUES ({p}, {p}, 'Bekliyor', {p})",
                        (username, email, now))
@@ -433,7 +438,6 @@ def forgot_password():
         cursor.close()
         conn.close()
 
-        # Discord Bildirimi
         send_discord_log(
             title="📩 Yeni Şifre Sıfırlama Talebi",
             description=(
@@ -445,6 +449,7 @@ def forgot_password():
             color=16753920
         )
 
+        session["failed_attempts"] = 0
         flash("✅ Şifre sıfırlama talebiniz yöneticiye iletildi. En kısa sürede e-postanız üzerinden sizinle iletişime geçilecektir.", "success")
         return redirect(url_for("login"))
 
@@ -688,7 +693,6 @@ def admin_panel():
     cursor.execute("SELECT * FROM orders ORDER BY id DESC")
     all_orders = cursor.fetchall()
 
-    # Bekleyen ve tamamlanan şifre talepleri
     cursor.execute("SELECT * FROM reset_requests ORDER BY id DESC")
     reset_reqs = cursor.fetchall()
     
@@ -733,6 +737,7 @@ def admin_reset_user_password():
     flash(f"'{target_username}' kullanıcısının şifresi başarıyla güncellendi! Yeni şifre: {new_password}", "success")
     return redirect(url_for("admin_panel"))
 
+# --- SADECE Lvbelc5baba KULLANABİLİR: ADMIN EKLE / ÇIKAR ---
 @app.route("/admin/user/toggle-admin/<int:user_id>", methods=["POST"])
 @admin_required
 def admin_toggle_role(user_id):
@@ -763,6 +768,7 @@ def admin_toggle_role(user_id):
     conn.close()
     return redirect(url_for("admin_panel"))
 
+# --- ÜRÜN YÖNETİMİ ---
 @app.route("/admin/product/add", methods=["POST"])
 @admin_required
 def admin_add_product():
