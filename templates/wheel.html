@@ -12,11 +12,12 @@
         .tier-card { cursor: pointer; transition: 0.2s; border: 1px solid #334155; background-color: #1e293b; border-radius: 12px; }
         .tier-card:hover, .tier-card.active { border-color: #eab308; transform: translateY(-3px); box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); }
         .display-wheel { height: 120px; font-size: 2.2rem; font-weight: 800; background-color: #020617; border: 3px solid #eab308; border-radius: 12px; }
+        .prob-table { background-color: #1e293b; border-radius: 12px; }
     </style>
 </head>
 <body class="py-4">
 
-<div class="container" style="max-width: 800px;">
+<div class="container" style="max-width: 850px;">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
         <div>
             <h3 class="fw-bold text-warning mb-0"><i class="fa-solid fa-dharmachakra"></i> E-Pin & Steam Şans Çarkı</h3>
@@ -25,13 +26,13 @@
         <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağazaya Dön</a>
     </div>
 
-    <!-- KASA SEÇİMİ (STEAM LİMİTLERİ VURGULANMIŞTIR) -->
+    <!-- KASA SEÇİMİ -->
     <div class="row g-3 mb-4">
         <div class="col-4">
             <div class="tier-card p-3 text-center active" onclick="selectTier('bronze', 50, this)">
                 <h6 class="fw-bold text-secondary mb-1">🥉 Bronz Kasa</h6>
                 <span class="badge bg-dark border border-secondary mb-2">50 TL</span>
-                <div class="small text-warning fw-bold"><i class="fa-brands fa-steam"></i> 1$ - 10$ Steam</div>
+                <div class="small text-warning fw-bold">1$ - 10$ Steam</div>
                 <div class="small text-muted" style="font-size: 0.75rem;">+ 150 VP, 60 UC</div>
             </div>
         </div>
@@ -39,7 +40,7 @@
             <div class="tier-card p-3 text-center" onclick="selectTier('silver', 150, this)">
                 <h6 class="fw-bold text-info mb-1">🥈 Gümüş Kasa</h6>
                 <span class="badge bg-dark border border-info mb-2">150 TL</span>
-                <div class="small text-info fw-bold"><i class="fa-brands fa-steam"></i> 5$ - 30$ Steam</div>
+                <div class="small text-info fw-bold">5$ - 30$ Steam</div>
                 <div class="small text-muted" style="font-size: 0.75rem;">+ 600-1200 VP, UC</div>
             </div>
         </div>
@@ -47,7 +48,7 @@
             <div class="tier-card p-3 text-center" onclick="selectTier('gold', 300, this)">
                 <h6 class="fw-bold text-warning mb-1">👑 VIP Altın Kasa</h6>
                 <span class="badge bg-warning text-dark fw-bold mb-2">300 TL</span>
-                <div class="small text-warning fw-bold"><i class="fa-brands fa-steam"></i> 10$ - 100$ Steam!</div>
+                <div class="small text-warning fw-bold">10$ - 100$ Steam!</div>
                 <div class="small text-muted" style="font-size: 0.75rem;">+ 11000 VP, 8100 UC</div>
             </div>
         </div>
@@ -59,25 +60,145 @@
             🎰 Çevirmeye Hazır
         </div>
 
-        <button id="spin-btn" class="btn btn-warning btn-lg fw-bold px-5 py-3 shadow" onclick="spinWheel()">
-            <i class="fa-solid fa-play"></i> ÇARKI ÇEVİR (<span id="btn-cost">50</span> TL)
-        </button>
+        <div class="d-flex justify-content-center gap-2">
+            <!-- GERÇEK ÇEVİRME BUTONU -->
+            <button id="spin-btn" class="btn btn-warning btn-lg fw-bold px-4 py-3 shadow" onclick="spinWheel(false)">
+                <i class="fa-solid fa-play"></i> ÇARKI ÇEVİR (<span id="btn-cost">50</span> TL)
+            </button>
+
+            <!-- SİMÜLASYON / DENEME BUTONU -->
+            <button id="sim-btn" class="btn btn-outline-info btn-lg fw-bold px-3 py-3" onclick="spinWheel(true)" title="Bakiyeniz Düşmez">
+                <i class="fa-solid fa-flask"></i> 🎮 Deneme Çevir (Ücretsiz)
+            </button>
+        </div>
     </div>
 
     <!-- KAZANILAN KOD DETAY ALANI -->
-    <div id="result-box" class="card bg-dark border-warning p-3 text-center" style="display: none;">
-        <h5 class="text-success fw-bold mb-1">🎉 Tebrikler!</h5>
+    <div id="result-box" class="card bg-dark border-warning p-3 text-center mb-4" style="display: none;">
+        <h5 class="text-success fw-bold mb-1" id="result-title">🎉 Tebrikler!</h5>
         <p class="mb-2" id="won-item-text"></p>
         <div class="d-flex justify-content-center align-items-center gap-2">
             <span class="fs-5 fw-bold text-warning font-monospace" id="delivered-code"></span>
         </div>
-        <small class="text-secondary mt-2">Kodunuz siparişlerime kaydedildi.</small>
+        <small class="text-secondary mt-2" id="result-note">Kodunuz siparişlerime kaydedildi.</small>
+    </div>
+
+    <!-- KAZANMA İHTİMALLERİ TABLOSU -->
+    <div class="card prob-table p-4 border-secondary">
+        <h6 class="fw-bold text-warning mb-3"><i class="fa-solid fa-percent"></i> Seçili Kasa Çıkma İhtimal Oranları (<span id="tier-name-display">Bronz Kasa</span>)</h6>
+        <div id="prob-list" class="row g-2 small">
+            <!-- Dinamik İhtimaller JS ile Buraya Doldurulacak -->
+        </div>
     </div>
 </div>
 
 <script>
+// --- WEB AUDIO API İLE DAHİLİ SES MOTORU (HARİCİ MP3 İSTEMEZ) ---
+let audioCtx;
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+// Çark Döndükçe Mekanik Tık Sesi
+function playTickSound() {
+    try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.04);
+    } catch (e) {}
+}
+
+// Kazanınca Zafer Melodisi
+function playWinSound() {
+    try {
+        initAudio();
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.1);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime + idx * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.1 + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + idx * 0.1);
+            osc.stop(audioCtx.currentTime + idx * 0.1 + 0.3);
+        });
+    } catch (e) {}
+}
+
+// --- KASA SEÇİMİ VE İHTİMALLER ---
+const PROBABILITIES = {
+    bronze: [
+        { item: "1$ Steam USD", rate: "%30.0" },
+        { item: "150 Valorant VP", rate: "%25.0" },
+        { item: "60 PUBG Mobile UC", rate: "%18.0" },
+        { item: "2.5$ Steam USD", rate: "%10.0" },
+        { item: "600 Valorant VP", rate: "%8.0" },
+        { item: "5$ Steam USD", rate: "%4.0" },
+        { item: "325 PUBG Mobile UC", rate: "%2.5" },
+        { item: "10$ Steam USD", rate: "%1.5" },
+        { item: "1200 Valorant VP", rate: "%0.7" },
+        { item: "660 PUBG Mobile UC", rate: "%0.3" }
+    ],
+    silver: [
+        { item: "5$ Steam USD", rate: "%25.0" },
+        { item: "60 PUBG Mobile UC", rate: "%20.0" },
+        { item: "600 Valorant VP", rate: "%18.0" },
+        { item: "10$ Steam USD", rate: "%12.0" },
+        { item: "325 PUBG Mobile UC", rate: "%10.0" },
+        { item: "1200 Valorant VP", rate: "%7.0" },
+        { item: "20$ Steam USD", rate: "%4.0" },
+        { item: "660 PUBG Mobile UC", rate: "%2.0" },
+        { item: "30$ Steam USD", rate: "%1.5" },
+        { item: "2480 Valorant VP", rate: "%0.5" }
+    ],
+    gold: [
+        { item: "10$ Steam USD", rate: "%25.0" },
+        { item: "660 PUBG Mobile UC", rate: "%20.0" },
+        { item: "25$ Steam USD", rate: "%15.0" },
+        { item: "2480 Valorant VP", rate: "%12.0" },
+        { item: "1800 PUBG Mobile UC", rate: "%10.0" },
+        { item: "50$ Steam USD", rate: "%6.0" },
+        { item: "5350 Valorant VP", rate: "%5.0" },
+        { item: "3850 PUBG Mobile UC", rate: "%4.0" },
+        { item: "100$ Steam USD (Efsanevi)", rate: "%1.5" },
+        { item: "8100 PUBG Mobile UC", rate: "%1.0" },
+        { item: "11000 Valorant VP", rate: "%0.5" }
+    ]
+};
+
 let currentTier = 'bronze';
 let currentCost = 50;
+
+function updateProbTable(tier) {
+    const list = document.getElementById('prob-list');
+    list.innerHTML = '';
+    const names = { bronze: 'Bronz Kasa (50 TL)', silver: 'Gümüş Kasa (150 TL)', gold: 'VIP Altın Kasa (300 TL)' };
+    document.getElementById('tier-name-display').innerText = names[tier];
+
+    PROBABILITIES[tier].forEach(p => {
+        list.innerHTML += `
+            <div class="col-md-6 d-flex justify-content-between border-bottom border-secondary py-1">
+                <span>${p.item}</span>
+                <span class="badge bg-dark border border-secondary text-warning">${p.rate}</span>
+            </div>
+        `;
+    });
+}
+updateProbTable('bronze');
 
 function selectTier(tier, cost, element) {
     document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('active'));
@@ -85,38 +206,55 @@ function selectTier(tier, cost, element) {
     currentTier = tier;
     currentCost = cost;
     document.getElementById('btn-cost').innerText = cost;
+    updateProbTable(tier);
 }
 
-function spinWheel() {
-    const btn = document.getElementById('spin-btn');
+function spinWheel(isSim = false) {
+    const spinBtn = document.getElementById('spin-btn');
+    const simBtn = document.getElementById('sim-btn');
     const display = document.getElementById('reward-display');
     const resultBox = document.getElementById('result-box');
     
-    btn.disabled = true;
+    spinBtn.disabled = true;
+    simBtn.disabled = true;
     resultBox.style.display = 'none';
 
     const items = ['1$ Steam USD', '150 VP', '5$ Steam USD', '60 PUBG UC', '10$ Steam USD', '1200 VP', '25$ Steam USD', '660 PUBG UC', '50$ Steam USD', '5350 VP', '100$ Steam USD', '11000 VP'];
     let counter = 0;
+    
+    // Tık sesi eşliğinde animasyon
     const interval = setInterval(() => {
         display.innerText = items[counter % items.length];
+        playTickSound();
         counter++;
     }, 80);
 
     fetch('/spin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: currentTier })
+        body: JSON.stringify({ tier: currentTier, simulation: isSim })
     })
     .then(res => res.json())
     .then(data => {
         setTimeout(() => {
             clearInterval(interval);
-            btn.disabled = false;
+            spinBtn.disabled = false;
+            simBtn.disabled = false;
 
             if (data.success) {
+                playWinSound();
                 display.innerText = "🎉 " + data.reward;
-                document.getElementById('user-balance').innerText = data.new_balance + " TL";
-                document.getElementById('won-item-text').innerText = data.reward_label + " Kazandınız!";
+                
+                if (data.simulation) {
+                    document.getElementById('result-title').innerText = "🧪 Deneme / Simülasyon Çevirmesi";
+                    document.getElementById('result-note').innerText = "Simülasyon modunda bakiyeniz eksilmez ve gerçek kod verilmez.";
+                } else {
+                    document.getElementById('result-title').innerText = "🎉 Tebrikler! Ödül Kazandınız!";
+                    document.getElementById('result-note').innerText = "Kodunuz siparişlerime kaydedildi.";
+                    document.getElementById('user-balance').innerText = data.new_balance + " TL";
+                }
+
+                document.getElementById('won-item-text').innerText = data.reward_label;
                 document.getElementById('delivered-code').innerText = data.code;
                 resultBox.style.display = 'block';
             } else {
@@ -127,7 +265,8 @@ function spinWheel() {
     })
     .catch(err => {
         clearInterval(interval);
-        btn.disabled = false;
+        spinBtn.disabled = false;
+        simBtn.disabled = false;
         display.innerText = "❌ Hata Oluştu";
     });
 }
