@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Pin & Hesap Pazaryeri</title>
+    <title>E-Pin & Sosyal Medya Pazaryeri</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -11,14 +11,17 @@
         .navbar-custom { background-color: #0f172a; border-bottom: 1px solid #1e293b; }
         .product-card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; }
         .product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .product-img { height: 180px; object-fit: cover; border-radius: 12px 12px 0 0; }
+        .product-img { height: 170px; object-fit: cover; border-radius: 12px 12px 0 0; }
+        .nav-pills .nav-link { color: #94a3b8; border-radius: 8px; font-weight: bold; }
+        .nav-pills .nav-link.active { background-color: #eab308; color: #000; }
+        .sub-filter-btn { border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
     </style>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
     <div class="container">
-        <a class="navbar-brand fw-bold text-warning fs-4" href="/"><i class="fa-solid fa-gamepad"></i> EPIN PAZARI</a>
+        <a class="navbar-brand fw-bold text-warning fs-4" href="/"><i class="fa-solid fa-gamepad"></i> EPIN & SMM PAZARI</a>
         
         <div class="d-flex align-items-center gap-2">
             {% if username %}
@@ -53,20 +56,48 @@
       {% endif %}
     {% endwith %}
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0 text-white"><i class="fa-solid fa-bolt text-warning"></i> Popüler E-Pin Ürünleri</h4>
-        <span class="text-secondary small">Anında Otomatik Kod Teslimatı</span>
+    <!-- ANA KATEGORİ SEÇİMİ (OYUN / SOSYAL MEDYA) -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+        <ul class="nav nav-pills" id="mainCatTab">
+            <li class="nav-item">
+                <button class="nav-link active" onclick="filterMain('all', this)"><i class="fa-solid fa-border-all"></i> Tümü</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" onclick="filterMain('oyun', this)"><i class="fa-solid fa-gamepad"></i> Oyun E-Pin</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" onclick="filterMain('sosyal', this)"><i class="fa-solid fa-hashtag"></i> Sosyal Medya Hizmetleri</button>
+            </li>
+        </ul>
+        <span class="text-secondary small">⚡ 7/24 Otomatik Teslimat</span>
     </div>
 
-    <div class="row g-4">
+    <!-- SOSYAL MEDYA ALT FİLTRELERİ (INSTA, TIKTOK, YT, TWITTER) -->
+    <div id="social-sub-filters" class="d-flex gap-2 flex-wrap mb-4" style="display: none !important;">
+        <button class="btn btn-outline-light btn-sm sub-filter-btn active" onclick="filterSub('all', this)">Tüm Sosyal Medya</button>
+        <button class="btn btn-outline-danger btn-sm sub-filter-btn" onclick="filterSub('instagram', this)"><i class="fa-brands fa-instagram"></i> Instagram</button>
+        <button class="btn btn-outline-info btn-sm sub-filter-btn" onclick="filterSub('tiktok', this)"><i class="fa-brands fa-tiktok"></i> TikTok</button>
+        <button class="btn btn-outline-danger btn-sm sub-filter-btn" onclick="filterSub('youtube', this)"><i class="fa-brands fa-youtube"></i> YouTube</button>
+        <button class="btn btn-outline-secondary btn-sm sub-filter-btn" onclick="filterSub('twitter', this)"><i class="fa-brands fa-x-twitter"></i> Twitter/X</button>
+    </div>
+
+    <!-- ÜRÜN KARTLARI -->
+    <div class="row g-4" id="products-grid">
         {% for p in products %}
-        <div class="col-md-4">
+        <div class="col-md-4 product-item" data-main="{{ p.main_category }}" data-sub="{{ p.sub_category }}">
             <div class="card product-card h-100 text-white">
                 <img src="{{ p.image }}" class="card-img-top product-img" alt="{{ p.title }}">
                 <div class="card-body d-flex flex-column justify-content-between p-4">
                     <div>
-                        <h5 class="card-title fw-bold text-warning">{{ p.title }}</h5>
-                        <p class="text-secondary small mb-2">Stok Durumu: <span class="badge bg-dark border border-secondary">{{ p.stock }} Adet</span></p>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title fw-bold text-warning mb-0">{{ p.title }}</h5>
+                        </div>
+                        <p class="text-secondary small mb-2">
+                            Kategori: 
+                            <span class="badge bg-dark border border-secondary text-info">
+                                {% if p.main_category == 'sosyal' %}📲 Sosyal Medya ({{ p.sub_category|upper }}){% else %}🎮 Oyun E-Pin{% endif %}
+                            </span>
+                        </p>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary">
                         <span class="fs-5 fw-bold text-light">{{ "%.2f"|format(p.price) }} TL</span>
@@ -82,6 +113,51 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+let currentMain = 'all';
+let currentSub = 'all';
+
+function filterMain(cat, btn) {
+    document.querySelectorAll('#mainCatTab .nav-link').forEach(l => l.classList.remove('active'));
+    btn.classList.add('active');
+    currentMain = cat;
+    currentSub = 'all';
+
+    const subFilters = document.getElementById('social-sub-filters');
+    if (cat === 'sosyal') {
+        subFilters.style.setProperty('display', 'flex', 'important');
+    } else {
+        subFilters.style.setProperty('display', 'none', 'important');
+    }
+
+    applyFilters();
+}
+
+function filterSub(subCat, btn) {
+    document.querySelectorAll('#social-sub-filters .sub-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSub = subCat;
+    applyFilters();
+}
+
+function applyFilters() {
+    const items = document.querySelectorAll('.product-item');
+    items.forEach(item => {
+        const main = item.getAttribute('data-main');
+        const sub = item.getAttribute('data-sub');
+
+        let matchMain = (currentMain === 'all' || main === currentMain);
+        let matchSub = (currentSub === 'all' || sub === currentSub);
+
+        if (matchMain && matchSub) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
