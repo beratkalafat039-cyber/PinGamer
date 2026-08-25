@@ -56,7 +56,7 @@
       {% endif %}
     {% endwith %}
 
-    <!-- ANA KATEGORİ SEÇİMİ (OYUN / SOSYAL MEDYA) -->
+    <!-- ANA KATEGORİ SEÇİMİ -->
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <ul class="nav nav-pills" id="mainCatTab">
             <li class="nav-item">
@@ -69,10 +69,10 @@
                 <button class="nav-link" onclick="filterMain('sosyal', this)"><i class="fa-solid fa-hashtag"></i> Sosyal Medya Hizmetleri</button>
             </li>
         </ul>
-        <span class="text-secondary small">⚡ 7/24 Otomatik Teslimat</span>
+        <span class="text-secondary small">⚡ 7/24 Anında Teslimat</span>
     </div>
 
-    <!-- SOSYAL MEDYA ALT FİLTRELERİ (INSTA, TIKTOK, YT, TWITTER) -->
+    <!-- SOSYAL MEDYA ALT FİLTRELERİ -->
     <div id="social-sub-filters" class="d-flex gap-2 flex-wrap mb-4" style="display: none !important;">
         <button class="btn btn-outline-light btn-sm sub-filter-btn active" onclick="filterSub('all', this)">Tüm Sosyal Medya</button>
         <button class="btn btn-outline-danger btn-sm sub-filter-btn" onclick="filterSub('instagram', this)"><i class="fa-brands fa-instagram"></i> Instagram</button>
@@ -89,9 +89,7 @@
                 <img src="{{ p.image }}" class="card-img-top product-img" alt="{{ p.title }}">
                 <div class="card-body d-flex flex-column justify-content-between p-4">
                     <div>
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title fw-bold text-warning mb-0">{{ p.title }}</h5>
-                        </div>
+                        <h5 class="card-title fw-bold text-warning mb-1">{{ p.title }}</h5>
                         <p class="text-secondary small mb-2">
                             Kategori: 
                             <span class="badge bg-dark border border-secondary text-info">
@@ -114,7 +112,65 @@
     </div>
 </div>
 
+<!-- CANLI DESTEK BUTONU (SAĞ ALT) -->
+<div id="live-support-btn" style="position: fixed; bottom: 25px; right: 25px; z-index: 1000;">
+    <button class="btn btn-warning rounded-circle p-3 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 60px; height: 60px;">
+        <i class="fa-solid fa-headset fa-xl text-dark"></i>
+    </button>
+</div>
+
+<!-- CANLI DESTEK PENCERESİ -->
+<div id="support-modal" style="display: none; position: fixed; bottom: 95px; right: 25px; width: 360px; z-index: 1000; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background-color: #1e293b; border: 1px solid #334155;">
+    <div class="bg-dark p-3 text-white d-flex justify-content-between align-items-center border-bottom border-secondary">
+        <div>
+            <h6 class="mb-0 fw-bold text-warning"><i class="fa-solid fa-comments"></i> 7/24 Canlı Destek</h6>
+            <small id="agent-subtext" class="text-secondary" style="font-size: 0.75rem;">Müşteri Hizmetleri</small>
+        </div>
+        <button class="btn-close btn-close-white" onclick="closeSupport()"></button>
+    </div>
+
+    <!-- GİRİŞ ANKETİ EKRANI -->
+    <div id="support-survey" class="p-4 text-white">
+        <h6 class="fw-bold mb-2">Destek Talebi Başlatın</h6>
+        <p class="small text-secondary mb-3">Doğru uzmanın bağlanabilmesi için lütfen konuyu seçiniz.</p>
+        
+        <div class="mb-3">
+            <label class="form-label small text-secondary">Adınız</label>
+            <input type="text" id="survey-name" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Adınız Soyadınız" value="{{ username or '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label small text-secondary">Sorununuzun Konusu</label>
+            <select id="survey-topic" class="form-select form-select-sm bg-dark text-white border-secondary">
+                <option value="odeme">💳 Bakiye & Ödeme İşlemleri</option>
+                <option value="epin">🎮 E-Pin & Oyun Kodu Teslimatı</option>
+                <option value="sosyal">📲 Sosyal Medya Hizmetleri</option>
+                <option value="teknik">⚙️ Hesap & Teknik Destek</option>
+            </select>
+        </div>
+
+        <button class="btn btn-warning w-100 fw-bold btn-sm py-2 shadow" onclick="startSupportChat()">
+            <i class="fa-solid fa-bolt"></i> Uzmana Bağlan
+        </button>
+    </div>
+
+    <!-- SOHBET EKRANI -->
+    <div id="support-chat" style="display: none;">
+        <div id="chat-messages" style="height: 300px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;"></div>
+
+        <div id="typing-indicator" class="px-3 py-1 text-secondary small" style="display: none;">
+            <i class="fa-solid fa-ellipsis fa-fade"></i> <span id="typing-agent-name">Temsilci</span> yazıyor...
+        </div>
+
+        <div class="p-2 bg-dark border-top border-secondary d-flex gap-2">
+            <input type="text" id="chat-input" class="form-control form-control-sm bg-secondary text-white border-0" placeholder="Mesajınızı yazın..." onkeydown="handleInputKey(event)">
+            <button class="btn btn-warning btn-sm" onclick="sendUserMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+
 <script>
+// --- KATEGORİ FİLTRELEME ---
 let currentMain = 'all';
 let currentSub = 'all';
 
@@ -156,6 +212,122 @@ function applyFilters() {
             item.style.display = 'none';
         }
     });
+}
+
+// --- CANLI DESTEK & 30sn ZAMAN AŞIMI ---
+let currentAgent = null;
+let currentTopic = null;
+let inactivityTimer = null;
+
+function toggleSupportModal() {
+    const modal = document.getElementById('support-modal');
+    modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'block' : 'none';
+}
+
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+        appendSystemMessage("⚠️ 30 saniye boyunca işlem yapılmadığı için görüşme güvenlik nedeniyle sonlandırılmıştır.");
+        document.getElementById('chat-input').disabled = true;
+        document.getElementById('agent-subtext').innerText = "Görüşme Sonlandırıldı";
+    }, 30000);
+}
+
+function startSupportChat() {
+    currentTopic = document.getElementById('survey-topic').value;
+    
+    fetch('/api/support/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: currentTopic })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            currentAgent = data.agent_name;
+            document.getElementById('support-survey').style.display = 'none';
+            document.getElementById('support-chat').style.display = 'block';
+            document.getElementById('agent-subtext').innerText = `${data.agent_name} (${data.department})`;
+            document.getElementById('typing-agent-name').innerText = data.agent_name;
+
+            appendSystemMessage(`🔔 ${data.agent_name} sohbete katıldı.`);
+            
+            setTimeout(() => {
+                appendAgentMessage(data.initial_message);
+                resetInactivityTimer();
+            }, 600);
+        }
+    });
+}
+
+function sendUserMessage() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    appendUserMessage(msg);
+    input.value = '';
+    resetInactivityTimer();
+
+    document.getElementById('typing-indicator').style.display = 'block';
+    
+    fetch('/api/support/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, topic: currentTopic })
+    })
+    .then(res => res.json())
+    .then(data => {
+        setTimeout(() => {
+            document.getElementById('typing-indicator').style.display = 'none';
+            appendAgentMessage(data.reply);
+            resetInactivityTimer();
+        }, 1200);
+    });
+}
+
+function handleInputKey(e) {
+    if (e.key === 'Enter') sendUserMessage();
+}
+
+function appendUserMessage(text) {
+    const area = document.getElementById('chat-messages');
+    area.innerHTML += `
+        <div class="align-self-end text-white p-2 rounded-3 shadow-sm" style="max-width: 80%; background-color: #0284c7;">
+            ${text}
+        </div>
+    `;
+    area.scrollTop = area.scrollHeight;
+}
+
+function appendAgentMessage(text) {
+    const area = document.getElementById('chat-messages');
+    area.innerHTML += `
+        <div class="align-self-start text-white p-2 rounded-3 shadow-sm" style="max-width: 80%; background-color: #334155;">
+            <strong class="text-warning small d-block">${currentAgent}</strong>
+            ${text}
+        </div>
+    `;
+    area.scrollTop = area.scrollHeight;
+}
+
+function appendSystemMessage(text) {
+    const area = document.getElementById('chat-messages');
+    area.innerHTML += `
+        <div class="text-center text-muted small py-1" style="font-size: 0.75rem;">
+            ${text}
+        </div>
+    `;
+    area.scrollTop = area.scrollHeight;
+}
+
+function closeSupport() {
+    clearTimeout(inactivityTimer);
+    document.getElementById('support-modal').style.display = 'none';
+    document.getElementById('support-survey').style.display = 'block';
+    document.getElementById('support-chat').style.display = 'none';
+    document.getElementById('chat-messages').innerHTML = '';
+    document.getElementById('chat-input').disabled = false;
 }
 </script>
 
