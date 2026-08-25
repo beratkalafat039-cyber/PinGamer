@@ -58,6 +58,10 @@ def init_db():
             except Exception:
                 pass
 
+            # Lvbelc5baba kullanıcısını veritabanında kesin admin yap
+            cursor.execute("UPDATE users SET is_admin = 1 WHERE username = %s;", (SUPER_ADMIN_USERNAME,))
+            conn.commit()
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
                     id SERIAL PRIMARY KEY,
@@ -107,6 +111,9 @@ def init_db():
                 conn.commit()
             except Exception:
                 pass
+
+            cursor.execute("UPDATE users SET is_admin = 1 WHERE username = ?", (SUPER_ADMIN_USERNAME,))
+            conn.commit()
 
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
@@ -188,7 +195,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- BANKA VE POS STANDARTLARINDA KART DOĞRULAMA (BIN + LUHN) ---
+# --- BANKA KART DOĞRULAMA (BIN + LUHN) ---
 TURKISH_BINS = {
     "454671": ("Ziraat Bankası", "Visa"),
     "542374": ("Ziraat Bankası", "Mastercard"),
@@ -293,7 +300,7 @@ def send_discord_log(title, description, color):
     except Exception as e:
         print(f"Discord Hatası: {e}")
 
-# --- GENEL SAYFA ROTALARI ---
+# --- ROTALAR ---
 
 @app.route("/")
 def home():
@@ -301,8 +308,8 @@ def home():
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
     
-    # Süper Admin veya Atanmış Adminler Paneli Görebilir
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or user.get("is_admin")))
+    # Süper Admin veya Atanmış Admin Kontrolü
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
 
     conn = get_db()
     cursor = conn.cursor()
@@ -332,7 +339,6 @@ def register():
         cursor = conn.cursor()
         p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
         try:
-            # Lvbelc5baba kayıt olduğunda otomatik Süper Admin olur
             is_adm = 1 if username == SUPER_ADMIN_USERNAME else 0
             cursor.execute(f"INSERT INTO users (username, password, balance, is_admin) VALUES ({p}, {p}, 0.0, {p})", 
                            (username, hashed_pw, is_adm))
@@ -391,7 +397,7 @@ def wheel():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or user.get("is_admin")))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
     return render_template("wheel.html", balance=balance, username=username, is_admin=is_admin)
 
 @app.route("/spin", methods=["POST"])
@@ -514,7 +520,7 @@ def deposit():
         return redirect(url_for("home"))
 
     balance = float(user["balance"] or 0.0)
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or user.get("is_admin")))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
     return render_template("deposit.html", balance=balance, username=user["username"], is_admin=is_admin)
 
 @app.route("/buy/<int:product_id>", methods=["POST"])
@@ -587,7 +593,7 @@ def buy(product_id):
 def orders():
     user = get_current_user()
     balance = float(user["balance"] or 0.0)
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or user.get("is_admin")))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
     
     conn = get_db()
     cursor = conn.cursor()
@@ -629,13 +635,11 @@ def admin_panel():
                            products=products, 
                            orders=all_orders)
 
-# --- SADECE Lvbelc5baba KULLANABİLİR: ADMIN EKLE / ÇIKAR ---
 @app.route("/admin/user/toggle-admin/<int:user_id>", methods=["POST"])
 @admin_required
 def admin_toggle_role(user_id):
     current = get_current_user()
     
-    # Lvbelc5baba haricinde hiç kimse bu işlemi yapamaz
     if current["username"] != SUPER_ADMIN_USERNAME:
         flash("⛔ Admin yetkisi verme veya kaldırma yetkisi yalnızca Süper Admin'e (Lvbelc5baba) aittir!", "danger")
         return redirect(url_for("admin_panel"))
@@ -661,7 +665,6 @@ def admin_toggle_role(user_id):
     conn.close()
     return redirect(url_for("admin_panel"))
 
-# --- TÜM ADMİNLERİN YAPABİLECEĞİ: ÜRÜN EKLEME ---
 @app.route("/admin/product/add", methods=["POST"])
 @admin_required
 def admin_add_product():
@@ -684,7 +687,6 @@ def admin_add_product():
         flash("Ürün adı ve fiyatı zorunludur!", "danger")
     return redirect(url_for("admin_panel"))
 
-# --- TÜM ADMİNLERİN YAPABİLECEĞİ: FİYAT VE STOK GÜNCELLEME ---
 @app.route("/admin/product/update/<int:product_id>", methods=["POST"])
 @admin_required
 def admin_update_product(product_id):
@@ -702,7 +704,6 @@ def admin_update_product(product_id):
     flash("Ürün fiyatı ve stoğu başarıyla güncellendi.", "success")
     return redirect(url_for("admin_panel"))
 
-# --- TÜM ADMİNLERİN YAPABİLECEĞİ: ÜRÜN SİLME ---
 @app.route("/admin/product/delete/<int:product_id>", methods=["POST"])
 @admin_required
 def admin_delete_product(product_id):
@@ -716,7 +717,6 @@ def admin_delete_product(product_id):
     flash("Ürün sistemden silindi.", "info")
     return redirect(url_for("admin_panel"))
 
-# --- SADECE SÜPER ADMIN VEYA ADMİNLERİN MANUEL BAKİYE YÜKLEMESİ ---
 @app.route("/admin/user/set-balance", methods=["POST"])
 @admin_required
 def admin_set_balance():
