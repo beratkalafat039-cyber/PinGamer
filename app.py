@@ -101,11 +101,11 @@ def init_db():
         cursor.execute("SELECT COUNT(*) FROM products")
         if cursor.fetchone()[0] == 0:
             cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)",
-                           ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234))
+                           ("Valorant 1200 VP", 395.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234))
             cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)",
-                           ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234))
+                           ("Steam 10 USD Cüzdan", 470.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234))
             cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)",
-                           ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234))
+                           ("PUBG Mobile 660 UC", 405.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234))
             conn.commit()
 
     cursor.close()
