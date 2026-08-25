@@ -39,7 +39,7 @@ def init_db():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS products (
                 id SERIAL PRIMARY KEY,
-                title TEXT,
+                title TEXT UNIQUE,
                 price REAL,
                 image TEXT,
                 stock INTEGER DEFAULT 234
@@ -56,18 +56,21 @@ def init_db():
             );
         ''')
         conn.commit()
+
+        urunler = [
+            ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
+            ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234),
+            ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234)
+        ]
         
-        cursor.execute("SELECT COUNT(*) as count FROM products")
-        res = cursor.fetchone()
-        count = res["count"] if isinstance(res, dict) else res[0]
-        if count == 0:
-            cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (%s, %s, %s, %s)",
-                           ("Valorant 1200 VP", 395.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234))
-            cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (%s, %s, %s, %s)",
-                           ("Steam 10 USD Cüzdan", 470.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234))
-            cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (%s, %s, %s, %s)",
-                           ("PUBG Mobile 660 UC", 405.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234))
-            conn.commit()
+        for title, price, img, stock in urunler:
+            cursor.execute('''
+                INSERT INTO products (title, price, image, stock)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (title) 
+                DO UPDATE SET price = EXCLUDED.price, image = EXCLUDED.image, stock = EXCLUDED.stock;
+            ''', (title, price, img, stock))
+        conn.commit()
     else:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
@@ -80,7 +83,7 @@ def init_db():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS products (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT,
+                title TEXT UNIQUE,
                 price REAL,
                 image TEXT,
                 stock INTEGER DEFAULT 234
@@ -98,20 +101,38 @@ def init_db():
         ''')
         conn.commit()
 
-        cursor.execute("SELECT COUNT(*) FROM products")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)",
-                           ("Valorant 1200 VP", 395.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234))
-            cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)",
-                           ("Steam 10 USD Cüzdan", 470.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234))
-            cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)",
-                           ("PUBG Mobile 660 UC", 405.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234))
-            conn.commit()
+        urunler = [
+            ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
+            ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234),
+            ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234)
+        ]
+        
+        for title, price, img, stock in urunler:
+            cursor.execute('''
+                INSERT INTO products (title, price, image, stock)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(title) DO UPDATE SET price=excluded.price, image=excluded.image, stock=excluded.stock;
+            ''', (title, price, img, stock))
+        conn.commit()
 
     cursor.close()
     conn.close()
 
 init_db()
+
+def luhn_check(card_number):
+    digits = [int(d) for d in str(card_number).replace(" ", "").replace("-", "") if d.isdigit()]
+    if len(digits) < 13 or len(digits) > 19:
+        return False
+    checksum = 0
+    reverse_digits = digits[::-1]
+    for i, digit in enumerate(reverse_digits):
+        if i % 2 == 1:
+            doubled = digit * 2
+            checksum += (doubled - 9) if doubled > 9 else doubled
+        else:
+            checksum += digit
+    return checksum % 10 == 0
 
 def get_current_user():
     user_id = session.get("user_id")
@@ -228,7 +249,7 @@ def login():
 def logout():
     session.clear()
     flash("Hesaptan çıkış yapıldı.", "info")
-    return redirect(url_for("login"))
+    return redirect(url_for("home"))
 
 @app.route("/wheel")
 def wheel():
@@ -311,38 +332,89 @@ def deposit():
         return redirect(url_for("login"))
 
     if request.method == "POST":
-        amount = request.form.get("amount")
+        card_holder = request.form.get("card_holder", "").strip()
+        card_number = request.form.get("card_number", "").replace(" ", "").replace("-", "").strip()
+        exp_date = request.form.get("exp_date", "").strip()
+        cvv = request.form.get("cvv", "").strip()
+        amount = request.form.get("amount", "").strip()
+
         try:
             amount_val = float(amount)
             if amount_val <= 0:
-                flash("Lütfen geçerli bir tutar girin!", "danger")
+                flash("Geçerli bir tutar giriniz!", "danger")
                 return redirect(url_for("deposit"))
-        except (ValueError, TypeError):
-            flash("Geçersiz bakiye tutarı!", "danger")
+        except ValueError:
+            flash("Geçersiz tutar formatı!", "danger")
             return redirect(url_for("deposit"))
 
-        conn = get_db()
-        cursor = conn.cursor()
-        p = "%s" if DATABASE_URL else "?"
-        cursor.execute(f"UPDATE users SET balance = balance + {p} WHERE id = {p}", (amount_val, user["id"]))
-        cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
-        row = cursor.fetchone()
-        new_balance = row["balance"] if isinstance(row, dict) else row[0]
-        conn.commit()
-        cursor.close()
-        conn.close()
+        if not luhn_check(card_number):
+            flash("Geçersiz kart numarası! Lütfen geçerli bir kart numarası girin.", "danger")
+            return redirect(url_for("deposit"))
 
-        trx_id = f"TRX{random.randint(100000, 999999)}"
-        send_discord_log(
-            title="💳 Yeni Bakiye Yüklendi!",
-            description=f"**Kullanıcı:** `{user['username']}`\n**İşlem ID:** `{trx_id}`\n**Yüklenen:** {amount_val:.2f} TL\n**Güncel Bakiye:** {new_balance:.2f} TL",
-            color=3066993
-        )
-        flash(f"💳 {amount_val:.2f} TL başarıyla yüklendi!", "success")
-        return redirect(url_for("home"))
+        if len(cvv) not in [3, 4] or not cvv.isdigit():
+            flash("Geçersiz CVV güvenlik kodu!", "danger")
+            return redirect(url_for("deposit"))
+
+        test_sms_code = str(random.randint(100000, 999999))
+        session["pending_payment"] = {
+            "amount": amount_val,
+            "card_last4": card_number[-4:],
+            "sms_code": test_sms_code,
+            "created_at": datetime.datetime.now().strftime("%H:%M:%S")
+        }
+
+        return redirect(url_for("secure_3d"))
 
     balance = float(user["balance"] or 0.0)
     return render_template("deposit.html", balance=balance, username=user["username"])
+
+@app.route("/3d-secure", methods=["GET", "POST"])
+def secure_3d():
+    user = get_current_user()
+    payment = session.get("pending_payment")
+
+    if not user or not payment:
+        flash("Aktif bir ödeme işlemi bulunamadı.", "warning")
+        return redirect(url_for("deposit"))
+
+    if request.method == "POST":
+        input_code = request.form.get("sms_code", "").strip()
+
+        if input_code == payment["sms_code"]:
+            amount_val = payment["amount"]
+
+            conn = get_db()
+            cursor = conn.cursor()
+            p = "%s" if DATABASE_URL else "?"
+            cursor.execute(f"UPDATE users SET balance = balance + {p} WHERE id = {p}", (amount_val, user["id"]))
+            cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
+            row = cursor.fetchone()
+            new_balance = row["balance"] if isinstance(row, dict) else row[0]
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            trx_id = f"TRX{random.randint(100000, 999999)}"
+            send_discord_log(
+                title="💳 3D Secure Onaylı Bakiye Yüklendi!",
+                description=(
+                    f"**Kullanıcı:** `{user['username']}`\n"
+                    f"**İşlem ID:** `{trx_id}`\n"
+                    f"**Kart:** `**** **** **** {payment['card_last4']}`\n"
+                    f"**Yüklenen:** {amount_val:.2f} TL\n"
+                    f"**Güncel Bakiye:** {new_balance:.2f} TL"
+                ),
+                color=3066993
+            )
+
+            session.pop("pending_payment", None)
+            flash(f"🎉 3D Secure onayı başarılı! {amount_val:.2f} TL bakiyenize tanımlandı.", "success")
+            return redirect(url_for("home"))
+        else:
+            flash("Hatalı SMS doğrulama kodu! Lütfen tekrar deneyin.", "danger")
+            return redirect(url_for("secure_3d"))
+
+    return render_template("3d_secure.html", payment=payment)
 
 @app.route("/buy/<int:product_id>", methods=["POST"])
 def buy(product_id):
