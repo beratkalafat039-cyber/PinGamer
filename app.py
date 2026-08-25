@@ -134,46 +134,36 @@ init_db()
 
 # --- BANKA VE POS STANDARTLARINDA KART DOĞRULAMA (BIN + LUHN) ---
 TURKISH_BINS = {
-    # Ziraat Bankası
     "454671": ("Ziraat Bankası", "Visa"),
     "542374": ("Ziraat Bankası", "Mastercard"),
     "979201": ("Ziraat Bankası", "Troy"),
-    # İş Bankası Maximum
     "454359": ("Türkiye İş Bankası", "Visa"),
     "454360": ("Türkiye İş Bankası", "Visa"),
     "589283": ("Türkiye İş Bankası", "Mastercard"),
-    # Garanti BBVA Bonus
     "540036": ("Garanti BBVA", "Mastercard"),
     "517041": ("Garanti BBVA", "Mastercard"),
     "554960": ("Garanti BBVA", "Mastercard"),
     "405040": ("Garanti BBVA", "Visa"),
-    # Akbank Axess
     "552608": ("Akbank", "Mastercard"),
     "589004": ("Akbank", "Mastercard"),
     "435509": ("Akbank", "Visa"),
     "979207": ("Akbank", "Troy"),
-    # Yapı Kredi World
     "545103": ("Yapı Kredi", "Mastercard"),
     "516888": ("Yapı Kredi", "Mastercard"),
     "450634": ("Yapı Kredi", "Visa"),
-    # VakıfBank
     "491005": ("VakıfBank", "Visa"),
     "415792": ("VakıfBank", "Visa"),
     "542119": ("VakıfBank", "Mastercard"),
     "979288": ("VakıfBank", "Troy"),
-    # QNB Finansbank
     "531157": ("QNB Finansbank", "Mastercard"),
     "498749": ("QNB Finansbank", "Visa"),
     "415565": ("QNB Finansbank", "Visa"),
-    # Halkbank Paraf
     "447505": ("Halkbank", "Visa"),
     "552879": ("Halkbank", "Mastercard"),
     "453144": ("Halkbank", "Visa"),
-    # DenizBank
     "460345": ("DenizBank", "Visa"),
     "476662": ("DenizBank", "Visa"),
     "520019": ("DenizBank", "Mastercard"),
-    # Papara / Paycell / Tosla / İninal
     "404809": ("Papara Card", "Mastercard"),
     "543719": ("Paycell", "Mastercard"),
     "516741": ("Tosla", "Mastercard"),
@@ -181,22 +171,18 @@ TURKISH_BINS = {
 }
 
 def validate_credit_card(card_holder, card_number, exp_date, cvv):
-    # 1. Ad Soyad Kontrolü
     names = [n for n in card_holder.strip().split() if len(n) >= 2]
     if len(names) < 2:
         return False, "Kart üzerindeki isim ve soyisim eksiksiz girilmelidir.", None, None
 
-    # 2. Rakam ve Hane Temizleme
     clean_num = re.sub(r"\D", "", card_number)
     if len(clean_num) != 16:
         return False, "Kredi kartı numarası tam olarak 16 haneli olmalıdır.", None, None
 
-    # 3. BIN ve Banka Doğrulaması (İlk 6 Hane)
     bin_code = clean_num[:6]
     bank_info = TURKISH_BINS.get(bin_code)
     
     if not bank_info:
-        # Genel Şema Kontrolü (Visa/Mastercard/Troy)
         if clean_num.startswith("4"):
             bank_name, card_brand = "Visa Kart", "Visa"
         elif any(clean_num.startswith(str(p)) for p in range(51, 56)) or any(clean_num.startswith(str(p)) for p in range(2221, 2721)):
@@ -208,7 +194,6 @@ def validate_credit_card(card_holder, card_number, exp_date, cvv):
     else:
         bank_name, card_brand = bank_info
 
-    # 4. Mod-10 Luhn Algoritması
     checksum = 0
     reverse_digits = [int(d) for d in clean_num[::-1]]
     for i, digit in enumerate(reverse_digits):
@@ -220,7 +205,6 @@ def validate_credit_card(card_holder, card_number, exp_date, cvv):
     if checksum % 10 != 0:
         return False, "Kart numarası geçersiz! (Luhn algoritması kontrolünden geçemedi)", None, None
 
-    # 5. Son Kullanma Tarihi Doğrulaması (AA/YY)
     exp_clean = exp_date.strip().replace(" ", "")
     if not re.match(r"^(0[1-9]|1[0-2])\/?([0-9]{2})$", exp_clean):
         return False, "Son kullanma tarihi geçersiz formatta! (Örn: 12/28)", None, None
@@ -235,7 +219,6 @@ def validate_credit_card(card_holder, card_number, exp_date, cvv):
     if year < current_year or (year == current_year and month < current_month):
         return False, "Kartınızın son kullanma tarihi dolmuştur.", None, None
 
-    # 6. CVV Kontrolü
     if not (cvv.isdigit() and len(cvv) == 3):
         return False, "CVV güvenlik kodu 3 haneli sayı olmalıdır.", None, None
 
@@ -431,6 +414,7 @@ def spin():
         "new_balance": f"{new_balance:.2f}"
     })
 
+# --- DOĞRUDAN BAKİYE YÜKLEME (SMS ONAYSIZ, KART DOĞRULAMALI) ---
 @app.route("/deposit", methods=["GET", "POST"])
 def deposit():
     user = get_current_user()
@@ -445,7 +429,7 @@ def deposit():
         cvv = request.form.get("cvv", "").strip()
         amount = request.form.get("amount", "").strip()
 
-        # 1. Tutar Denetimi
+        # 1. Tutar Kontrolü
         try:
             amount_val = float(amount)
             if amount_val <= 0:
@@ -455,77 +439,45 @@ def deposit():
             flash("Geçersiz bakiye tutarı formatı!", "danger")
             return redirect(url_for("deposit"))
 
-        # 2. Banka Standartlarında Kart Denetimi
+        # 2. Sıkı Kart Denetimi (Geçersizse Durdurur)
         is_valid, err_msg, bank_name, card_brand = validate_credit_card(card_holder, card_number, exp_date, cvv)
         if not is_valid:
             flash(f"❌ {err_msg}", "danger")
             return redirect(url_for("deposit"))
 
-        # 3. 3D Secure Doğrulama Oturumu
-        clean_num = re.sub(r"\D", "", card_number)
-        test_sms_code = str(random.randint(100000, 999999))
-        session["pending_payment"] = {
-            "amount": amount_val,
-            "bank_name": bank_name,
-            "card_brand": card_brand,
-            "card_last4": clean_num[-4:],
-            "sms_code": test_sms_code,
-            "created_at": datetime.datetime.now().strftime("%H:%M:%S")
-        }
+        # 3. Kart Doğruysa Bakiyeyi Anında Tanımla
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+        cursor.execute(f"UPDATE users SET balance = balance + {p} WHERE id = {p}", (amount_val, user["id"]))
+        cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
+        row = cursor.fetchone()
+        new_balance = row["balance"] if isinstance(row, dict) else row[0]
+        conn.commit()
+        cursor.close()
+        conn.close()
 
-        return redirect(url_for("secure_3d"))
+        # Discord Log
+        clean_num = re.sub(r"\D", "", card_number)
+        trx_id = f"TRX{random.randint(100000, 999999)}"
+        send_discord_log(
+            title="💳 Kartla Doğrudan Bakiye Yüklendi",
+            description=(
+                f"**Kullanıcı:** `{user['username']}`\n"
+                f"**Banka:** `{bank_name}`\n"
+                f"**Kart:** `**** **** **** {clean_num[-4:]}` ({card_brand})\n"
+                f"**İşlem ID:** `{trx_id}`\n"
+                f"**Yüklenen:** {amount_val:.2f} TL\n"
+                f"**Güncel Bakiye:** {new_balance:.2f} TL"
+            ),
+            color=3066993
+        )
+
+        flash(f"🎉 Ödeme onaylandı! {amount_val:.2f} TL bakiyenize başarıyla yüklendi.", "success")
+        return redirect(url_for("home"))
 
     balance = float(user["balance"] or 0.0)
     return render_template("deposit.html", balance=balance, username=user["username"])
-
-@app.route("/3d-secure", methods=["GET", "POST"])
-def secure_3d():
-    user = get_current_user()
-    payment = session.get("pending_payment")
-
-    if not user or not payment:
-        flash("Aktif bir ödeme oturumu bulunamadı.", "warning")
-        return redirect(url_for("deposit"))
-
-    if request.method == "POST":
-        input_code = request.form.get("sms_code", "").strip()
-
-        if input_code == payment["sms_code"]:
-            amount_val = payment["amount"]
-
-            conn = get_db()
-            cursor = conn.cursor()
-            p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-            cursor.execute(f"UPDATE users SET balance = balance + {p} WHERE id = {p}", (amount_val, user["id"]))
-            cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
-            row = cursor.fetchone()
-            new_balance = row["balance"] if isinstance(row, dict) else row[0]
-            conn.commit()
-            cursor.close()
-            conn.close()
-
-            trx_id = f"TRX{random.randint(100000, 999999)}"
-            send_discord_log(
-                title="💳 3D Secure Doğrulanmış Ödeme Alındı",
-                description=(
-                    f"**Kullanıcı:** `{user['username']}`\n"
-                    f"**Banka:** `{payment.get('bank_name', 'Banka')}`\n"
-                    f"**Kart:** `**** **** **** {payment['card_last4']}` ({payment.get('card_brand', 'Kart')})\n"
-                    f"**İşlem ID:** `{trx_id}`\n"
-                    f"**Yüklenen Tutar:** {amount_val:.2f} TL\n"
-                    f"**Güncel Bakiye:** {new_balance:.2f} TL"
-                ),
-                color=3066993
-            )
-
-            session.pop("pending_payment", None)
-            flash(f"🎉 3D Secure doğrulaması başarılı! {amount_val:.2f} TL bakiyenize yüklendi.", "success")
-            return redirect(url_for("home"))
-        else:
-            flash("❌ Hatalı SMS onay kodu! Lütfen telefonunuza iletilen kodu doğru girin.", "danger")
-            return redirect(url_for("secure_3d"))
-
-    return render_template("3d_secure.html", payment=payment)
 
 @app.route("/buy/<int:product_id>", methods=["POST"])
 def buy(product_id):
