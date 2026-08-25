@@ -58,9 +58,7 @@ def init_db():
             except Exception:
                 pass
 
-            # Lvbelc5baba kullanıcısını veritabanında kesin admin yap
             cursor.execute("UPDATE users SET is_admin = 1 WHERE username = %s;", (SUPER_ADMIN_USERNAME,))
-            conn.commit()
 
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
@@ -78,6 +76,16 @@ def init_db():
                     product_title TEXT,
                     price REAL,
                     delivered_code TEXT,
+                    created_at TEXT
+                );
+            ''')
+            # Şifre Sıfırlama Talepleri Tablosu
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS reset_requests (
+                    id SERIAL PRIMARY KEY,
+                    username TEXT,
+                    email TEXT,
+                    status TEXT DEFAULT 'Bekliyor',
                     created_at TEXT
                 );
             ''')
@@ -113,7 +121,6 @@ def init_db():
                 pass
 
             cursor.execute("UPDATE users SET is_admin = 1 WHERE username = ?", (SUPER_ADMIN_USERNAME,))
-            conn.commit()
 
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
@@ -131,6 +138,16 @@ def init_db():
                     product_title TEXT,
                     price REAL,
                     delivered_code TEXT,
+                    created_at TEXT
+                )
+            ''')
+            # Şifre Sıfırlama Talepleri Tablosu
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS reset_requests (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT,
+                    email TEXT,
+                    status TEXT DEFAULT 'Bekliyor',
                     created_at TEXT
                 )
             ''')
@@ -195,7 +212,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- BANKA KART DOĞRULAMA (BIN + LUHN) ---
+# --- BANKA VE POS STANDARTLARINDA KART DOĞRULAMA ---
 TURKISH_BINS = {
     "454671": ("Ziraat Bankası", "Visa"),
     "542374": ("Ziraat Bankası", "Mastercard"),
@@ -300,15 +317,13 @@ def send_discord_log(title, description, color):
     except Exception as e:
         print(f"Discord Hatası: {e}")
 
-# --- ROTALAR ---
+# --- GENEL SAYFA ROTALARI ---
 
 @app.route("/")
 def home():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
-    
-    # Süper Admin veya Atanmış Admin Kontrolü
     is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
 
     conn = get_db()
@@ -384,6 +399,56 @@ def login():
             return redirect(url_for("login"))
 
     return render_template("login.html")
+
+# --- ŞİFRE SIFIRLAMA TALEBİ SAYFASI ---
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        email = request.form.get("email", "").strip()
+
+        if not username or not email:
+            flash("Kullanıcı adı ve iletişim e-posta adresi zorunludur!", "danger")
+            return redirect(url_for("forgot_password"))
+
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+        
+        # Kullanıcının varlığını kontrol et
+        cursor.execute(f"SELECT id FROM users WHERE username = {p}", (username,))
+        user_exists = cursor.fetchone()
+
+        if not user_exists:
+            cursor.close()
+            conn.close()
+            flash("Bu kullanıcı adına sahip bir hesap bulunamadı!", "danger")
+            return redirect(url_for("forgot_password"))
+
+        # Talebi kaydet
+        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+        cursor.execute(f"INSERT INTO reset_requests (username, email, status, created_at) VALUES ({p}, {p}, 'Bekliyor', {p})",
+                       (username, email, now))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        # Discord Bildirimi
+        send_discord_log(
+            title="📩 Yeni Şifre Sıfırlama Talebi",
+            description=(
+                f"**Kullanıcı:** `{username}`\n"
+                f"**İletişim E-Posta:** `{email}`\n"
+                f"**Tarih:** {now}\n"
+                f"Yönetici panelinden şifresini güncelleyebilirsiniz."
+            ),
+            color=16753920
+        )
+
+        flash("✅ Şifre sıfırlama talebiniz yöneticiye iletildi. En kısa sürede e-postanız üzerinden sizinle iletişime geçilecektir.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("forgot_password.html")
 
 @app.route("/logout")
 def logout():
@@ -622,6 +687,10 @@ def admin_panel():
     
     cursor.execute("SELECT * FROM orders ORDER BY id DESC")
     all_orders = cursor.fetchall()
+
+    # Bekleyen ve tamamlanan şifre talepleri
+    cursor.execute("SELECT * FROM reset_requests ORDER BY id DESC")
+    reset_reqs = cursor.fetchall()
     
     cursor.close()
     conn.close()
@@ -633,7 +702,36 @@ def admin_panel():
                            super_admin_name=SUPER_ADMIN_USERNAME,
                            users=all_users, 
                            products=products, 
-                           orders=all_orders)
+                           orders=all_orders,
+                           reset_requests=reset_reqs)
+
+# --- ŞİFRE SIFIRLAMA TALEBİNİ İŞLEME (YENİ ŞİFRE BELİRLEME) ---
+@app.route("/admin/user/reset-password", methods=["POST"])
+@admin_required
+def admin_reset_user_password():
+    target_username = request.form.get("username")
+    new_password = request.form.get("new_password", "").strip()
+    request_id = request.form.get("request_id")
+
+    if not new_password:
+        flash("Yeni şifre boş bırakılamaz!", "danger")
+        return redirect(url_for("admin_panel"))
+
+    hashed_pw = generate_password_hash(new_password)
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+
+    cursor.execute(f"UPDATE users SET password = {p} WHERE username = {p}", (hashed_pw, target_username))
+    if request_id:
+        cursor.execute(f"UPDATE reset_requests SET status = 'Tamamlandı' WHERE id = {p}", (request_id,))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash(f"'{target_username}' kullanıcısının şifresi başarıyla güncellendi! Yeni şifre: {new_password}", "success")
+    return redirect(url_for("admin_panel"))
 
 @app.route("/admin/user/toggle-admin/<int:user_id>", methods=["POST"])
 @admin_required
