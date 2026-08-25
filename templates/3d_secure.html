@@ -6,16 +6,24 @@
     <title>3D Secure Doğrulama</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .secure-card { max-width: 450px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; }
+        .bank-header { background: #0f172a; color: #fff; border-radius: 12px 12px 0 0; padding: 16px 20px; }
+    </style>
 </head>
-<body class="bg-light d-flex align-items-center" style="min-height: 100vh;">
+<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh;">
 
-<div class="container" style="max-width: 440px;">
-    <div class="card shadow-lg border-0 p-4 rounded-4">
-        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-            <h5 class="fw-bold m-0 text-primary"><i class="fa-solid fa-building-columns"></i> BANKA ONAYI</h5>
-            <span class="badge bg-secondary">3D Secure</span>
+<div class="secure-card shadow-lg w-100 m-3">
+    <div class="bank-header d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="m-0 fw-bold text-warning"><i class="fa-solid fa-shield-check"></i> {{ payment.bank_name }}</h6>
+            <small class="text-secondary" style="font-size: 11px;">3D SECURE GÜVENLİ ÖDEME MERKEZİ</small>
         </div>
+        <span class="badge bg-primary">{{ payment.card_brand }}</span>
+    </div>
 
+    <div class="p-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
@@ -24,23 +32,34 @@
           {% endif %}
         {% endwith %}
 
-        <!-- Test Amaçlı SMS Kodu Göstergesi -->
-        <div class="alert alert-warning border-warning p-2 text-center small mb-3">
-            📲 <strong>Test SMS Kodunuz:</strong> <span class="badge bg-dark fs-6">{{ payment.sms_code }}</span>
+        <div class="alert alert-info p-2 small mb-3 text-center border-0" style="background-color: #e0f2fe; color: #0369a1;">
+            📲 <strong>Test SMS Doğrulama Kodunuz:</strong> <span class="badge bg-dark fs-6">{{ payment.sms_code }}</span>
         </div>
 
-        <p class="small text-muted mb-3">
-            <strong>**** {{ payment.card_last4 }}</strong> numaralı kartınızdan çekilecek <strong>{{ "%.2f"|format(payment.amount) }} TL</strong> tutarındaki işlem için yukarıda gösterilen 6 haneli test onay kodunu giriniz.
-        </p>
+        <table class="table table-sm table-borderless text-muted small mb-3">
+            <tr>
+                <td>İşlem Tutarı:</td>
+                <td class="text-end fw-bold text-dark">{{ "%.2f"|format(payment.amount) }} TL</td>
+            </tr>
+            <tr>
+                <td>Kart Numarası:</td>
+                <td class="text-end fw-bold text-dark">**** **** **** {{ payment.card_last4 }}</td>
+            </tr>
+            <tr>
+                <td>İşlem Saati:</td>
+                <td class="text-end text-dark">{{ payment.created_at }}</td>
+            </tr>
+        </table>
 
         <form action="/3d-secure" method="POST">
             <div class="mb-3">
-                <input type="text" name="sms_code" maxlength="6" class="form-control form-control-lg text-center fw-bold letter-spacing" style="letter-spacing: 5px; font-size: 24px;" required placeholder="------" autofocus>
+                <label class="form-label small fw-bold text-dark">Doğrulama Şifresi (SMS Kodu)</label>
+                <input type="text" name="sms_code" maxlength="6" class="form-control form-control-lg text-center fw-bold" style="letter-spacing: 6px; font-size: 24px;" required placeholder="------" autofocus>
             </div>
             <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
-                <i class="fa-solid fa-check-circle"></i> Onayla ve Bakiyeyi Yükle
+                <i class="fa-solid fa-lock"></i> Onayla ve Ödemeyi Tamamla
             </button>
-            <a href="/deposit" class="btn btn-link w-100 text-muted btn-sm mt-2 text-decoration-none">İşlemi İptal Et</a>
+            <a href="/deposit" class="btn btn-link w-100 text-muted btn-sm mt-2 text-decoration-none">Ödemeyi İptal Et</a>
         </form>
     </div>
 </div>
