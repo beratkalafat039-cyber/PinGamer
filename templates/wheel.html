@@ -19,33 +19,36 @@
 <div class="container" style="max-width: 800px;">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
         <div>
-            <h3 class="fw-bold text-warning mb-0"><i class="fa-solid fa-dharmachakra"></i> E-Pin & UC Şans Çarkı</h3>
+            <h3 class="fw-bold text-warning mb-0"><i class="fa-solid fa-dharmachakra"></i> E-Pin & Steam Şans Çarkı</h3>
             <small class="text-secondary">Bakiye: <strong id="user-balance" class="text-success">{{ "%.2f"|format(balance) }} TL</strong></small>
         </div>
         <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağazaya Dön</a>
     </div>
 
-    <!-- KASA SEÇİMİ -->
+    <!-- KASA SEÇİMİ (STEAM LİMİTLERİ VURGULANMIŞTIR) -->
     <div class="row g-3 mb-4">
         <div class="col-4">
             <div class="tier-card p-3 text-center active" onclick="selectTier('bronze', 50, this)">
                 <h6 class="fw-bold text-secondary mb-1">🥉 Bronz Kasa</h6>
-                <span class="badge bg-dark border border-secondary">50 TL</span>
-                <div class="small text-muted mt-2">150 - 600 VP / 60 - 660 UC</div>
+                <span class="badge bg-dark border border-secondary mb-2">50 TL</span>
+                <div class="small text-warning fw-bold"><i class="fa-brands fa-steam"></i> 1$ - 10$ Steam</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">+ 150 VP, 60 UC</div>
             </div>
         </div>
         <div class="col-4">
             <div class="tier-card p-3 text-center" onclick="selectTier('silver', 150, this)">
                 <h6 class="fw-bold text-info mb-1">🥈 Gümüş Kasa</h6>
-                <span class="badge bg-dark border border-info">150 TL</span>
-                <div class="small text-muted mt-2">600 - 2480 VP / 325 - 660 UC</div>
+                <span class="badge bg-dark border border-info mb-2">150 TL</span>
+                <div class="small text-info fw-bold"><i class="fa-brands fa-steam"></i> 5$ - 30$ Steam</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">+ 600-1200 VP, UC</div>
             </div>
         </div>
         <div class="col-4">
             <div class="tier-card p-3 text-center" onclick="selectTier('gold', 300, this)">
                 <h6 class="fw-bold text-warning mb-1">👑 VIP Altın Kasa</h6>
-                <span class="badge bg-warning text-dark fw-bold">300 TL</span>
-                <div class="small text-warning mt-2">11.000 VP / 8.100 UC Şansı!</div>
+                <span class="badge bg-warning text-dark fw-bold mb-2">300 TL</span>
+                <div class="small text-warning fw-bold"><i class="fa-brands fa-steam"></i> 10$ - 100$ Steam!</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">+ 11000 VP, 8100 UC</div>
             </div>
         </div>
     </div>
@@ -92,7 +95,7 @@ function spinWheel() {
     btn.disabled = true;
     resultBox.style.display = 'none';
 
-    const items = ['150 VP', '60 PUBG UC', '600 VP', '325 PUBG UC', '1200 VP', '660 PUBG UC', '2480 VP', '1800 PUBG UC', '5350 VP', '3850 PUBG UC', '8100 PUBG UC', '11000 VP'];
+    const items = ['1$ Steam USD', '150 VP', '5$ Steam USD', '60 PUBG UC', '10$ Steam USD', '1200 VP', '25$ Steam USD', '660 PUBG UC', '50$ Steam USD', '5350 VP', '100$ Steam USD', '11000 VP'];
     let counter = 0;
     const interval = setInterval(() => {
         display.innerText = items[counter % items.length];
