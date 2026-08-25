@@ -179,22 +179,18 @@ def generate_game_code(product_title):
     chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     
     if "valorant" in title_lower or "vp" in title_lower:
-        # Valorant Points: RA-XXXX-XXXX-XXXX
         p1 = "".join(random.choices(chars, k=4))
         p2 = "".join(random.choices(chars, k=4))
         p3 = "".join(random.choices(chars, k=4))
         return f"RA-{p1}-{p2}-{p3}"
     elif "pubg" in title_lower or "uc" in title_lower:
-        # PUBG Mobile UC: 14 haneli harf ve rakam dizisi
         return "".join(random.choices(chars, k=14))
-    elif "steam" in title_lower:
-        # Steam Cüzdan: XXXXX-XXXXX-XXXXX
+    elif "steam" in title_lower or "usd" in title_lower:
         p1 = "".join(random.choices(chars, k=5))
         p2 = "".join(random.choices(chars, k=5))
         p3 = "".join(random.choices(chars, k=5))
         return f"{p1}-{p2}-{p3}"
     else:
-        # Genel E-Pin Formatı: EPIN-XXXX-XXXX
         p1 = "".join(random.choices(chars, k=4))
         p2 = "".join(random.choices(chars, k=4))
         return f"EPIN-{p1}-{p2}"
@@ -495,7 +491,7 @@ def wheel():
     is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
     return render_template("wheel.html", balance=balance, username=username, is_admin=is_admin)
 
-# --- ŞANS ÇARKI (VP & PUBG UC STANDART KOD ÜRETİMİ) ---
+# --- ŞANS ÇARKI (STEAM 1-100 USD, VALORANT VP & PUBG UC DAHİL) ---
 @app.route("/spin", methods=["POST"])
 @login_required
 def spin():
@@ -510,36 +506,50 @@ def spin():
         return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen önce bakiye yükleyin."}), 400
 
     if tier == "gold":
+        # VIP KASA (STEAM 10-100 USD, YÜKSEK VP & UC)
         options = [
-            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC", "type": "pubg"},
-            {"reward": "2480 VP", "label": "2480 Valorant Points", "type": "valorant"},
-            {"reward": "1800 PUBG UC", "label": "PUBG Mobile 1800 UC", "type": "pubg"},
-            {"reward": "5350 VP", "label": "5350 Valorant Points", "type": "valorant"},
-            {"reward": "3850 PUBG UC", "label": "PUBG Mobile 3850 UC (Nadir)", "type": "pubg"},
-            {"reward": "8100 PUBG UC", "label": "PUBG Mobile 8100 UC (BÜYÜK ÖDÜL)", "type": "pubg"},
-            {"reward": "11000 VP", "label": "11000 Valorant Points (BÜYÜK ÖDÜL)", "type": "valorant"}
+            {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu"},
+            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"},
+            {"reward": "25$ Steam USD", "label": "Steam 25 USD Cüzdan Kodu"},
+            {"reward": "2480 VP", "label": "2480 Valorant Points"},
+            {"reward": "1800 PUBG UC", "label": "PUBG Mobile 1800 UC"},
+            {"reward": "50$ Steam USD", "label": "Steam 50 USD Cüzdan Kodu (Nadir)"},
+            {"reward": "5350 VP", "label": "5350 Valorant Points"},
+            {"reward": "3850 PUBG UC", "label": "PUBG Mobile 3850 UC"},
+            {"reward": "100$ Steam USD", "label": "Steam 100 USD Cüzdan Kodu (EFSANEVİ BÜYÜK ÖDÜL)"},
+            {"reward": "8100 PUBG UC", "label": "PUBG Mobile 8100 UC (BÜYÜK ÖDÜL)"},
+            {"reward": "11000 VP", "label": "11000 Valorant Points (BÜYÜK ÖDÜL)"}
         ]
-        weights = [35, 25, 20, 12, 5, 2, 1]
+        weights = [25, 20, 15, 12, 10, 6, 5, 4, 1.5, 1, 0.5]
     elif tier == "silver":
+        # GÜMÜŞ KASA (STEAM 5-30 USD, ORTA SEVİYE VP & UC)
         options = [
-            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC", "type": "pubg"},
-            {"reward": "600 VP", "label": "600 Valorant Points", "type": "valorant"},
-            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC", "type": "pubg"},
-            {"reward": "1200 VP", "label": "1200 Valorant Points", "type": "valorant"},
-            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC", "type": "pubg"},
-            {"reward": "2480 VP", "label": "2480 Valorant Points", "type": "valorant"}
+            {"reward": "5$ Steam USD", "label": "Steam 5 USD Cüzdan Kodu"},
+            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC"},
+            {"reward": "600 VP", "label": "600 Valorant Points"},
+            {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu"},
+            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC"},
+            {"reward": "1200 VP", "label": "1200 Valorant Points"},
+            {"reward": "20$ Steam USD", "label": "Steam 20 USD Cüzdan Kodu"},
+            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"},
+            {"reward": "30$ Steam USD", "label": "Steam 30 USD Cüzdan Kodu (Büyük)"},
+            {"reward": "2480 VP", "label": "2480 Valorant Points"}
         ]
-        weights = [30, 30, 20, 14, 5, 1]
-    else:  # Bronze Kasa
+        weights = [25, 20, 18, 12, 10, 7, 4, 2, 1.5, 0.5]
+    else:  # Bronz Kasa (STEAM 1-10 USD, BAŞLANGIÇ VP & UC)
         options = [
-            {"reward": "150 VP", "label": "150 Valorant Points", "type": "valorant"},
-            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC", "type": "pubg"},
-            {"reward": "600 VP", "label": "600 Valorant Points", "type": "valorant"},
-            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC", "type": "pubg"},
-            {"reward": "1200 VP", "label": "1200 Valorant Points", "type": "valorant"},
-            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC (Büyük)", "type": "pubg"}
+            {"reward": "1$ Steam USD", "label": "Steam 1 USD Cüzdan Kodu"},
+            {"reward": "150 VP", "label": "150 Valorant Points"},
+            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC"},
+            {"reward": "2.5$ Steam USD", "label": "Steam 2.5 USD Cüzdan Kodu"},
+            {"reward": "600 VP", "label": "600 Valorant Points"},
+            {"reward": "5$ Steam USD", "label": "Steam 5 USD Cüzdan Kodu"},
+            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC"},
+            {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu (Büyük)"},
+            {"reward": "1200 VP", "label": "1200 Valorant Points"},
+            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"}
         ]
-        weights = [45, 30, 15, 6, 3, 1]
+        weights = [30, 25, 18, 10, 8, 4, 2.5, 1.5, 0.7, 0.3]
 
     chosen = random.choices(options, weights=weights, k=1)[0]
     code = generate_game_code(chosen["label"])
@@ -638,7 +648,6 @@ def deposit():
     is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
     return render_template("deposit.html", balance=balance, username=user["username"], is_admin=is_admin)
 
-# --- MAĞAZADAN E-PIN SATIN ALMA (OTOMATİK FORMATLI KOD TESLİMATI) ---
 @app.route("/buy/<int:product_id>", methods=["POST"])
 @login_required
 def buy(product_id):
@@ -663,7 +672,6 @@ def buy(product_id):
         flash("Yetersiz bakiye! Lütfen önce bakiye yükleyin.", "danger")
         return redirect(url_for("home"))
 
-    # Ürün tipine göre standart kod üretilir
     delivered_code = generate_game_code(product["title"])
 
     cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (product["price"], user["id"]))
