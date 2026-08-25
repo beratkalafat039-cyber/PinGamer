@@ -1,26 +1,74 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
-import sqlite3
+import os
 import requests
 import datetime
 import random
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import sqlite3
 
 app = Flask(__name__)
 app.secret_key = "epin-super-gizli-anahtar-12345"
 
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1525268830635429930/Lwnf7QQj43IMSHJDrGgj68YpQc0ZKLZ5BF_0nPNQYTMegtVC0ZqlTcfROtV5iZtTmw98"
-DATABASE = "market.db"
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if DATABASE_URL:
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        return conn
+    else:
+        conn = sqlite3.connect("market.db")
+        conn.row_factory = sqlite3.Row
+        return conn
 
 def init_db():
-    with get_db() as conn:
-        cursor = conn.cursor()
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    if DATABASE_URL:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE,
+                password TEXT,
+                balance REAL DEFAULT 0.0
+            );
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS products (
+                id SERIAL PRIMARY KEY,
+                title TEXT,
+                price REAL,
+                image TEXT,
+                stock INTEGER DEFAULT 234
+            );
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER,
+                product_title TEXT,
+                price REAL,
+                delivered_code TEXT,
+                created_at TEXT
+            );
+        ''')
+        conn.commit()
         
-        # Tabloları oluştur
+        cursor.execute("SELECT COUNT(*) as count FROM products")
+        res = cursor.fetchone()
+        count = res["count"] if isinstance(res, dict) else res[0]
+        if count == 0:
+            cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (%s, %s, %s, %s)",
+                           ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234))
+            cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (%s, %s, %s, %s)",
+                           ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234))
+            cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (%s, %s, %s, %s)",
+                           ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234))
+            conn.commit()
+    else:
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,25 +96,7 @@ def init_db():
                 created_at TEXT
             )
         ''')
-        
-        # Eski veritabanı sütun eksikliklerini otomatik onar
-        try:
-            cursor.execute("ALTER TABLE users ADD COLUMN password TEXT")
-        except sqlite3.OperationalError:
-            pass
-
-        try:
-            cursor.execute("ALTER TABLE users ADD COLUMN balance REAL DEFAULT 0.0")
-        except sqlite3.OperationalError:
-            pass
-
-        try:
-            cursor.execute("ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT 234")
-        except sqlite3.OperationalError:
-            pass
-
-        # Null bakiyeleri düzelt
-        cursor.execute("UPDATE users SET balance = 0.0 WHERE balance IS NULL")
+        conn.commit()
 
         cursor.execute("SELECT COUNT(*) FROM products")
         if cursor.fetchone()[0] == 0:
@@ -76,7 +106,10 @@ def init_db():
                            ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234))
             cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)",
                            ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234))
-        conn.commit()
+            conn.commit()
+
+    cursor.close()
+    conn.close()
 
 init_db()
 
@@ -85,10 +118,14 @@ def get_current_user():
     if not user_id:
         return None
     try:
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-            return cursor.fetchone()
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if DATABASE_URL else "?"
+        cursor.execute(f"SELECT * FROM users WHERE id = {p}", (user_id,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return user
     except Exception as e:
         print(f"Kullanıcı getirme hatası: {e}")
         return None
@@ -115,18 +152,21 @@ def home():
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
 
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM products")
-        products = cursor.fetchall()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM products ORDER BY id ASC")
+    products = cursor.fetchall()
+    cursor.close()
+    conn.close()
         
     return render_template("index.html", balance=balance, username=username, products=products)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    if session.get("user_id"):
+    user = get_current_user()
+    if user:
         return redirect(url_for("home"))
-        
+
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
@@ -136,41 +176,47 @@ def register():
             return redirect(url_for("register"))
 
         hashed_pw = generate_password_hash(password)
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if DATABASE_URL else "?"
         try:
-            with get_db() as conn:
-                cursor = conn.cursor()
-                cursor.execute("INSERT INTO users (username, password, balance) VALUES (?, ?, 0.0)", (username, hashed_pw))
-                conn.commit()
+            cursor.execute(f"INSERT INTO users (username, password, balance) VALUES ({p}, {p}, 0.0)", (username, hashed_pw))
+            conn.commit()
             flash("Kayıt başarılı! Şimdi giriş yapabilirsiniz.", "success")
             return redirect(url_for("login"))
-        except sqlite3.IntegrityError:
+        except Exception:
             flash("Bu kullanıcı adı zaten kullanılıyor!", "danger")
             return redirect(url_for("register"))
-        except Exception as e:
-            flash(f"Hata: {e}", "danger")
-            return redirect(url_for("register"))
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template("register.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if session.get("user_id"):
+    user = get_current_user()
+    if user:
         return redirect(url_for("home"))
 
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
 
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-            user = cursor.fetchone()
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if DATABASE_URL else "?"
+        cursor.execute(f"SELECT * FROM users WHERE username = {p}", (username,))
+        user_record = cursor.fetchone()
+        cursor.close()
+        conn.close()
 
-        if user and user["password"] and check_password_hash(user["password"], password):
+        if user_record and user_record["password"] and check_password_hash(user_record["password"], password):
             session.clear()
-            session["user_id"] = user["id"]
-            session["username"] = user["username"]
-            flash(f"Giriş başarılı! Hoş geldin, {user['username']}", "success")
+            session["user_id"] = user_record["id"]
+            session["username"] = user_record["username"]
+            session.permanent = True
+            flash(f"Giriş başarılı! Hoş geldin, {user_record['username']}", "success")
             return redirect(url_for("home"))
         else:
             flash("Kullanıcı adı veya şifre hatalı!", "danger")
@@ -182,7 +228,7 @@ def login():
 def logout():
     session.clear()
     flash("Hesaptan çıkış yapıldı.", "info")
-    return redirect(url_for("home"))
+    return redirect(url_for("login"))
 
 @app.route("/wheel")
 def wheel():
@@ -222,15 +268,20 @@ def spin():
     p2 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
     code = f"VP-{p1}-{p2}"
 
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("UPDATE users SET balance = balance - ? WHERE id = ?", (cost, user["id"]))
-        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
-        cursor.execute("INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES (?, ?, ?, ?, ?)",
-                       (user["id"], f"Slot: {chosen['label']}", cost, code, now))
-        cursor.execute("SELECT balance FROM users WHERE id = ?", (user["id"],))
-        new_balance = cursor.fetchone()["balance"]
-        conn.commit()
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if DATABASE_URL else "?"
+    
+    cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (cost, user["id"]))
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+    cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, {p}, {p}, {p})",
+                   (user["id"], f"Slot: {chosen['label']}", cost, code, now))
+    cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
+    row = cursor.fetchone()
+    new_balance = row["balance"] if isinstance(row, dict) else row[0]
+    conn.commit()
+    cursor.close()
+    conn.close()
 
     send_discord_log(
         title="🎰 Şans Slotu Çevrildi!",
@@ -270,12 +321,16 @@ def deposit():
             flash("Geçersiz bakiye tutarı!", "danger")
             return redirect(url_for("deposit"))
 
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (amount_val, user["id"]))
-            cursor.execute("SELECT balance FROM users WHERE id = ?", (user["id"],))
-            new_balance = cursor.fetchone()["balance"]
-            conn.commit()
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if DATABASE_URL else "?"
+        cursor.execute(f"UPDATE users SET balance = balance + {p} WHERE id = {p}", (amount_val, user["id"]))
+        cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
+        row = cursor.fetchone()
+        new_balance = row["balance"] if isinstance(row, dict) else row[0]
+        conn.commit()
+        cursor.close()
+        conn.close()
 
         trx_id = f"TRX{random.randint(100000, 999999)}"
         send_discord_log(
@@ -296,38 +351,49 @@ def buy(product_id):
         flash("Satın alma işlemi yapabilmek için lütfen giriş yapın!", "warning")
         return redirect(url_for("login"))
 
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM products WHERE id = ?", (product_id,))
-        product = cursor.fetchone()
-        
-        if not product or product["stock"] <= 0:
-            flash("Ürün stokta kalmadı!", "danger")
-            return redirect(url_for("home"))
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if DATABASE_URL else "?"
+    cursor.execute(f"SELECT * FROM products WHERE id = {p}", (product_id,))
+    product = cursor.fetchone()
+    
+    if not product or product["stock"] <= 0:
+        cursor.close()
+        conn.close()
+        flash("Ürün stokta kalmadı!", "danger")
+        return redirect(url_for("home"))
 
-        user_balance = float(user["balance"] or 0.0)
-        if user_balance < product["price"]:
-            flash("Yetersiz bakiye! Lütfen önce bakiye yükleyin.", "danger")
-            return redirect(url_for("home"))
+    user_balance = float(user["balance"] or 0.0)
+    if user_balance < product["price"]:
+        cursor.close()
+        conn.close()
+        flash("Yetersiz bakiye! Lütfen önce bakiye yükleyin.", "danger")
+        return redirect(url_for("home"))
 
-        raw_prefix = "".join([c for c in product["title"][:4] if c.isalnum()]).upper()
-        prefix = raw_prefix if raw_prefix else "EPIN"
-        part1 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
-        part2 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
-        delivered_code = f"{prefix}-{part1}-{part2}"
+    raw_prefix = "".join([c for c in product["title"][:4] if c.isalnum()]).upper()
+    prefix = raw_prefix if raw_prefix else "EPIN"
+    part1 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
+    part2 = "".join(random.choices("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", k=4))
+    delivered_code = f"{prefix}-{part1}-{part2}"
 
-        cursor.execute("UPDATE users SET balance = balance - ? WHERE id = ?", (product["price"], user["id"]))
-        cursor.execute("UPDATE products SET stock = stock - 1 WHERE id = ?", (product_id,))
-        
-        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
-        cursor.execute("INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES (?, ?, ?, ?, ?)",
-                       (user["id"], product["title"], product["price"], delivered_code, now))
-        
-        cursor.execute("SELECT stock FROM products WHERE id = ?", (product_id,))
-        remaining_stock = cursor.fetchone()["stock"]
-        cursor.execute("SELECT balance FROM users WHERE id = ?", (user["id"],))
-        new_balance = cursor.fetchone()["balance"]
-        conn.commit()
+    cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (product["price"], user["id"]))
+    cursor.execute(f"UPDATE products SET stock = stock - 1 WHERE id = {p}", (product_id,))
+    
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+    cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, {p}, {p}, {p})",
+                   (user["id"], product["title"], product["price"], delivered_code, now))
+    
+    cursor.execute(f"SELECT stock FROM products WHERE id = {p}", (product_id,))
+    stock_row = cursor.fetchone()
+    remaining_stock = stock_row["stock"] if isinstance(stock_row, dict) else stock_row[0]
+    
+    cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
+    bal_row = cursor.fetchone()
+    new_balance = bal_row["balance"] if isinstance(bal_row, dict) else bal_row[0]
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
 
     send_discord_log(
         title="🛒 E-Pin Satışı Yapıldı",
@@ -353,10 +419,14 @@ def orders():
         return redirect(url_for("login"))
 
     balance = float(user["balance"] or 0.0)
-    with get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", (user["id"],))
-        order_list = cursor.fetchall()
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if DATABASE_URL else "?"
+    cursor.execute(f"SELECT * FROM orders WHERE user_id = {p} ORDER BY id DESC", (user["id"],))
+    order_list = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
     return render_template("orders.html", balance=balance, username=user["username"], orders=order_list)
 
 if __name__ == "__main__":
