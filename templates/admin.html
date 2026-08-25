@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yönetici Paneli - E-Pin</title>
+    <title>Yönetici Paneli - E-Pin & SMM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -42,7 +42,7 @@
       {% endif %}
     {% endwith %}
 
-    <!-- 1. KULLANICI LİSTESİ (SİLME & RANDOM HESAP) -->
+    <!-- 1. KULLANICI LİSTESİ -->
     <div class="card card-custom p-4 mb-4 shadow border-info">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-users"></i> Kayıtlı Kullanıcılar ({{ users|length }})</h5>
@@ -93,7 +93,7 @@
 
                                 {% if u.username != super_admin_name %}
                                     <form action="/admin/user/delete/{{ u.id }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Bu kullanıcıyı ve tüm siparişlerini silmek istediğinize emin misiniz?')">
+                                        <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')">
                                             <i class="fa-solid fa-trash-can"></i> Sil
                                         </button>
                                     </form>
@@ -155,15 +155,13 @@
         </div>
     </div>
 
-    <!-- 3. ÜRÜN YÖNETİMİ & RASTGELE İLAN OLUŞTURMA -->
+    <!-- 3. ÜRÜN YÖNETİMİ & RASTGELE İLAN -->
     <div class="row g-4">
-        <!-- Sol: Ürün Ekle & Bakiye -->
         <div class="col-lg-5">
             <div class="card card-custom p-4 mb-4 shadow">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-plus"></i> Yeni İlan / Ürün Ekle</h5>
+                    <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-plus"></i> Yeni İlan Ekle</h5>
                     
-                    <!-- RASTGELE İLAN BUTONU -->
                     <form action="/admin/product/generate-random" method="POST">
                         <button type="submit" class="btn btn-warning btn-sm fw-bold">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> 🎲 Rastgele İlan Yap
@@ -235,7 +233,6 @@
             </div>
         </div>
 
-        <!-- Sağ: Ürün Güncelleme ve Siparişler -->
         <div class="col-lg-7">
             <div class="card card-custom p-4 shadow mb-4">
                 <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-tags"></i> Yayındaki İlanlar ({{ products|length }})</h5>
