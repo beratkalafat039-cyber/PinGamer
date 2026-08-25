@@ -4,8 +4,6 @@ import os
 import requests
 import datetime
 import random
-import psycopg2
-from psycopg2.extras import RealDictCursor
 import sqlite3
 
 app = Flask(__name__)
@@ -14,109 +12,123 @@ app.secret_key = "epin-super-gizli-anahtar-12345"
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1525268830635429930/Lwnf7QQj43IMSHJDrGgj68YpQc0ZKLZ5BF_0nPNQYTMegtVC0ZqlTcfROtV5iZtTmw98"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+HAS_POSTGRES = False
+if DATABASE_URL:
+    try:
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        HAS_POSTGRES = True
+    except Exception as e:
+        print(f"PostgreSQL modülü yüklenemedi: {e}")
+
 def get_db():
-    if DATABASE_URL:
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
-        return conn
-    else:
-        conn = sqlite3.connect("market.db")
-        conn.row_factory = sqlite3.Row
-        return conn
+    if HAS_POSTGRES and DATABASE_URL:
+        try:
+            return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        except Exception as e:
+            print(f"PostgreSQL bağlantı hatası: {e}")
+    
+    conn = sqlite3.connect("market.db")
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def init_db():
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    if DATABASE_URL:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username TEXT UNIQUE,
-                password TEXT,
-                balance REAL DEFAULT 0.0
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS products (
-                id SERIAL PRIMARY KEY,
-                title TEXT UNIQUE,
-                price REAL,
-                image TEXT,
-                stock INTEGER DEFAULT 234
-            );
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS orders (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER,
-                product_title TEXT,
-                price REAL,
-                delivered_code TEXT,
-                created_at TEXT
-            );
-        ''')
-        conn.commit()
-
-        urunler = [
-            ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
-            ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234),
-            ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234)
-        ]
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
         
-        for title, price, img, stock in urunler:
+        if HAS_POSTGRES and DATABASE_URL:
             cursor.execute('''
-                INSERT INTO products (title, price, image, stock)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (title) 
-                DO UPDATE SET price = EXCLUDED.price, image = EXCLUDED.image, stock = EXCLUDED.stock;
-            ''', (title, price, img, stock))
-        conn.commit()
-    else:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE,
-                password TEXT,
-                balance REAL DEFAULT 0.0
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS products (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT UNIQUE,
-                price REAL,
-                image TEXT,
-                stock INTEGER DEFAULT 234
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS orders (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                product_title TEXT,
-                price REAL,
-                delivered_code TEXT,
-                created_at TEXT
-            )
-        ''')
-        conn.commit()
-
-        urunler = [
-            ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
-            ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234),
-            ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234)
-        ]
-        
-        for title, price, img, stock in urunler:
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username TEXT UNIQUE,
+                    password TEXT,
+                    balance REAL DEFAULT 0.0
+                );
+            ''')
             cursor.execute('''
-                INSERT INTO products (title, price, image, stock)
-                VALUES (?, ?, ?, ?)
-                ON CONFLICT(title) DO UPDATE SET price=excluded.price, image=excluded.image, stock=excluded.stock;
-            ''', (title, price, img, stock))
-        conn.commit()
+                CREATE TABLE IF NOT EXISTS products (
+                    id SERIAL PRIMARY KEY,
+                    title TEXT,
+                    price REAL,
+                    image TEXT,
+                    stock INTEGER DEFAULT 234
+                );
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS orders (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER,
+                    product_title TEXT,
+                    price REAL,
+                    delivered_code TEXT,
+                    created_at TEXT
+                );
+            ''')
+            conn.commit()
 
-    cursor.close()
-    conn.close()
+            # Ürünleri güvenli güncelleme/ekleme
+            urunler = [
+                ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
+                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234),
+                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234)
+            ]
+            for title, price, img, stock in urunler:
+                cursor.execute("SELECT id FROM products WHERE title = %s", (title,))
+                row = cursor.fetchone()
+                if row:
+                    cursor.execute("UPDATE products SET price = %s, image = %s, stock = %s WHERE title = %s", (price, img, stock, title))
+                else:
+                    cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (%s, %s, %s, %s)", (title, price, img, stock))
+            conn.commit()
+        else:
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT UNIQUE,
+                    password TEXT,
+                    balance REAL DEFAULT 0.0
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS products (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT,
+                    price REAL,
+                    image TEXT,
+                    stock INTEGER DEFAULT 234
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS orders (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    product_title TEXT,
+                    price REAL,
+                    delivered_code TEXT,
+                    created_at TEXT
+                )
+            ''')
+            conn.commit()
+
+            urunler = [
+                ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
+                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234),
+                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234)
+            ]
+            for title, price, img, stock in urunler:
+                cursor.execute("SELECT id FROM products WHERE title = ?", (title,))
+                row = cursor.fetchone()
+                if row:
+                    cursor.execute("UPDATE products SET price = ?, image = ?, stock = ? WHERE title = ?", (price, img, stock, title))
+                else:
+                    cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)", (title, price, img, stock))
+            conn.commit()
+
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Veritabanı başlatma hatası: {e}")
 
 init_db()
 
@@ -141,7 +153,7 @@ def get_current_user():
     try:
         conn = get_db()
         cursor = conn.cursor()
-        p = "%s" if DATABASE_URL else "?"
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
         cursor.execute(f"SELECT * FROM users WHERE id = {p}", (user_id,))
         user = cursor.fetchone()
         cursor.close()
@@ -199,7 +211,7 @@ def register():
         hashed_pw = generate_password_hash(password)
         conn = get_db()
         cursor = conn.cursor()
-        p = "%s" if DATABASE_URL else "?"
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
         try:
             cursor.execute(f"INSERT INTO users (username, password, balance) VALUES ({p}, {p}, 0.0)", (username, hashed_pw))
             conn.commit()
@@ -226,7 +238,7 @@ def login():
 
         conn = get_db()
         cursor = conn.cursor()
-        p = "%s" if DATABASE_URL else "?"
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
         cursor.execute(f"SELECT * FROM users WHERE username = {p}", (username,))
         user_record = cursor.fetchone()
         cursor.close()
@@ -249,7 +261,7 @@ def login():
 def logout():
     session.clear()
     flash("Hesaptan çıkış yapıldı.", "info")
-    return redirect(url_for("home"))
+    return redirect(url_for("login"))
 
 @app.route("/wheel")
 def wheel():
@@ -291,7 +303,7 @@ def spin():
 
     conn = get_db()
     cursor = conn.cursor()
-    p = "%s" if DATABASE_URL else "?"
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
     
     cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (cost, user["id"]))
     now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
@@ -385,7 +397,7 @@ def secure_3d():
 
             conn = get_db()
             cursor = conn.cursor()
-            p = "%s" if DATABASE_URL else "?"
+            p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
             cursor.execute(f"UPDATE users SET balance = balance + {p} WHERE id = {p}", (amount_val, user["id"]))
             cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
             row = cursor.fetchone()
@@ -425,7 +437,7 @@ def buy(product_id):
 
     conn = get_db()
     cursor = conn.cursor()
-    p = "%s" if DATABASE_URL else "?"
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
     cursor.execute(f"SELECT * FROM products WHERE id = {p}", (product_id,))
     product = cursor.fetchone()
     
@@ -493,7 +505,7 @@ def orders():
     balance = float(user["balance"] or 0.0)
     conn = get_db()
     cursor = conn.cursor()
-    p = "%s" if DATABASE_URL else "?"
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
     cursor.execute(f"SELECT * FROM orders WHERE user_id = {p} ORDER BY id DESC", (user["id"],))
     order_list = cursor.fetchall()
     cursor.close()
