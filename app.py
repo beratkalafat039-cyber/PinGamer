@@ -19,6 +19,8 @@ def get_db():
 def init_db():
     with get_db() as conn:
         cursor = conn.cursor()
+        
+        # Tabloları oluştur
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,6 +48,26 @@ def init_db():
                 created_at TEXT
             )
         ''')
+        
+        # Eski veritabanı sütun eksikliklerini otomatik onar
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN password TEXT")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN balance REAL DEFAULT 0.0")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE products ADD COLUMN stock INTEGER DEFAULT 234")
+        except sqlite3.OperationalError:
+            pass
+
+        # Null bakiyeleri düzelt
+        cursor.execute("UPDATE users SET balance = 0.0 WHERE balance IS NULL")
+
         cursor.execute("SELECT COUNT(*) FROM products")
         if cursor.fetchone()[0] == 0:
             cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)",
@@ -67,7 +89,8 @@ def get_current_user():
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
             return cursor.fetchone()
-    except Exception:
+    except Exception as e:
+        print(f"Kullanıcı getirme hatası: {e}")
         return None
 
 def send_discord_log(title, description, color):
@@ -89,7 +112,7 @@ def send_discord_log(title, description, color):
 @app.route("/")
 def home():
     user = get_current_user()
-    balance = user["balance"] if user else 0.0
+    balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
 
     with get_db() as conn:
@@ -123,6 +146,9 @@ def register():
         except sqlite3.IntegrityError:
             flash("Bu kullanıcı adı zaten kullanılıyor!", "danger")
             return redirect(url_for("register"))
+        except Exception as e:
+            flash(f"Hata: {e}", "danger")
+            return redirect(url_for("register"))
 
     return render_template("register.html")
 
@@ -140,11 +166,10 @@ def login():
             cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
             user = cursor.fetchone()
 
-        if user and check_password_hash(user["password"], password):
+        if user and user["password"] and check_password_hash(user["password"], password):
             session.clear()
             session["user_id"] = user["id"]
             session["username"] = user["username"]
-            session.permanent = True
             flash(f"Giriş başarılı! Hoş geldin, {user['username']}", "success")
             return redirect(url_for("home"))
         else:
@@ -162,7 +187,7 @@ def logout():
 @app.route("/wheel")
 def wheel():
     user = get_current_user()
-    balance = user["balance"] if user else 0.0
+    balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
     return render_template("wheel.html", balance=balance, username=username)
 
@@ -177,7 +202,8 @@ def spin():
     tier_costs = {"bronze": 50.0, "silver": 150.0, "gold": 300.0}
     cost = tier_costs.get(tier, 50.0)
 
-    if user["balance"] < cost:
+    current_balance = float(user["balance"] or 0.0)
+    if current_balance < cost:
         return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen önce bakiye yükleyin."}), 400
 
     options = [
@@ -260,7 +286,8 @@ def deposit():
         flash(f"💳 {amount_val:.2f} TL başarıyla yüklendi!", "success")
         return redirect(url_for("home"))
 
-    return render_template("deposit.html", balance=user["balance"], username=user["username"])
+    balance = float(user["balance"] or 0.0)
+    return render_template("deposit.html", balance=balance, username=user["username"])
 
 @app.route("/buy/<int:product_id>", methods=["POST"])
 def buy(product_id):
@@ -278,7 +305,8 @@ def buy(product_id):
             flash("Ürün stokta kalmadı!", "danger")
             return redirect(url_for("home"))
 
-        if user["balance"] < product["price"]:
+        user_balance = float(user["balance"] or 0.0)
+        if user_balance < product["price"]:
             flash("Yetersiz bakiye! Lütfen önce bakiye yükleyin.", "danger")
             return redirect(url_for("home"))
 
@@ -324,11 +352,12 @@ def orders():
         flash("Sipariş geçmişinizi görmek için lütfen giriş yapın!", "warning")
         return redirect(url_for("login"))
 
+    balance = float(user["balance"] or 0.0)
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", (user["id"],))
         order_list = cursor.fetchall()
-    return render_template("orders.html", balance=user["balance"], username=user["username"], orders=order_list)
+    return render_template("orders.html", balance=balance, username=user["username"], orders=order_list)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
