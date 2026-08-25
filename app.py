@@ -67,9 +67,18 @@ def init_db():
                     title TEXT,
                     price REAL,
                     image TEXT,
-                    stock INTEGER DEFAULT 234
+                    stock INTEGER DEFAULT 234,
+                    main_category TEXT DEFAULT 'oyun',
+                    sub_category TEXT DEFAULT 'epin'
                 );
             ''')
+            try:
+                cursor.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS main_category TEXT DEFAULT 'oyun';")
+                cursor.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS sub_category TEXT DEFAULT 'epin';")
+                conn.commit()
+            except Exception:
+                pass
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS orders (
                     id SERIAL PRIMARY KEY,
@@ -91,18 +100,21 @@ def init_db():
             ''')
             conn.commit()
 
-            urunler = [
-                ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
-                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234),
-                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234)
+            varsayilan_urunler = [
+                ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234, "oyun", "valorant"),
+                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234, "oyun", "pubg"),
+                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234, "oyun", "steam"),
+                ("Instagram 1.000 Türk Takipçi", 45.0, "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", 500, "sosyal", "instagram"),
+                ("Instagram 5.000 Beğeni Paketi", 35.0, "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", 500, "sosyal", "instagram"),
+                ("TikTok 10.000 İzlenme & Beğeni", 40.0, "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", 500, "sosyal", "tiktok"),
+                ("YouTube 1.000 Abone & 4.000 Saat", 180.0, "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400", 200, "sosyal", "youtube")
             ]
-            for title, price, img, stock in urunler:
+            for title, price, img, stock, main_cat, sub_cat in varsayilan_urunler:
                 cursor.execute("SELECT id FROM products WHERE title = %s", (title,))
                 row = cursor.fetchone()
-                if row:
-                    cursor.execute("UPDATE products SET price = %s, image = %s, stock = %s WHERE title = %s", (price, img, stock, title))
-                else:
-                    cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (%s, %s, %s, %s)", (title, price, img, stock))
+                if not row:
+                    cursor.execute("INSERT INTO products (title, price, image, stock, main_category, sub_category) VALUES (%s, %s, %s, %s, %s, %s)", 
+                                   (title, price, img, stock, main_cat, sub_cat))
             conn.commit()
         else:
             cursor.execute('''
@@ -128,9 +140,18 @@ def init_db():
                     title TEXT,
                     price REAL,
                     image TEXT,
-                    stock INTEGER DEFAULT 234
+                    stock INTEGER DEFAULT 234,
+                    main_category TEXT DEFAULT 'oyun',
+                    sub_category TEXT DEFAULT 'epin'
                 )
             ''')
+            try:
+                cursor.execute("ALTER TABLE products ADD COLUMN main_category TEXT DEFAULT 'oyun'")
+                cursor.execute("ALTER TABLE products ADD COLUMN sub_category TEXT DEFAULT 'epin'")
+                conn.commit()
+            except Exception:
+                pass
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS orders (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -152,18 +173,21 @@ def init_db():
             ''')
             conn.commit()
 
-            urunler = [
-                ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234),
-                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234),
-                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234)
+            varsayilan_urunler = [
+                ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234, "oyun", "valorant"),
+                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234, "oyun", "pubg"),
+                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234, "oyun", "steam"),
+                ("Instagram 1.000 Türk Takipçi", 45.0, "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", 500, "sosyal", "instagram"),
+                ("Instagram 5.000 Beğeni Paketi", 35.0, "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", 500, "sosyal", "instagram"),
+                ("TikTok 10.000 İzlenme & Beğeni", 40.0, "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", 500, "sosyal", "tiktok"),
+                ("YouTube 1.000 Abone & 4.000 Saat", 180.0, "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400", 200, "sosyal", "youtube")
             ]
-            for title, price, img, stock in urunler:
+            for title, price, img, stock, main_cat, sub_cat in varsayilan_urunler:
                 cursor.execute("SELECT id FROM products WHERE title = ?", (title,))
                 row = cursor.fetchone()
-                if row:
-                    cursor.execute("UPDATE products SET price = ?, image = ?, stock = ? WHERE title = ?", (price, img, stock, title))
-                else:
-                    cursor.execute("INSERT INTO products (title, price, image, stock) VALUES (?, ?, ?, ?)", (title, price, img, stock))
+                if not row:
+                    cursor.execute("INSERT INTO products (title, price, image, stock, main_category, sub_category) VALUES (?, ?, ?, ?, ?, ?)", 
+                                   (title, price, img, stock, main_cat, sub_cat))
             conn.commit()
 
         cursor.close()
@@ -173,7 +197,7 @@ def init_db():
 
 init_db()
 
-# --- STANDART E-PIN KOD ÜRETİM MOTORU ---
+# --- STANDART KOD VE AKTİVASYON ANAHTARI ÜRETİMİ ---
 def generate_game_code(product_title):
     title_lower = product_title.lower()
     chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -190,6 +214,10 @@ def generate_game_code(product_title):
         p2 = "".join(random.choices(chars, k=5))
         p3 = "".join(random.choices(chars, k=5))
         return f"{p1}-{p2}-{p3}"
+    elif any(k in title_lower for k in ["takipçi", "beğeni", "izlenme", "instagram", "tiktok", "youtube"]):
+        p1 = "".join(random.choices(chars, k=4))
+        p2 = "".join(random.choices(chars, k=4))
+        return f"SMM-KEY-{p1}-{p2}"
     else:
         p1 = "".join(random.choices(chars, k=4))
         p2 = "".join(random.choices(chars, k=4))
@@ -349,7 +377,7 @@ def home():
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM products ORDER BY id ASC")
+    cursor.execute("SELECT * FROM products ORDER BY id DESC")
     products = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -491,22 +519,23 @@ def wheel():
     is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
     return render_template("wheel.html", balance=balance, username=username, is_admin=is_admin)
 
-# --- ŞANS ÇARKI (STEAM 1-100 USD, VALORANT VP & PUBG UC DAHİL) ---
+# --- ŞANS ÇARKI VE SİMÜLASYON MOTORU ---
 @app.route("/spin", methods=["POST"])
 @login_required
 def spin():
     user = get_current_user()
     data = request.get_json() or {}
     tier = data.get("tier", "bronze")
+    is_simulation = bool(data.get("simulation", False))  # Deneme Modu
+    
     tier_costs = {"bronze": 50.0, "silver": 150.0, "gold": 300.0}
     cost = tier_costs.get(tier, 50.0)
 
     current_balance = float(user["balance"] or 0.0)
-    if current_balance < cost:
-        return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen önce bakiye yükleyin."}), 400
+    if not is_simulation and current_balance < cost:
+        return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen önce bakiye yükleyin veya Deneme Modunu kullanın."}), 400
 
     if tier == "gold":
-        # VIP KASA (STEAM 10-100 USD, YÜKSEK VP & UC)
         options = [
             {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu"},
             {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"},
@@ -516,13 +545,12 @@ def spin():
             {"reward": "50$ Steam USD", "label": "Steam 50 USD Cüzdan Kodu (Nadir)"},
             {"reward": "5350 VP", "label": "5350 Valorant Points"},
             {"reward": "3850 PUBG UC", "label": "PUBG Mobile 3850 UC"},
-            {"reward": "100$ Steam USD", "label": "Steam 100 USD Cüzdan Kodu (EFSANEVİ BÜYÜK ÖDÜL)"},
+            {"reward": "100$ Steam USD", "label": "Steam 100 USD Cüzdan Kodu (BÜYÜK ÖDÜL)"},
             {"reward": "8100 PUBG UC", "label": "PUBG Mobile 8100 UC (BÜYÜK ÖDÜL)"},
             {"reward": "11000 VP", "label": "11000 Valorant Points (BÜYÜK ÖDÜL)"}
         ]
         weights = [25, 20, 15, 12, 10, 6, 5, 4, 1.5, 1, 0.5]
     elif tier == "silver":
-        # GÜMÜŞ KASA (STEAM 5-30 USD, ORTA SEVİYE VP & UC)
         options = [
             {"reward": "5$ Steam USD", "label": "Steam 5 USD Cüzdan Kodu"},
             {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC"},
@@ -536,7 +564,7 @@ def spin():
             {"reward": "2480 VP", "label": "2480 Valorant Points"}
         ]
         weights = [25, 20, 18, 12, 10, 7, 4, 2, 1.5, 0.5]
-    else:  # Bronz Kasa (STEAM 1-10 USD, BAŞLANGIÇ VP & UC)
+    else:  # Bronz Kasa
         options = [
             {"reward": "1$ Steam USD", "label": "Steam 1 USD Cüzdan Kodu"},
             {"reward": "150 VP", "label": "150 Valorant Points"},
@@ -554,6 +582,18 @@ def spin():
     chosen = random.choices(options, weights=weights, k=1)[0]
     code = generate_game_code(chosen["label"])
 
+    if is_simulation:
+        # Simülasyonda bakiye düşmez, sipariş kaydı atılmaz
+        return jsonify({
+            "success": True,
+            "simulation": True,
+            "reward": chosen["reward"],
+            "reward_label": chosen["label"],
+            "code": "TEST-SIMULASYON-KODU",
+            "new_balance": f"{current_balance:.2f}"
+        })
+
+    # Gerçek Çevirme İşlemi
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
@@ -583,6 +623,7 @@ def spin():
 
     return jsonify({
         "success": True,
+        "simulation": False,
         "reward": chosen["reward"],
         "reward_label": chosen["label"],
         "code": code,
@@ -694,7 +735,7 @@ def buy(product_id):
     conn.close()
 
     send_discord_log(
-        title="🛒 E-Pin Satışı Yapıldı",
+        title="🛒 Satın Alma Gerçekleşti",
         description=(
             f"**Kullanıcı:** `{user['username']}`\n"
             f"**Ürün:** {product['title']}\n"
@@ -706,7 +747,7 @@ def buy(product_id):
         color=15158332
     )
 
-    flash(f"🎉 Satın Alma Başarılı! Kodunuz: {delivered_code}", "success")
+    flash(f"🎉 Satın Alma Başarılı! Teslim Edilen Kodunuz: {delivered_code}", "success")
     return redirect(url_for("orders"))
 
 @app.route("/orders")
@@ -738,7 +779,7 @@ def admin_panel():
     cursor.execute("SELECT id, username, balance, is_admin FROM users ORDER BY id DESC")
     all_users = cursor.fetchall()
     
-    cursor.execute("SELECT * FROM products ORDER BY id ASC")
+    cursor.execute("SELECT * FROM products ORDER BY id DESC")
     products = cursor.fetchall()
     
     cursor.execute("SELECT * FROM orders ORDER BY id DESC")
@@ -785,6 +826,39 @@ def admin_generate_random_user():
         cursor.close()
         conn.close()
 
+    return redirect(url_for("admin_panel"))
+
+# --- RASTGELE İLAN / ÜRÜN OLUŞTURMA (OYUN & SOSYAL MEDYA) ---
+@app.route("/admin/product/generate-random", methods=["POST"])
+@admin_required
+def admin_generate_random_product():
+    random_templates = [
+        # Oyun E-Pin İlanları
+        {"title": f"Valorant {random.choice([1200, 2480, 5350, 11000])} VP", "price": random.choice([150, 290, 580, 1150]), "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "oyun", "sub_cat": "valorant"},
+        {"title": f"PUBG Mobile {random.choice([325, 660, 1800, 3850])} UC", "price": random.choice([110, 210, 550, 1100]), "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "oyun", "sub_cat": "pubg"},
+        {"title": f"Steam {random.choice([10, 20, 50, 100])} USD Cüzdan Kodu", "price": random.choice([340, 680, 1700, 3400]), "image": "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", "main_cat": "oyun", "sub_cat": "steam"},
+        # Sosyal Medya İlanları
+        {"title": f"Instagram {random.choice(['2.500', '5.000', '10.000'])} Organik Takipçi", "price": random.choice([55, 95, 175]), "image": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", "main_cat": "sosyal", "sub_cat": "instagram"},
+        {"title": f"Instagram {random.choice(['5.000', '10.000', '25.000'])} Keşfet Etkili Beğeni", "price": random.choice([30, 60, 120]), "image": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", "main_cat": "sosyal", "sub_cat": "instagram"},
+        {"title": f"TikTok {random.choice(['10.000', '50.000', '100.000'])} İzlenme & Paylaşım", "price": random.choice([40, 110, 190]), "image": "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", "main_cat": "sosyal", "sub_cat": "tiktok"},
+        {"title": f"TikTok {random.choice(['1.000', '5.000'])} Canlı Yayın Takipçisi", "price": random.choice([75, 290]), "image": "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", "main_cat": "sosyal", "sub_cat": "tiktok"},
+        {"title": f"YouTube {random.choice(['1.000', '4.000'])} İzlenme & Abone Paketi", "price": random.choice([130, 320]), "image": "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400", "main_cat": "sosyal", "sub_cat": "youtube"},
+        {"title": f"Twitter/X {random.choice(['1.000', '5.000'])} Retweet & Beğeni", "price": random.choice([60, 190]), "image": "https://images.unsplash.com/photo-1611605698335-8b1569810432?w=400", "main_cat": "sosyal", "sub_cat": "twitter"}
+    ]
+    
+    item = random.choice(random_templates)
+    stock = random.randint(150, 999)
+
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"INSERT INTO products (title, price, image, stock, main_category, sub_category) VALUES ({p}, {p}, {p}, {p}, {p}, {p})",
+                   (item["title"], float(item["price"]), item["image"], stock, item["main_cat"], item["sub_cat"]))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash(f"🎲 Rastgele İlan Başarıyla Oluşturuldu: '{item['title']}' ({item['price']} TL)", "success")
     return redirect(url_for("admin_panel"))
 
 # --- KULLANICI SİLME ---
@@ -870,7 +944,7 @@ def admin_toggle_role(user_id):
     conn.close()
     return redirect(url_for("admin_panel"))
 
-# --- ÜRÜN YÖNETİMİ ---
+# --- MANUEL ÜRÜN EKLEME (KATEGORİ DESTEKLİ) ---
 @app.route("/admin/product/add", methods=["POST"])
 @admin_required
 def admin_add_product():
@@ -878,13 +952,15 @@ def admin_add_product():
     price = float(request.form.get("price", 0.0))
     image = request.form.get("image", "").strip()
     stock = int(request.form.get("stock", 100))
+    main_cat = request.form.get("main_category", "oyun")
+    sub_cat = request.form.get("sub_category", "genel")
 
     if title and price > 0:
         conn = get_db()
         cursor = conn.cursor()
         p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-        cursor.execute(f"INSERT INTO products (title, price, image, stock) VALUES ({p}, {p}, {p}, {p})",
-                       (title, price, image, stock))
+        cursor.execute(f"INSERT INTO products (title, price, image, stock, main_category, sub_category) VALUES ({p}, {p}, {p}, {p}, {p}, {p})",
+                       (title, price, image, stock, main_cat, sub_cat))
         conn.commit()
         cursor.close()
         conn.close()
