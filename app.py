@@ -144,9 +144,22 @@ def init_db():
                     logo_height INTEGER DEFAULT 40,
                     font_size INTEGER DEFAULT 22,
                     text_color TEXT DEFAULT '#eab308',
-                    letter_colors TEXT DEFAULT ''
+                    letter_colors TEXT DEFAULT '',
+                    anim_type TEXT DEFAULT 'none'
                 );
             ''')
+            try:
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS font_family TEXT DEFAULT 'Orbitron';")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_position TEXT DEFAULT 'left';")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_height INTEGER DEFAULT 40;")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS font_size INTEGER DEFAULT 22;")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS text_color TEXT DEFAULT '#eab308';")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS letter_colors TEXT DEFAULT '';")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS anim_type TEXT DEFAULT 'none';")
+                conn.commit()
+            except Exception:
+                pass
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS giveaway_participants (
                     id SERIAL PRIMARY KEY,
@@ -175,8 +188,8 @@ def init_db():
 
             cursor.execute("SELECT id FROM site_settings LIMIT 1")
             if not cursor.fetchone():
-                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
-                               ('Hesap.com.tr', '', 'Orbitron', 'left', 40, 22, '#38bdf8', '[]'))
+                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors, anim_type) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+                               ('Hesap.com.tr', '', 'Press Start 2P', 'left', 36, 20, '#38bdf8', '[]', 'none'))
             conn.commit()
         else:
             cursor.execute('''
@@ -272,9 +285,22 @@ def init_db():
                     logo_height INTEGER DEFAULT 40,
                     font_size INTEGER DEFAULT 22,
                     text_color TEXT DEFAULT '#eab308',
-                    letter_colors TEXT DEFAULT ''
+                    letter_colors TEXT DEFAULT '',
+                    anim_type TEXT DEFAULT 'none'
                 )
             ''')
+            try:
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN font_family TEXT DEFAULT 'Orbitron'")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN logo_position TEXT DEFAULT 'left'")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN logo_height INTEGER DEFAULT 40")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN font_size INTEGER DEFAULT 22")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN text_color TEXT DEFAULT '#eab308'")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN letter_colors TEXT DEFAULT ''")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN anim_type TEXT DEFAULT 'none'")
+                conn.commit()
+            except Exception:
+                pass
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS giveaway_participants (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -303,8 +329,8 @@ def init_db():
 
             cursor.execute("SELECT id FROM site_settings LIMIT 1")
             if not cursor.fetchone():
-                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
-                               ('Hesap.com.tr', '', 'Orbitron', 'left', 40, 22, '#38bdf8', '[]'))
+                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors, anim_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                               ('Hesap.com.tr', '', 'Press Start 2P', 'left', 36, 20, '#38bdf8', '[]', 'none'))
             conn.commit()
 
         cursor.close()
@@ -318,12 +344,13 @@ def get_site_settings():
     default_settings = {
         "title": "Hesap.com.tr",
         "logo": "",
-        "font_family": "Montserrat",
+        "font_family": "Press Start 2P",
         "logo_position": "left",
-        "logo_height": 38,
-        "font_size": 22,
+        "logo_height": 36,
+        "font_size": 20,
         "text_color": "#38bdf8",
         "letter_colors": "[]",
+        "anim_type": "none",
         "formatted_letters": []
     }
     try:
@@ -341,26 +368,29 @@ def get_site_settings():
                 settings_data = {
                     "title": title,
                     "logo": row.get("site_logo") or "",
-                    "font_family": row.get("font_family") or "Montserrat",
+                    "font_family": row.get("font_family") or "Press Start 2P",
                     "logo_position": row.get("logo_position") or "left",
-                    "logo_height": row.get("logo_height") or 38,
-                    "font_size": row.get("font_size") or 22,
+                    "logo_height": row.get("logo_height") or 36,
+                    "font_size": row.get("font_size") or 20,
                     "text_color": base_color,
-                    "letter_colors": raw_colors
+                    "letter_colors": raw_colors,
+                    "anim_type": row.get("anim_type") or "none"
                 }
             else:
                 title = row[1] or default_settings["title"]
                 raw_colors = row[8] if len(row) > 8 and row[8] else "[]"
                 base_color = row[7] if len(row) > 7 and row[7] else "#38bdf8"
+                anim = row[9] if len(row) > 9 and row[9] else "none"
                 settings_data = {
                     "title": title,
                     "logo": row[2] or "",
-                    "font_family": row[3] if len(row) > 3 and row[3] else "Montserrat",
+                    "font_family": row[3] if len(row) > 3 and row[3] else "Press Start 2P",
                     "logo_position": row[4] if len(row) > 4 and row[4] else "left",
-                    "logo_height": row[5] if len(row) > 5 and row[5] else 38,
-                    "font_size": row[6] if len(row) > 6 and row[6] else 22,
+                    "logo_height": row[5] if len(row) > 5 and row[5] else 36,
+                    "font_size": row[6] if len(row) > 6 and row[6] else 20,
                     "text_color": base_color,
-                    "letter_colors": raw_colors
+                    "letter_colors": raw_colors,
+                    "anim_type": anim
                 }
 
             try:
@@ -371,14 +401,14 @@ def get_site_settings():
             formatted = []
             for i, char in enumerate(settings_data["title"]):
                 c = color_list[i] if i < len(color_list) and color_list[i] else settings_data["text_color"]
-                formatted.append({"char": char, "color": c})
+                formatted.append({"char": char, "color": c, "index": i})
 
             settings_data["formatted_letters"] = formatted
             return settings_data
     except Exception as e:
         print(f"Site ayarları getirme hatası: {e}")
     
-    default_settings["formatted_letters"] = [{"char": c, "color": "#38bdf8"} for c in default_settings["title"]]
+    default_settings["formatted_letters"] = [{"char": c, "color": "#38bdf8", "index": i} for i, c in enumerate(default_settings["title"])]
     return default_settings
 
 def generate_game_code(product_title):
@@ -555,10 +585,10 @@ def support_start():
     dept = department_names.get(topic, "Müşteri Temsilcisi")
 
     welcome_messages = {
-        "odeme": f"Merhaba! Ben {agent_name}, Finans ve Bakiye departmanındanım. Ödeme veya bakiye yükleme işleminizle ilgili nasıl yardımcı olabilirim?",
-        "epin": f"Merhaba! Ben {agent_name}, Kod ve Teslimat birimindenim. Satın aldığınız e-pin veya hesap teslimatıyla ilgili detayları paylaşabilir misiniz?",
+        "odeme": f"Merhaba! Ben {agent_name}, Finans ve Bakiye departmanındanım. Nasıl yardımcı olabilirim?",
+        "epin": f"Merhaba! Ben {agent_name}, Kod ve Teslimat birimindenim. Satın aldığınız ürünle ilgili detayları iletir misiniz?",
         "sosyal": f"Merhaba! Ben {agent_name}, Sosyal Medya Hizmetleri uzmanıyım. Siparişinizle ilgili yardımcı olmaktan memnuniyet duyarım.",
-        "teknik": f"Merhaba! Ben {agent_name}, Teknik Destek ekibindenim. Karşılaştığınız sorunu detaylandırır mısınız?"
+        "teknik": f"Merhaba! Ben {agent_name}, Teknik Destek ekibindenim. Sorununuzu detaylandırır mısınız?"
     }
 
     return jsonify({
@@ -580,7 +610,7 @@ def support_message():
     elif any(k in user_msg for k in ["kod", "gelmedi", "çalışmıyor", "hatalı", "vp", "uc", "steam", "hesap"]):
         reply = "Satın aldığınız ürünün bilgileri ve teslimat kodları 'Siparişlerim' sayfasına anında yansıtılmaktadır."
     elif any(k in user_msg for k in ["ilan", "talep", "onay", "3 ilan"]):
-        reply = "Kullanıcı ilan talepleri moderatör ekibimiz tarafından incelenip en kısa sürede onaylanarak pazar alanında listelenir."
+        reply = "Kullanıcı ilan talepleri moderatör ekibimiz tarafından incelenip onaylandıktan sonra pazarda listelenir."
     elif any(k in user_msg for k in ["merhaba", "selam", "sa", "günaydın", "iyi günler"]):
         reply = "Tekrar merhaba! Sorununuzu çözebilmemiz için detayları iletmeniz yeterlidir."
     else:
@@ -603,7 +633,6 @@ def home():
     cursor.execute("SELECT * FROM categories ORDER BY id ASC")
     categories = cursor.fetchall()
     
-    # Sadece ONAYLANMIŞ ilanlar ana sayfada listelenir
     cursor.execute("SELECT * FROM products WHERE status = 'Onaylandı' ORDER BY id DESC")
     products = cursor.fetchall()
     cursor.close()
@@ -611,7 +640,7 @@ def home():
         
     return render_template("index.html", balance=balance, username=username, is_admin=is_admin, products=products, categories=categories, settings=settings)
 
-# --- KULLANICI İLAN EKLEME (3 İLAN LİMİTİ & TALEP SİSTEMİ) ---
+# --- KULLANICI İLAN EKLEME (3 İLAN LİMİTİ) ---
 @app.route("/user/add-listing", methods=["GET", "POST"])
 @login_required
 def user_add_listing():
@@ -620,7 +649,6 @@ def user_add_listing():
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
 
-    # Kullanıcının aktif/bekleyen ilan sayısını kontrol et
     cursor.execute(f"SELECT COUNT(*) FROM products WHERE seller_id = {p}", (user["id"],))
     count_row = cursor.fetchone()
     current_count = count_row[0] if not isinstance(count_row, dict) else list(count_row.values())[0]
@@ -638,7 +666,6 @@ def user_add_listing():
         sub_cat = request.form.get("sub_category", "genel").strip()
         image_url = request.form.get("image_url", "").strip()
 
-        # Bilgisayardan dosya yüklendiyse
         img_file = request.files.get("listing_image")
         final_image = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"
 
@@ -661,7 +688,7 @@ def user_add_listing():
 
         send_discord_log(
             title="📥 Yeni Kullanıcı İlan Talebi!",
-            description=f"**Kullanıcı:** `{user['username']}`\n**İlan Başlığı:** {title}\n**Fiyat:** {price:.2f} TL\n**Kategori:** {category.upper()}\nAdmin panelinden onaylayabilirsiniz.",
+            description=f"**Kullanıcı:** `{user['username']}`\n**İlan Başlığı:** {title}\n**Fiyat:** {price:.2f} TL\n**Kategori:** {category.upper()}",
             color=16753920
         )
 
@@ -1082,6 +1109,14 @@ def buy(product_id):
     cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, {p}, {p}, {p})",
                    (user["id"], product["title"], product["price"], delivered_code, now))
     
+    cursor.execute(f"SELECT stock FROM products WHERE id = {p}", (product_id,))
+    stock_row = cursor.fetchone()
+    remaining_stock = stock_row["stock"] if isinstance(stock_row, dict) else stock_row[0]
+    
+    cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
+    bal_row = cursor.fetchone()
+    new_balance = bal_row["balance"] if isinstance(bal_row, dict) else bal_row[0]
+    
     conn.commit()
     cursor.close()
     conn.close()
@@ -1127,11 +1162,9 @@ def admin_panel():
     cursor.execute("SELECT * FROM categories ORDER BY id ASC")
     categories = cursor.fetchall()
     
-    # Tüm onaylı ve onay bekleyen ilanları çek
     cursor.execute("SELECT * FROM products ORDER BY id DESC")
     products = cursor.fetchall()
 
-    # Kullanıcı ilan taleplerini filtrele
     pending_listings = [p for p in products if p["status"] == "Onay Bekliyor"]
     
     cursor.execute("SELECT * FROM orders ORDER BY id DESC")
@@ -1140,7 +1173,6 @@ def admin_panel():
     cursor.execute("SELECT * FROM reset_requests ORDER BY id DESC")
     reset_reqs = cursor.fetchall()
 
-    # Çekilişleri ve katılımcı listelerini çek
     cursor.execute("SELECT * FROM giveaways ORDER BY id DESC")
     raw_giveaways = cursor.fetchall()
     admin_giveaways = []
@@ -1239,17 +1271,18 @@ def admin_delete_category(cat_id):
     flash("Kategori silindi.", "info")
     return redirect(url_for("admin_panel"))
 
-# --- SAYFA DÜZENLERİ GÜNCELLEME ---
+# --- GÖRÜNÜM, 8-BİT FONT & HARF ANİMASYONLARI GÜNCELLEME ---
 @app.route("/admin/settings/update", methods=["POST"])
 @admin_required
 def admin_update_settings():
     new_title = request.form.get("site_title", "").strip()
-    font_family = request.form.get("font_family", "Montserrat").strip()
+    font_family = request.form.get("font_family", "Press Start 2P").strip()
     logo_position = request.form.get("logo_position", "left").strip()
-    logo_height = int(request.form.get("logo_height", 38))
-    font_size = int(request.form.get("font_size", 22))
+    logo_height = int(request.form.get("logo_height", 36))
+    font_size = int(request.form.get("font_size", 20))
     text_color = request.form.get("text_color", "#38bdf8").strip()
     letter_colors = request.form.get("letter_colors", "[]").strip()
+    anim_type = request.form.get("anim_type", "none").strip()
 
     if not new_title:
         flash("Site başlığı boş bırakılamaz!", "danger")
@@ -1278,21 +1311,21 @@ def admin_update_settings():
         final_logo = logo_path if logo_path else (old_logo or "")
         cursor.execute(f'''
             UPDATE site_settings 
-            SET site_title = {p}, site_logo = {p}, font_family = {p}, logo_position = {p}, logo_height = {p}, font_size = {p}, text_color = {p}, letter_colors = {p} 
+            SET site_title = {p}, site_logo = {p}, font_family = {p}, logo_position = {p}, logo_height = {p}, font_size = {p}, text_color = {p}, letter_colors = {p}, anim_type = {p} 
             WHERE id = {p}
-        ''', (new_title, final_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors, row_id))
+        ''', (new_title, final_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors, anim_type, row_id))
     else:
         final_logo = logo_path if logo_path else ""
         cursor.execute(f'''
-            INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) 
-            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p})
-        ''', (new_title, final_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors))
+            INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors, anim_type) 
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p})
+        ''', (new_title, final_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors, anim_type))
 
     conn.commit()
     cursor.close()
     conn.close()
 
-    flash("🎨 Görünüm ayarları başarıyla kaydedildi!", "success")
+    flash("🎨 Görünüm, 8-Bit Fontlar ve Harf Animasyonları kaydedildi!", "success")
     return redirect(url_for("admin_panel"))
 
 # --- ÇEKİLİŞ ROTALARI ---
@@ -1405,12 +1438,40 @@ def admin_delete_giveaway(giveaway_id):
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    cursor.execute(f"DELETE FROM giveaway_participants WHERE giveaway_id = {p}", (giveaway_id,))
+    cursor.execute(f"DELETE FROM giveaway_participants WHERE id = {p}", (giveaway_id,))
     cursor.execute(f"DELETE FROM giveaways WHERE id = {p}", (giveaway_id,))
     conn.commit()
     cursor.close()
     conn.close()
     flash("Çekiliş silindi.", "info")
+    return redirect(url_for("admin_panel"))
+
+# --- MANUEL İLAN EKLEME (ADMİN) ---
+@app.route("/admin/product/add", methods=["POST"])
+@admin_required
+def admin_add_product():
+    title = request.form.get("title", "").strip()
+    price = float(request.form.get("price", 0.0))
+    image = request.form.get("image", "").strip()
+    stock = int(request.form.get("stock", 100))
+    main_cat = request.form.get("main_category", "oyun")
+    sub_cat = request.form.get("sub_category", "genel")
+
+    if title and price > 0:
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+        cursor.execute(f'''
+            INSERT INTO products (title, price, image, stock, main_category, sub_category, seller_name, seller_id, status, created_at) 
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, 'Yönetici', 0, 'Onaylandı', {p})
+        ''', (title, price, image, stock, main_cat, sub_cat, now))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash("Yeni ilan başarıyla eklendi.", "success")
+    else:
+        flash("İlan adı ve fiyatı zorunludur!", "danger")
     return redirect(url_for("admin_panel"))
 
 # --- DİĞER ADMİN İŞLEMLERİ ---
@@ -1479,33 +1540,6 @@ def admin_toggle_role(user_id):
     conn.close()
     return redirect(url_for("admin_panel"))
 
-@app.route("/admin/product/add", methods=["POST"])
-@admin_required
-def admin_add_product():
-    title = request.form.get("title", "").strip()
-    price = float(request.form.get("price", 0.0))
-    image = request.form.get("image", "").strip()
-    stock = int(request.form.get("stock", 100))
-    main_cat = request.form.get("main_category", "oyun")
-    sub_cat = request.form.get("sub_category", "genel")
-
-    if title and price > 0:
-        conn = get_db()
-        cursor = conn.cursor()
-        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
-        cursor.execute(f'''
-            INSERT INTO products (title, price, image, stock, main_category, sub_category, seller_name, seller_id, status, created_at) 
-            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, 'Yönetici', 0, 'Onaylandı', {p})
-        ''', (title, price, image, stock, main_cat, sub_cat, now))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        flash("Ürün eklendi.", "success")
-    else:
-        flash("Ürün adı ve fiyatı zorunludur!", "danger")
-    return redirect(url_for("admin_panel"))
-
 @app.route("/admin/product/update/<int:product_id>", methods=["POST"])
 @admin_required
 def admin_update_product(product_id):
@@ -1519,7 +1553,7 @@ def admin_update_product(product_id):
     conn.commit()
     cursor.close()
     conn.close()
-    flash("Ürün güncellendi.", "success")
+    flash("İlan güncellendi.", "success")
     return redirect(url_for("admin_panel"))
 
 @app.route("/admin/product/delete/<int:product_id>", methods=["POST"])
@@ -1532,7 +1566,7 @@ def admin_delete_product(product_id):
     conn.commit()
     cursor.close()
     conn.close()
-    flash("Ürün silindi.", "info")
+    flash("İlan silindi.", "info")
     return redirect(url_for("admin_panel"))
 
 @app.route("/admin/user/set-balance", methods=["POST"])
@@ -1548,7 +1582,43 @@ def admin_set_balance():
     conn.commit()
     cursor.close()
     conn.close()
+
     flash("Bakiye güncellendi.", "success")
+    return redirect(url_for("admin_panel"))
+
+# --- ÇEŞİTLİ RASTGELE İLAN OLUŞTURMA ---
+@app.route("/admin/product/generate-random", methods=["POST"])
+@admin_required
+def admin_generate_random_product():
+    random_templates = [
+        {"title": "PUBG Mobile VIP Magic Bullet & Sekmeme", "price": 185.0, "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "hile", "sub_cat": "pubg"},
+        {"title": "Valorant ESP & Aimbot Undetected Key", "price": 290.0, "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "hile", "sub_cat": "valorant"},
+        {"title": "Valorant Asil Vandal + Yağmacı Hesap", "price": 450.0, "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "hesap", "sub_cat": "valorant"},
+        {"title": "PUBG Mobile Buz Diyarı 4. Seviye Hesap", "price": 680.0, "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "hesap", "sub_cat": "pubg"},
+        {"title": f"Valorant {random.choice([1200, 2480, 5350, 11000])} VP", "price": random.choice([150, 290, 580, 1150]), "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "oyun", "sub_cat": "valorant"},
+        {"title": f"PUBG Mobile {random.choice([325, 660, 1800, 3850])} UC", "price": random.choice([110, 210, 550, 1100]), "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "oyun", "sub_cat": "pubg"},
+        {"title": f"Steam {random.choice([10, 20, 50, 100])} USD Cüzdan", "price": random.choice([340, 680, 1700, 3400]), "image": "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", "main_cat": "oyun", "sub_cat": "steam"},
+        {"title": f"Instagram {random.choice(['5.000', '10.000'])} Takipçi", "price": random.choice([55, 95]), "image": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", "main_cat": "sosyal", "sub_cat": "instagram"},
+        {"title": f"TikTok {random.choice(['25.000', '50.000'])} İzlenme", "price": random.choice([40, 85]), "image": "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", "main_cat": "sosyal", "sub_cat": "tiktok"},
+        {"title": "Discord 3 Aylık Nitro Linki", "price": 75.0, "image": "https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=400", "main_cat": "sosyal", "sub_cat": "genel"}
+    ]
+    
+    item = random.choice(random_templates)
+    stock = random.randint(150, 999)
+
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+    cursor.execute(f'''
+        INSERT INTO products (title, price, image, stock, main_category, sub_category, seller_name, seller_id, status, created_at) 
+        VALUES ({p}, {p}, {p}, {p}, {p}, {p}, 'Yönetici', 0, 'Onaylandı', {p})
+    ''', (item["title"], float(item["price"]), item["image"], stock, item["main_cat"], item["sub_cat"], now))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash(f"🎲 Rastgele İlan Oluşturuldu: '{item['title']}'", "success")
     return redirect(url_for("admin_panel"))
 
 if __name__ == "__main__":
