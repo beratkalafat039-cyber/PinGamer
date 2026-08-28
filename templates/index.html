@@ -3,96 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ settings.title }}</title>
+    <title>{{ settings.title }} - Güvenilir Oyun & Hesap Pazarı</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&family=Orbitron:wght@700;900&family=Poppins:wght@600;800&family=Righteous&family=Inter:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 
     <style>
-        body { background-color: #0b1120; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar-custom { background-color: #0f172a; border-bottom: 1px solid #1e293b; }
-        .product-card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; transition: transform 0.2s, box-shadow 0.2s; }
-        .product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .product-img { height: 170px; object-fit: cover; border-radius: 12px 12px 0 0; }
-        
-        .nav-pills .nav-link { color: #94a3b8; border-radius: 8px; font-weight: bold; }
-        .nav-pills .nav-link.active { background-color: #eab308; color: #000; }
-        .sub-filter-btn { border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
-        
+        :root {
+            --bg-dark: #090c14;
+            --card-bg: #111827;
+            --sidebar-bg: #0d131f;
+            --border-color: #1f293d;
+            --accent-blue: #3b82f6;
+            --accent-yellow: #eab308;
+            --accent-green: #10b981;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #f3f4f6;
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: -0.2px;
+        }
+
+        /* 1. ÜST HEADER (TOP NAV) */
+        .top-navbar {
+            background-color: #0b0f19;
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 0;
+        }
+        .search-container {
+            max-width: 480px;
+            width: 100%;
+            position: relative;
+        }
+        .search-input {
+            background-color: #151d2e;
+            border: 1px solid #243048;
+            color: #fff;
+            border-radius: 8px;
+            padding: 10px 16px 10px 42px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background-color: #182238;
+            color: #fff;
+        }
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+
+        /* 2. KATEGORİ ŞERİDİ (SUB-BAR) */
+        .sub-bar {
+            background-color: #0d1322;
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 0;
+        }
+        .cat-badge-btn {
+            background-color: transparent;
+            color: #94a3b8;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 6px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .cat-badge-btn:hover, .cat-badge-btn.active {
+            color: #fff;
+            background-color: #1e293b;
+        }
+        .btn-kategoriler-menu {
+            background-color: #2563eb;
+            color: #fff;
+            font-weight: 700;
+            border-radius: 6px;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+        }
+
+        /* 3. HERO MAVİ BANNER */
+        .hero-banner {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1d4ed8 100%);
+            border-radius: 16px;
+            padding: 35px 40px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+        }
+
+        /* 4. SOL FİLTRELEME SÜTUNU */
+        .filter-sidebar {
+            background-color: var(--sidebar-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        /* 5. MODERN KART TASARIMI */
+        .product-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-4px);
+            border-color: #3b82f6;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .card-banner-img {
+            height: 190px;
+            width: 100%;
+            object-fit: cover;
+        }
+        .coksatan-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #f43f5e;
+            color: #fb7185;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+        .seller-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background-color: #3b82f6;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .buy-action-btn {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            color: #38bdf8;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-weight: 700;
+            transition: 0.2s;
+        }
+        .buy-action-btn:hover {
+            background-color: #38bdf8;
+            color: #000;
+        }
+
+        /* CANLI DESTEK */
         .typing-bubble { background-color: #334155; display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 14px; width: fit-content; }
         .typing-dot { width: 6px; height: 6px; background-color: #94a3b8; border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes typingBounce {
-            0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
-            40% { transform: scale(1); opacity: 1; }
-        }
+        @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none 
-           {% if settings.logo_position == 'top' %}flex-column text-center{% elif settings.logo_position == 'right' %}flex-row-reverse{% else %}flex-row{% endif %}" 
-           href="/">
+<!-- 1. ÜST HEADER (LOGO, ARAMA, BUTONLAR) -->
+<header class="top-navbar">
+    <div class="container d-flex justify-content-between align-items-center gap-3">
+        
+        <!-- LOGO & BAŞLIK -->
+        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none m-0" href="/">
             {% if settings.logo %}
                 <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px; object-fit: contain;" class="rounded">
             {% else %}
-                <i class="fa-solid fa-gamepad text-warning" style="font-size: {{ settings.font_size }}px;"></i>
+                <i class="fa-solid fa-bolt text-info fs-3"></i>
             {% endif %}
             
-            <span style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800; letter-spacing: 0.5px;">
+            <span style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800;">
                 {% for item in settings.formatted_letters %}
                     <span style="color: {{ item.color }};">{{ item.char }}</span>
                 {% endfor %}
             </span>
         </a>
-        
+
+        <!-- HESAP.COM.TR TARZI ARAMA ÇUBUĞU -->
+        <div class="search-container d-none d-md-block">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="liveSearchInput" class="search-input" placeholder="Oyun, epin, ilan ara..." oninput="onSearchFilter(this.value)">
+        </div>
+
+        <!-- SAĞ BUTONLAR -->
         <div class="d-flex align-items-center gap-2">
             {% if username %}
+                <!-- KULLANICI İLAN EKLE (3 İLAN HAKKI) -->
+                <a href="/user/add-listing" class="btn btn-warning btn-sm fw-bold px-3 py-2 shadow-sm text-dark">
+                    <i class="fa-solid fa-plus"></i> İlan Ekle
+                </a>
+                <a href="/deposit" class="btn btn-success btn-sm fw-bold px-3 py-2 shadow-sm">
+                    <i class="fa-solid fa-wallet"></i> Bakiye Yükle ({{ "%.2f"|format(balance) }} TL)
+                </a>
+
                 {% if is_admin %}
-                    <a href="/admin" class="btn btn-danger btn-sm fw-bold">
-                        <i class="fa-solid fa-shield-halved"></i> Yönetici Paneli
-                    </a>
+                    <a href="/admin" class="btn btn-danger btn-sm fw-bold py-2"><i class="fa-solid fa-shield-halved"></i> Admin</a>
                 {% endif %}
 
-                <a href="/giveaways" class="btn btn-warning btn-sm fw-bold">
-                    <i class="fa-solid fa-gift"></i> Çekilişler
-                </a>
-                <a href="/wheel" class="btn btn-outline-warning btn-sm fw-bold">
-                    <i class="fa-solid fa-dharmachakra"></i> Şans Çarkı
-                </a>
-                <a href="/deposit" class="btn btn-success btn-sm fw-bold">
-                    <i class="fa-solid fa-wallet"></i> + Bakiye ({{ "%.2f"|format(balance) }} TL)
-                </a>
-                <a href="/orders" class="btn btn-outline-light btn-sm">
-                    <i class="fa-solid fa-box"></i> Siparişlerim
-                </a>
-                <span class="text-light small ms-2"><i class="fa-solid fa-user"></i> {{ username }}</span>
-                <a href="/logout" class="btn btn-outline-danger btn-sm">Çıkış</a>
+                <a href="/orders" class="btn btn-outline-light btn-sm py-2"><i class="fa-solid fa-box"></i></a>
+                <a href="/logout" class="btn btn-outline-danger btn-sm py-2"><i class="fa-solid fa-right-from-bracket"></i></a>
             {% else %}
-                <a href="/giveaways" class="btn btn-warning btn-sm fw-bold">
-                    <i class="fa-solid fa-gift"></i> Çekilişler
-                </a>
-                <a href="/wheel" class="btn btn-outline-warning btn-sm fw-bold">
-                    <i class="fa-solid fa-dharmachakra"></i> Şans Çarkı
-                </a>
-                <a href="/login" class="btn btn-outline-light btn-sm">Giriş Yap</a>
-                <a href="/register" class="btn btn-primary btn-sm">Kayıt Ol</a>
+                <a href="/login" class="btn btn-warning btn-sm fw-bold px-3 py-2 text-dark">Kayıt Ol / Giriş Yap</a>
             {% endif %}
+        </div>
+    </div>
+</header>
+
+<!-- 2. KATEGORİ ŞERİDİ (SUB-NAVBAR) -->
+<nav class="sub-bar">
+    <div class="container d-flex justify-content-between align-items-center overflow-x-auto py-1 gap-2">
+        <div class="d-flex align-items-center gap-1">
+            <button class="btn btn-kategoriler-menu d-flex align-items-center gap-2" onclick="filterMain('all', this)">
+                <i class="fa-solid fa-bars"></i> Kategoriler
+            </button>
+            <button class="cat-badge-btn active" onclick="filterMain('all', this)">
+                <i class="fa-solid fa-border-all"></i> Tümü
+            </button>
+            {% for cat in categories %}
+            <button class="cat-badge-btn" onclick="filterMain('{{ cat.slug }}', this)">
+                <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex align-items-center gap-2 text-nowrap">
+            <a href="/giveaways" class="cat-badge-btn text-warning fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
+            <a href="/wheel" class="cat-badge-btn text-info fw-bold"><i class="fa-solid fa-dharmachakra"></i> Şans Çarkı</a>
+            <span class="text-secondary small ms-2"><i class="fa-solid fa-bolt text-warning"></i> 7/24 Anında Teslimat</span>
         </div>
     </div>
 </nav>
 
+<!-- ANA İÇERİK ALANI -->
 <div class="container py-4">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show p-3 mb-4" role="alert">
+          <div class="alert alert-{{ category }} alert-dismissible fade show p-3 mb-4 shadow" role="alert">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
@@ -100,65 +266,108 @@
       {% endif %}
     {% endwith %}
 
-    <!-- DİNAMİK KATEGORİ SEKMELERİ -->
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
-        <ul class="nav nav-pills" id="mainCatTab">
-            <li class="nav-item">
-                <button class="nav-link active" onclick="filterMain('all', this)"><i class="fa-solid fa-border-all"></i> Tümü</button>
-            </li>
-            {% for cat in categories %}
-            <li class="nav-item">
-                <button class="nav-link" onclick="filterMain('{{ cat.slug }}', this)"><i class="{{ cat.icon }}"></i> {{ cat.name }}</button>
-            </li>
-            {% endfor %}
-        </ul>
-        <span class="text-secondary small">⚡ 7/24 Anında Teslimat</span>
+    <!-- 3. MAVİ HERO DUYURU BANNER'I (FOTOĞRAFTAKİ GİBİ) -->
+    <div class="hero-banner mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div style="max-width: 650px;">
+            <h3 class="fw-bold text-white mb-2" id="heroTitle">PUBG Mobile & Oyun İlanları Pazarı</h3>
+            <p class="text-light opacity-90 small mb-0">
+                Oyuncuların ilan pazarında sunduğu hesaplar ve e-pinler. Pazarda uygun bütçeye çeşitli envanterli profillere hemen ulaşabilirsiniz.
+            </p>
+        </div>
+        <a href="/user/add-listing" class="btn btn-light btn-lg fw-bold text-primary px-4 py-2 shadow">
+            İLAN EKLE <i class="fa-solid fa-plus ms-1"></i>
+        </a>
     </div>
 
-    <!-- SOSYAL MEDYA ALT FİLTRELERİ -->
-    <div id="social-sub-filters" class="d-flex gap-2 flex-wrap mb-4" style="display: none !important;">
-        <button class="btn btn-outline-light btn-sm sub-filter-btn active" onclick="filterSub('all', this)">Tüm Sosyal Medya</button>
-        <button class="btn btn-outline-danger btn-sm sub-filter-btn" onclick="filterSub('instagram', this)"><i class="fa-brands fa-instagram"></i> Instagram</button>
-        <button class="btn btn-outline-info btn-sm sub-filter-btn" onclick="filterSub('tiktok', this)"><i class="fa-brands fa-tiktok"></i> TikTok</button>
-        <button class="btn btn-outline-danger btn-sm sub-filter-btn" onclick="filterSub('youtube', this)"><i class="fa-brands fa-youtube"></i> YouTube</button>
-        <button class="btn btn-outline-secondary btn-sm sub-filter-btn" onclick="filterSub('twitter', this)"><i class="fa-brands fa-x-twitter"></i> Twitter/X</button>
-    </div>
+    <!-- 4. SOL FİLTRELER & SAĞ İLAN GRID'İ (HESAP.COM.TR DÜZENİ) -->
+    <div class="row g-4">
+        <!-- SOL FİLTRELEME ALANI -->
+        <div class="col-lg-3">
+            <div class="filter-sidebar">
+                <h6 class="fw-bold text-light mb-3 pb-2 border-bottom border-secondary">
+                    <i class="fa-solid fa-filter text-info"></i> DİĞER FİLTRELER
+                </h6>
 
-    <!-- ÜRÜN İLANLARI KARTLARI -->
-    <div class="row g-4" id="products-grid">
-        {% for p in products %}
-        <div class="col-md-4 product-item" data-main="{{ p.main_category }}" data-sub="{{ p.sub_category }}">
-            <div class="card product-card h-100 text-white">
-                <img src="{{ p.image }}" class="card-img-top product-img" alt="{{ p.title }}">
-                <div class="card-body d-flex flex-column justify-content-between p-4">
-                    <div>
-                        <h5 class="card-title fw-bold text-warning mb-1">{{ p.title }}</h5>
-                        <p class="text-secondary small mb-2">
-                            Kategori: 
-                            <span class="badge bg-dark border border-secondary text-info">
-                                {{ p.main_category|upper }}
-                            </span>
-                        </p>
+                <!-- GARANTİ SEÇİMİ -->
+                <div class="mb-3">
+                    <label class="form-label small text-secondary fw-bold">Garanti Durumu</label>
+                    <select class="form-select form-select-sm bg-dark text-white border-secondary">
+                        <option>Tümü</option>
+                        <option>İlk Sahibi Garantili</option>
+                        <option>E-Posta Değişen</option>
+                        <option>Anında Teslimat</option>
+                    </select>
+                </div>
+
+                <!-- FİYAT ARALIĞI -->
+                <div class="mb-3">
+                    <label class="form-label small text-secondary fw-bold">Fiyat Aralığı (TL)</label>
+                    <div class="d-flex gap-2">
+                        <input type="number" id="filterMinPrice" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="En Az" oninput="applyAdvancedFilters()">
+                        <input type="number" id="filterMaxPrice" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="En Çok" oninput="applyAdvancedFilters()">
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary">
-                        <span class="fs-5 fw-bold text-light">{{ "%.2f"|format(p.price) }} TL</span>
-                        <form action="/buy/{{ p.id }}" method="POST">
-                            <button type="submit" class="btn btn-primary btn-sm px-3 fw-bold" {% if p.stock <= 0 %}disabled{% endif %}>
-                                <i class="fa-solid fa-cart-shopping"></i> Satın Al
-                            </button>
-                        </form>
-                    </div>
+                </div>
+
+                <!-- OTOMATİK TESLİMAT ANAHTARI -->
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="autoDeliveryCheck" checked>
+                    <label class="form-check-label small text-light fw-bold" for="autoDeliveryCheck">⚡ Otomatik Teslimat</label>
                 </div>
             </div>
         </div>
-        {% endfor %}
+
+        <!-- SAĞ İLAN KARTLARI LİSTESİ -->
+        <div class="col-lg-9">
+            <div class="row g-3" id="products-grid">
+                {% for p in products %}
+                <div class="col-sm-6 col-md-4 product-item" data-main="{{ p.main_category }}" data-sub="{{ p.sub_category }}" data-price="{{ p.price }}" data-title="{{ p.title|lower }}">
+                    <div class="card product-card h-100 text-white shadow">
+                        
+                        <!-- ÇOK SATAN ETİKETİ -->
+                        <span class="coksatan-badge">🔥 ÇOK SATAN</span>
+                        <img src="{{ p.image }}" class="card-banner-img" alt="{{ p.title }}">
+
+                        <div class="card-body d-flex flex-column justify-content-between p-3">
+                            <div>
+                                <!-- SATICI ADI VE ROZET -->
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <div class="seller-avatar">{{ p.seller_name[0]|upper }}</div>
+                                    <span class="small text-secondary fw-bold">{{ p.seller_name }}</span>
+                                    <span class="badge bg-dark border border-secondary text-warning ms-auto" style="font-size: 0.65rem;">PRO</span>
+                                </div>
+
+                                <h6 class="card-title fw-bold text-light mb-1" style="font-size: 0.95rem;">{{ p.title }}</h6>
+                                <small class="text-secondary d-block mb-2">Teslimat: <span class="text-success fw-bold">Anında Kod</span></small>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
+                                <div>
+                                    <span class="fs-5 fw-bold text-light">{{ "%.2f"|format(p.price) }} TL</span>
+                                </div>
+                                <form action="/buy/{{ p.id }}" method="POST">
+                                    <button type="submit" class="btn buy-action-btn btn-sm" {% if p.stock <= 0 %}disabled{% endif %}>
+                                        <i class="fa-solid fa-cart-shopping"></i> Satın Al
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12 text-center py-5">
+                    <i class="fa-solid fa-box-open fa-3x text-secondary mb-3"></i>
+                    <h5 class="text-secondary">Bu kategoride henüz aktif ilan bulunmamaktadır.</h5>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- CANLI DESTEK -->
+<!-- CANLI DESTEK WIDGET -->
 <div id="live-support-btn" style="position: fixed; bottom: 25px; right: 25px; z-index: 1000;">
-    <button class="btn btn-warning rounded-circle p-3 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 60px; height: 60px;">
-        <i class="fa-solid fa-headset fa-xl text-dark"></i>
+    <button class="btn btn-primary rounded-circle p-3 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 60px; height: 60px; background-color: #2563eb; border: none;">
+        <i class="fa-solid fa-headset fa-xl text-white"></i>
     </button>
 </div>
 
@@ -190,7 +399,7 @@
             </select>
         </div>
 
-        <button class="btn btn-warning w-100 fw-bold btn-sm py-2 shadow" onclick="startSupportChat()">
+        <button class="btn btn-primary w-100 fw-bold btn-sm py-2 shadow" onclick="startSupportChat()">
             <i class="fa-solid fa-bolt"></i> Uzmana Bağlan
         </button>
     </div>
@@ -209,49 +418,54 @@
 
         <div class="p-2 bg-dark border-top border-secondary d-flex gap-2">
             <input type="text" id="chat-input" class="form-control form-control-sm bg-secondary text-white border-0" placeholder="Mesajınızı yazın..." onkeydown="handleInputKey(event)">
-            <button id="send-btn" class="btn btn-warning btn-sm" onclick="sendUserMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+            <button id="send-btn" class="btn btn-primary btn-sm" onclick="sendUserMessage()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 </div>
 
 <script>
-// --- KESİN FİLTRELEME MOTORU ---
-let currentMain = 'all';
-let currentSub = 'all';
+// --- KUSURSUZ KATEGORİ VE ARAMA FİLTRESİ ---
+let currentMainCategory = 'all';
+let searchKeyword = '';
 
-function filterMain(cat, btn) {
-    document.querySelectorAll('#mainCatTab .nav-link').forEach(l => l.classList.remove('active'));
-    btn.classList.add('active');
-    currentMain = cat;
-    currentSub = 'all';
+function filterMain(slug, btn) {
+    document.querySelectorAll('.cat-badge-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    currentMainCategory = slug;
 
-    const subFilters = document.getElementById('social-sub-filters');
-    if (cat === 'sosyal') {
-        subFilters.style.setProperty('display', 'flex', 'important');
-    } else {
-        subFilters.style.setProperty('display', 'none', 'important');
-    }
+    // Hero başlığını güncelle
+    const titles = {
+        'all': 'Tüm Oyun & İlan Pazarı',
+        'pubg': 'PUBG Mobile Hesap & UC Pazarı',
+        'valorant': 'Valorant VP & Hesap Satın Al',
+        'sosyal': 'Sosyal Medya Takipçi & İzlenme Hizmetleri',
+        'hile': 'Oyun Yazılımları & VIP Paketler'
+    };
+    document.getElementById('heroTitle').innerText = titles[slug] || (slug.toUpperCase() + ' İlan Pazarı');
 
-    applyFilters();
+    applyAdvancedFilters();
 }
 
-function filterSub(subCat, btn) {
-    document.querySelectorAll('#social-sub-filters .sub-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentSub = subCat;
-    applyFilters();
+function onSearchFilter(val) {
+    searchKeyword = val.trim().toLowerCase();
+    applyAdvancedFilters();
 }
 
-function applyFilters() {
+function applyAdvancedFilters() {
+    const minP = parseFloat(document.getElementById('filterMinPrice').value) || 0;
+    const maxP = parseFloat(document.getElementById('filterMaxPrice').value) || 999999;
     const items = document.querySelectorAll('.product-item');
+
     items.forEach(item => {
-        const itemMain = item.getAttribute('data-main');
-        const itemSub = item.getAttribute('data-sub');
+        const cat = item.getAttribute('data-main');
+        const title = item.getAttribute('data-title');
+        const price = parseFloat(item.getAttribute('data-price')) || 0;
 
-        let matchMain = (currentMain === 'all' || itemMain === currentMain);
-        let matchSub = (currentSub === 'all' || itemSub === currentSub);
+        let matchCat = (currentMainCategory === 'all' || cat === currentMainCategory);
+        let matchSearch = (!searchKeyword || title.includes(searchKeyword));
+        let matchPrice = (price >= minP && price <= maxP);
 
-        if (matchMain && matchSub) {
+        if (matchCat && matchSearch && matchPrice) {
             item.style.setProperty('display', 'block', 'important');
         } else {
             item.style.setProperty('display', 'none', 'important');
@@ -259,7 +473,7 @@ function applyFilters() {
     });
 }
 
-// CANLI DESTEK SİSTEMİ
+// CANLI DESTEK SCRİPTLERİ
 let currentAgent = null;
 let currentTopic = null;
 let inactivityTimer = null;
@@ -272,23 +486,20 @@ function toggleSupportModal() {
 function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
-        appendSystemMessage("⚠️ 30 saniye boyunca işlem yapılmadığı için görüşme güvenlik nedeniyle sonlandırılmıştır.");
+        appendSystemMessage("⚠️ 30 saniye boyunca işlem yapılmadığı için görüşme sonlandırılmıştır.");
         document.getElementById('chat-input').disabled = true;
         document.getElementById('send-btn').disabled = true;
-        document.getElementById('agent-subtext').innerText = "Görüşme Sonlandırıldı";
     }, 30000);
 }
 
 function calculateTypingDelay(text) {
-    const readingTime = Math.floor(Math.random() * 1500) + 1000;
-    const charDelay = Math.floor(Math.random() * 15) + 30;
-    const typingTime = text.length * charDelay;
-    return Math.min(readingTime + typingTime, 6500);
+    const readingTime = Math.floor(Math.random() * 1200) + 800;
+    const typingTime = text.length * 28;
+    return Math.min(readingTime + typingTime, 5000);
 }
 
 function startSupportChat() {
     currentTopic = document.getElementById('survey-topic').value;
-    
     fetch('/api/support/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -304,16 +515,14 @@ function startSupportChat() {
             document.getElementById('typing-agent-name').innerText = data.agent_name;
 
             appendSystemMessage(`🔔 ${data.agent_name} sohbete katıldı.`);
-            
             setTimeout(() => {
                 showTyping();
-                const delay = calculateTypingDelay(data.initial_message);
                 setTimeout(() => {
                     hideTyping();
                     appendAgentMessage(data.initial_message);
                     resetInactivityTimer();
-                }, delay);
-            }, 800);
+                }, calculateTypingDelay(data.initial_message));
+            }, 600);
         }
     });
 }
@@ -327,11 +536,8 @@ function sendUserMessage() {
     input.value = '';
     resetInactivityTimer();
 
-    const readDelay = Math.floor(Math.random() * 1000) + 800;
-    
     setTimeout(() => {
         showTyping();
-        
         fetch('/api/support/message', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -339,74 +545,38 @@ function sendUserMessage() {
         })
         .then(res => res.json())
         .then(data => {
-            const typingDuration = calculateTypingDelay(data.reply);
             setTimeout(() => {
                 hideTyping();
                 appendAgentMessage(data.reply);
                 resetInactivityTimer();
-            }, typingDuration);
-        })
-        .catch(() => {
-            hideTyping();
+            }, calculateTypingDelay(data.reply));
         });
-    }, readDelay);
+    }, 700);
 }
 
-function showTyping() {
-    const typing = document.getElementById('typing-indicator');
-    typing.style.display = 'block';
-    const area = document.getElementById('chat-messages');
-    area.scrollTop = area.scrollHeight;
-}
-
-function hideTyping() {
-    document.getElementById('typing-indicator').style.display = 'none';
-}
-
-function handleInputKey(e) {
-    if (e.key === 'Enter') sendUserMessage();
-}
-
+function showTyping() { document.getElementById('typing-indicator').style.display = 'block'; }
+function hideTyping() { document.getElementById('typing-indicator').style.display = 'none'; }
+function handleInputKey(e) { if (e.key === 'Enter') sendUserMessage(); }
 function appendUserMessage(text) {
     const area = document.getElementById('chat-messages');
-    area.innerHTML += `
-        <div class="align-self-end text-white p-2 rounded-3 shadow-sm" style="max-width: 80%; background-color: #0284c7;">
-            ${text}
-        </div>
-    `;
+    area.innerHTML += `<div class="align-self-end text-white p-2 rounded-3" style="max-width: 80%; background-color: #2563eb;">${text}</div>`;
     area.scrollTop = area.scrollHeight;
 }
-
 function appendAgentMessage(text) {
     const area = document.getElementById('chat-messages');
-    area.innerHTML += `
-        <div class="align-self-start text-white p-2 rounded-3 shadow-sm" style="max-width: 80%; background-color: #334155;">
-            <strong class="text-warning small d-block" style="font-size: 0.75rem;">${currentAgent}</strong>
-            ${text}
-        </div>
-    `;
+    area.innerHTML += `<div class="align-self-start text-white p-2 rounded-3" style="max-width: 80%; background-color: #334155;"><strong class="text-warning small d-block">${currentAgent}</strong>${text}</div>`;
     area.scrollTop = area.scrollHeight;
 }
-
 function appendSystemMessage(text) {
     const area = document.getElementById('chat-messages');
-    area.innerHTML += `
-        <div class="text-center text-muted small py-1" style="font-size: 0.75rem;">
-            ${text}
-        </div>
-    `;
+    area.innerHTML += `<div class="text-center text-muted small py-1">${text}</div>`;
     area.scrollTop = area.scrollHeight;
 }
-
 function closeSupport() {
     clearTimeout(inactivityTimer);
-    hideTyping();
     document.getElementById('support-modal').style.display = 'none';
     document.getElementById('support-survey').style.display = 'block';
     document.getElementById('support-chat').style.display = 'none';
-    document.getElementById('chat-messages').innerHTML = '';
-    document.getElementById('chat-input').disabled = false;
-    document.getElementById('send-btn').disabled = false;
 }
 </script>
 
