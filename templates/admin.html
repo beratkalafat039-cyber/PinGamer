@@ -40,7 +40,7 @@
       {% endif %}
     {% endwith %}
 
-    <!-- 1. ÇEKİLİŞ YÖNETİMİ -->
+    <!-- 1. ÇEKİLİŞ YÖNETİMİ & KATILIMCI KONTROLÜ -->
     <div class="card card-custom p-4 mb-4 shadow border-warning">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold text-warning mb-0"><i class="fa-solid fa-gift"></i> Çekiliş Yönetimi (Ücretli / Ücretsiz)</h5>
@@ -93,7 +93,7 @@
                         <th>Başlık</th>
                         <th>Ödül</th>
                         <th>Tür / Ücret</th>
-                        <th>Katılımcı</th>
+                        <th>Katılımcılar</th>
                         <th>Durum</th>
                         <th>Kazanan</th>
                         <th class="text-end">İşlemler</th>
@@ -112,7 +112,12 @@
                                 <span class="badge bg-success">Ücretsiz</span>
                             {% endif %}
                         </td>
-                        <td><span class="badge bg-secondary">{{ g.participant_count }} Kişi</span></td>
+                        <td>
+                            <!-- KATILIMCILARI GÖRÜNTÜLEME BUTONU -->
+                            <button class="btn btn-outline-info btn-sm py-0 px-2 fw-bold" data-bs-toggle="modal" data-bs-target="#participantsModal{{ g.id }}">
+                                <i class="fa-solid fa-users"></i> {{ g.participant_count }} Katılımcı
+                            </button>
+                        </td>
                         <td>
                             {% if g.status == 'Aktif' %}
                                 <span class="badge bg-success">Aktif</span>
@@ -129,7 +134,13 @@
                         </td>
                         <td class="text-end">
                             <div class="d-flex justify-content-end gap-1">
+                                <!-- RASTGELE İNSAN EKLE -->
                                 {% if g.status == 'Aktif' %}
+                                    <form action="/admin/giveaway/add-random-participant/{{ g.id }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2" title="Rastgele Katılımcı Ekle">
+                                            <i class="fa-solid fa-user-plus"></i> +Kişi
+                                        </button>
+                                    </form>
                                     <form action="/admin/giveaway/draw/{{ g.id }}" method="POST" style="display:inline;">
                                         <button type="submit" class="btn btn-success btn-sm py-0 px-2 fw-bold" onclick="return confirm('Çekilişi sonuçlandırmak istiyor musunuz?')">
                                             <i class="fa-solid fa-play"></i> Çek
@@ -142,6 +153,49 @@
                             </div>
                         </td>
                     </tr>
+
+                    <!-- KATILIMCILAR LİSTESİ MODAL PENCERESİ -->
+                    <div class="modal fade" id="participantsModal{{ g.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content bg-dark border-secondary text-light">
+                                <div class="modal-header border-secondary">
+                                    <h6 class="modal-title fw-bold text-warning"><i class="fa-solid fa-list-check"></i> '{{ g.title }}' Katılımcıları ({{ g.participant_count }})</h6>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body p-0" style="max-height: 350px; overflow-y: auto;">
+                                    <table class="table table-dark small mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Kullanıcı Adı</th>
+                                                <th>Katılım Tarihi</th>
+                                                <th class="text-end">İşlem</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for p in g.participants %}
+                                            <tr>
+                                                <td class="fw-bold text-info"><i class="fa-solid fa-user"></i> {{ p.username }}</td>
+                                                <td>{{ p.joined_at }}</td>
+                                                <td class="text-end">
+                                                    <form action="/admin/giveaway/remove-participant/{{ p.id }}" method="POST" style="display:inline;">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Çekilişten Çıkar">
+                                                            <i class="fa-solid fa-user-xmark"></i> Çıkar
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted py-3">Bu çekilişe henüz kimse katılmamış.</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {% else %}
                     <tr>
                         <td colspan="8" class="text-center text-secondary py-3">Çekiliş bulunmuyor.</td>
