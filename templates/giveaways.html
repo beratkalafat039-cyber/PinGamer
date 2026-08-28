@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Çekilişler - E-Pin Pazarı</title>
+    <title>Çekilişler - {{ settings.title }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -12,13 +12,15 @@
         .giveaway-card { background-color: #1e293b; border: 1px solid #334155; border-radius: 14px; overflow: hidden; transition: transform 0.2s; }
         .giveaway-card:hover { transform: translateY(-4px); }
         .gw-img { height: 180px; object-fit: cover; width: 100%; }
+        .nav-pills .nav-link { color: #94a3b8; border-radius: 8px; font-weight: bold; }
+        .nav-pills .nav-link.active { background-color: #eab308; color: #000; }
     </style>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
     <div class="container">
-        <a class="navbar-brand fw-bold text-warning fs-4" href="/"><i class="fa-solid fa-gamepad"></i> EPIN & SMM PAZARI</a>
+        <a class="navbar-brand fw-bold text-warning fs-4" href="/"><i class="{{ settings.icon }}"></i> {{ settings.title }}</a>
         
         <div class="d-flex align-items-center gap-2">
             {% if username %}
@@ -30,7 +32,7 @@
 
                 <a href="/giveaways" class="btn btn-warning btn-sm fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
                 <a href="/wheel" class="btn btn-outline-warning btn-sm"><i class="fa-solid fa-dharmachakra"></i> Şans Çarkı</a>
-                <a href="/deposit" class="btn btn-success btn-sm fw-bold"><i class="fa-solid fa-wallet"></i> + Bakiye Yükle ({{ "%.2f"|format(balance) }} TL)</a>
+                <a href="/deposit" class="btn btn-success btn-sm fw-bold"><i class="fa-solid fa-wallet"></i> + Bakiye ({{ "%.2f"|format(balance) }} TL)</a>
                 <a href="/orders" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-box"></i> Siparişlerim</a>
                 <span class="text-light small ms-2"><i class="fa-solid fa-user"></i> {{ username }}</span>
                 <a href="/logout" class="btn btn-outline-danger btn-sm">Çıkış</a>
@@ -55,16 +57,27 @@
       {% endif %}
     {% endwith %}
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div>
-            <h4 class="fw-bold mb-0 text-warning"><i class="fa-solid fa-gift"></i> Güncel Topluluk Çekilişleri</h4>
-            <small class="text-secondary">Tamamen ücretsiz katılın, e-pin ve hediye kodları kazanın!</small>
+            <h4 class="fw-bold mb-0 text-warning"><i class="fa-solid fa-gift"></i> Topluluk Çekilişleri</h4>
+            <small class="text-secondary">Ücretsiz veya ücretli biletli çekilişlere katılarak büyük ödüller kazanın!</small>
         </div>
+
+        <!-- ÇEKİLİŞ SEKMELERİ (ÜCRETSİZ / ÜCRETLİ) -->
+        <ul class="nav nav-pills" id="gwTab">
+            <li class="nav-item">
+                <button class="nav-link active" onclick="switchGwTab('free', this)"><i class="fa-solid fa-ticket"></i> Ücretsiz Çekilişler</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" onclick="switchGwTab('paid', this)"><i class="fa-solid fa-gem"></i> Ücretli Çekilişler</button>
+            </li>
+        </ul>
     </div>
 
-    <div class="row g-4">
+    <!-- KARTLAR -->
+    <div class="row g-4" id="gw-grid">
         {% for g in giveaways %}
-        <div class="col-md-6 col-lg-4">
+        <div class="col-md-6 col-lg-4 gw-item" data-type="{% if g.is_paid %}paid{% else %}free{% endif %}">
             <div class="card giveaway-card h-100 text-white shadow">
                 {% if g.image %}
                     <img src="{{ g.image }}" class="gw-img" alt="{{ g.title }}">
@@ -78,10 +91,10 @@
                     <div>
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h5 class="fw-bold text-light mb-0">{{ g.title }}</h5>
-                            {% if g.status == 'Aktif' %}
-                                <span class="badge bg-success"><i class="fa-solid fa-bolt"></i> Aktif</span>
+                            {% if g.is_paid %}
+                                <span class="badge bg-danger"><i class="fa-solid fa-gem"></i> {{ "%.2f"|format(g.ticket_price) }} TL / Bilet</span>
                             {% else %}
-                                <span class="badge bg-secondary">Tamamlandı</span>
+                                <span class="badge bg-success"><i class="fa-solid fa-bolt"></i> Ücretsiz</span>
                             {% endif %}
                         </div>
                         
@@ -110,7 +123,11 @@
                                 {% else %}
                                     <form action="/giveaways/join/{{ g.id }}" method="POST">
                                         <button type="submit" class="btn btn-warning w-100 fw-bold shadow">
-                                            <i class="fa-solid fa-ticket"></i> Çekilişe Ücretsiz Katıl
+                                            {% if g.is_paid %}
+                                                <i class="fa-solid fa-ticket"></i> Bileti Al & Katıl ({{ "%.2f"|format(g.ticket_price) }} TL)
+                                            {% else %}
+                                                <i class="fa-solid fa-ticket"></i> Çekilişe Ücretsiz Katıl
+                                            {% endif %}
                                         </button>
                                     </form>
                                 {% endif %}
@@ -136,6 +153,32 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+function switchGwTab(type, btn) {
+    document.querySelectorAll('#gwTab .nav-link').forEach(l => l.classList.remove('active'));
+    btn.classList.add('active');
+
+    const items = document.querySelectorAll('.gw-item');
+    items.forEach(item => {
+        const itemType = item.getAttribute('data-type');
+        if (itemType === type) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+// Sayfa açıldığında ücretsizleri göster
+document.addEventListener("DOMContentLoaded", function() {
+    const items = document.querySelectorAll('.gw-item');
+    items.forEach(item => {
+        if (item.getAttribute('data-type') !== 'free') {
+            item.style.display = 'none';
+        }
+    });
+});
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
