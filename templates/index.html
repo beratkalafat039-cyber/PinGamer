@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Pin & Sosyal Medya Pazaryeri</title>
+    <title>{{ settings.title }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -16,22 +16,8 @@
         .nav-pills .nav-link.active { background-color: #eab308; color: #000; }
         .sub-filter-btn { border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
         
-        .typing-bubble {
-            background-color: #334155;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 8px 14px;
-            border-radius: 14px;
-            width: fit-content;
-        }
-        .typing-dot {
-            width: 6px;
-            height: 6px;
-            background-color: #94a3b8;
-            border-radius: 50%;
-            animation: typingBounce 1.4s infinite ease-in-out both;
-        }
+        .typing-bubble { background-color: #334155; display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 14px; width: fit-content; }
+        .typing-dot { width: 6px; height: 6px; background-color: #94a3b8; border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typingBounce {
@@ -44,7 +30,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
     <div class="container">
-        <a class="navbar-brand fw-bold text-warning fs-4" href="/"><i class="fa-solid fa-gamepad"></i> EPIN & SMM PAZARI</a>
+        <a class="navbar-brand fw-bold text-warning fs-4" href="/"><i class="{{ settings.icon }}"></i> {{ settings.title }}</a>
         
         <div class="d-flex align-items-center gap-2">
             {% if username %}
@@ -56,7 +42,7 @@
 
                 <a href="/giveaways" class="btn btn-outline-warning btn-sm fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
                 <a href="/wheel" class="btn btn-outline-warning btn-sm"><i class="fa-solid fa-dharmachakra"></i> Şans Çarkı</a>
-                <a href="/deposit" class="btn btn-success btn-sm fw-bold"><i class="fa-solid fa-wallet"></i> + Bakiye Yükle ({{ "%.2f"|format(balance) }} TL)</a>
+                <a href="/deposit" class="btn btn-success btn-sm fw-bold"><i class="fa-solid fa-wallet"></i> + Bakiye ({{ "%.2f"|format(balance) }} TL)</a>
                 <a href="/orders" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-box"></i> Siparişlerim</a>
                 <span class="text-light small ms-2"><i class="fa-solid fa-user"></i> {{ username }}</span>
                 <a href="/logout" class="btn btn-outline-danger btn-sm">Çıkış</a>
@@ -81,7 +67,6 @@
       {% endif %}
     {% endwith %}
 
-    <!-- ANA KATEGORİ SEÇİMİ -->
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <ul class="nav nav-pills" id="mainCatTab">
             <li class="nav-item">
@@ -97,16 +82,14 @@
         <span class="text-secondary small">⚡ 7/24 Anında Teslimat</span>
     </div>
 
-    <!-- SOSYAL MEDYA ALT FİLTRELERİ -->
     <div id="social-sub-filters" class="d-flex gap-2 flex-wrap mb-4" style="display: none !important;">
-        <button class="btn btn-outline-light btn-sm sub-filter-btn active" onclick="filterSub('all', this)">Tüm Sosyal Medya</button>
+        <button class="btn btn-outline-light btn-sm sub-filter-btn active" onclick="filterSub('all', this)">Tümü</button>
         <button class="btn btn-outline-danger btn-sm sub-filter-btn" onclick="filterSub('instagram', this)"><i class="fa-brands fa-instagram"></i> Instagram</button>
         <button class="btn btn-outline-info btn-sm sub-filter-btn" onclick="filterSub('tiktok', this)"><i class="fa-brands fa-tiktok"></i> TikTok</button>
         <button class="btn btn-outline-danger btn-sm sub-filter-btn" onclick="filterSub('youtube', this)"><i class="fa-brands fa-youtube"></i> YouTube</button>
         <button class="btn btn-outline-secondary btn-sm sub-filter-btn" onclick="filterSub('twitter', this)"><i class="fa-brands fa-x-twitter"></i> Twitter/X</button>
     </div>
 
-    <!-- ÜRÜN KARTLARI -->
     <div class="row g-4" id="products-grid">
         {% for p in products %}
         <div class="col-md-4 product-item" data-main="{{ p.main_category }}" data-sub="{{ p.sub_category }}">
@@ -137,14 +120,13 @@
     </div>
 </div>
 
-<!-- CANLI DESTEK BUTONU -->
+<!-- CANLI DESTEK -->
 <div id="live-support-btn" style="position: fixed; bottom: 25px; right: 25px; z-index: 1000;">
     <button class="btn btn-warning rounded-circle p-3 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 60px; height: 60px;">
         <i class="fa-solid fa-headset fa-xl text-dark"></i>
     </button>
 </div>
 
-<!-- CANLI DESTEK PENCERESİ -->
 <div id="support-modal" style="display: none; position: fixed; bottom: 95px; right: 25px; width: 360px; z-index: 1000; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background-color: #1e293b; border: 1px solid #334155;">
     <div class="bg-dark p-3 text-white d-flex justify-content-between align-items-center border-bottom border-secondary">
         <div>
@@ -154,7 +136,6 @@
         <button class="btn-close btn-close-white" onclick="closeSupport()"></button>
     </div>
 
-    <!-- ANKET EKRANI -->
     <div id="support-survey" class="p-4 text-white">
         <h6 class="fw-bold mb-2">Destek Talebi Başlatın</h6>
         <p class="small text-secondary mb-3">Doğru uzmanın bağlanabilmesi için lütfen konuyu seçiniz.</p>
@@ -179,7 +160,6 @@
         </button>
     </div>
 
-    <!-- SOHBET EKRANI -->
     <div id="support-chat" style="display: none;">
         <div id="chat-messages" style="height: 300px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;"></div>
 
