@@ -56,6 +56,30 @@
         .cat-badge-btn:hover, .cat-badge-btn.active { color: #fff; background-color: #1e293b; border-color: #334155; }
         .btn-kategoriler-menu { background-color: #2563eb; color: #fff; font-weight: 700; border-radius: 6px; padding: 5px 12px; font-size: 0.78rem; flex-shrink: 0; border: none; }
 
+        /* Dropdown Hover ve Dikkat Çekici Çekiliş Linki */
+        .dropdown-hover-container { position: relative; display: inline-block; }
+        .custom-dropdown-menu {
+            display: none; position: absolute; top: 105%; left: 0; background-color: #111827;
+            border: 1px solid #334155; min-width: 220px; z-index: 9999; flex-direction: column; gap: 3px;
+        }
+        .dropdown-hover-container:hover .custom-dropdown-menu { display: flex; }
+        .dropdown-cat-item {
+            color: #cbd5e1; padding: 8px 12px; font-size: 0.8rem; text-decoration: none;
+            border-radius: 6px; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+        }
+        .dropdown-cat-item:hover { background-color: #1e293b; color: #fff; }
+        
+        .pulse-giveaway-link {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(220, 38, 38, 0.25));
+            border: 1px dashed #eab308;
+            animation: glowPulse 2s infinite;
+        }
+        @keyframes glowPulse {
+            0% { box-shadow: 0 0 5px rgba(234, 179, 8, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(234, 179, 8, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(234, 179, 8, 0.3); }
+        }
+
         .hero-banner {
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1d4ed8 100%);
             border-radius: 12px; padding: 20px; width: 100%; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
@@ -106,7 +130,7 @@
 <header class="top-navbar">
     <div class="container d-flex justify-content-between align-items-center gap-2">
         
-        <!-- LOGO & BAŞLIK (DOĞRUDAN ADMIN YÜKSEKLİK DEĞERİNİ ALIR) -->
+        <!-- LOGO & BAŞLIK -->
         <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none m-0 p-0" href="/" style="max-width: 55%;">
             {% if settings.logo %}
                 <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px !important; width: auto !important; object-fit: contain;" class="rounded">
@@ -156,12 +180,35 @@
     </div>
 </header>
 
+<!-- SOL ÜSTTE HOVER İLE AÇILAN MENÜ & DİKKAT ÇEKİCİ ÇEKİLİŞLER EKLENDİ -->
 <nav class="sub-bar">
-    <div class="container">
-        <div class="scroll-categories">
-            <button class="btn-kategoriler-menu" onclick="filterMain('all', this)">
-                <i class="fa-solid fa-bars"></i> Menü
+    <div class="container d-flex align-items-center gap-2">
+        
+        <div class="dropdown-hover-container position-relative">
+            <button class="btn-kategoriler-menu dropdown-toggle" type="button" id="catMenuBtn">
+                <i class="fa-solid fa-bars"></i> Tüm Kategoriler
             </button>
+            <div class="custom-dropdown-menu shadow-lg rounded p-2" id="catDropdownContent">
+                <a href="#" class="dropdown-cat-item active" onclick="filterMain('all', this); closeCatMenu();">
+                    <i class="fa-solid fa-border-all text-secondary"></i> Tümü
+                </a>
+                {% for cat in categories %}
+                <a href="#" class="dropdown-cat-item" onclick="filterMain('{{ cat.slug }}', this); closeCatMenu();">
+                    <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
+                </a>
+                {% endfor %}
+                <div class="dropdown-divider my-1 border-secondary"></div>
+                <!-- DİKKAT ÇEKİCİ ÇEKİLİŞLER LİNKE EKLENDİ -->
+                <a href="/giveaways" class="dropdown-cat-item text-warning fw-bold pulse-giveaway-link">
+                    <i class="fa-solid fa-gift text-warning fa-bounce"></i> 🎁 Topluluk Çekilişleri
+                </a>
+                <a href="/wheel" class="dropdown-cat-item text-info fw-bold">
+                    <i class="fa-solid fa-dharmachakra text-info"></i> Şans Çarkı / Kasa
+                </a>
+            </div>
+        </div>
+
+        <div class="scroll-categories">
             <button class="cat-badge-btn active" onclick="filterMain('all', this)">
                 <i class="fa-solid fa-border-all"></i> Tümü
             </button>
@@ -170,8 +217,12 @@
                 <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
             </button>
             {% endfor %}
-            <a href="/giveaways" class="cat-badge-btn text-warning fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
-            <a href="/wheel" class="cat-badge-btn text-info fw-bold"><i class="fa-solid fa-dharmachakra"></i> Çark</a>
+            <a href="/giveaways" class="cat-badge-btn text-warning fw-bold border border-warning px-2 py-1" style="background: rgba(234, 179, 8, 0.1);">
+                <i class="fa-solid fa-gift"></i> Çekilişler
+            </a>
+            <a href="/wheel" class="cat-badge-btn text-info fw-bold">
+                <i class="fa-solid fa-dharmachakra"></i> Çark
+            </a>
         </div>
     </div>
 </nav>
@@ -331,6 +382,12 @@
 </div>
 
 <script>
+function closeCatMenu() {
+    const menu = document.getElementById('catDropdownContent');
+    menu.style.display = 'none';
+    setTimeout(() => { menu.style.display = ''; }, 300);
+}
+
 let currentMainCategory = 'all';
 let searchKeyword = '';
 
