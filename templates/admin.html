@@ -24,7 +24,12 @@
             <h3 class="fw-bold text-danger mb-0"><i class="fa-solid fa-shield-halved"></i> Yönetici Paneli</h3>
             <small class="text-secondary">Oturum: <strong>{{ username }}</strong></small>
         </div>
-        <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağazaya Dön</a>
+        <div class="d-flex gap-2">
+            <a href="/admin/customizer" class="btn btn-warning btn-sm fw-bold">
+                <i class="fa-solid fa-palette"></i> 🎨 Sayfa Düzenleri & Logo
+            </a>
+            <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağazaya Dön</a>
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -35,32 +40,7 @@
       {% endif %}
     {% endwith %}
 
-    <!-- 1. BİLGİSAYARDAN LOGO YÜKLEME VE BAŞLIK DEĞİŞTİRME FORMU -->
-    <div class="card card-custom p-4 mb-4 shadow border-primary">
-        <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-image"></i> Site İsmi ve Logo Yükleme (Bilgisayardan)</h5>
-        <form action="/admin/settings/update" method="POST" enctype="multipart/form-data" class="row g-3 align-items-end">
-            <div class="col-md-5">
-                <label class="form-label small text-secondary">Web Sitesi Başlığı (İsmi)</label>
-                <input type="text" name="site_title" class="form-control" value="{{ settings.title }}" required placeholder="Örn: EPIN & SMM PAZARI">
-            </div>
-            <div class="col-md-5">
-                <label class="form-label small text-secondary">Yeni Logo Görseli Seç (PNG, JPG, WEBP, SVG)</label>
-                <input type="file" name="logo_file" class="form-control" accept="image/*">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100 fw-bold py-2"><i class="fa-solid fa-floppy-disk"></i> Güncelle</button>
-            </div>
-        </form>
-
-        {% if settings.logo %}
-        <div class="mt-3 pt-3 border-top border-secondary d-flex align-items-center gap-3">
-            <small class="text-secondary">Mevcut Aktif Logo:</small>
-            <img src="{{ settings.logo }}" alt="Mevcut Logo" style="height: 40px; background: #0f172a; padding: 4px; border-radius: 6px; border: 1px solid #334155;">
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- 2. ÇEKİLİŞ YÖNETİMİ (ÜCRETLİ & ÜCRETSİZ) -->
+    <!-- 1. ÇEKİLİŞ YÖNETİMİ -->
     <div class="card card-custom p-4 mb-4 shadow border-warning">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold text-warning mb-0"><i class="fa-solid fa-gift"></i> Çekiliş Yönetimi (Ücretli / Ücretsiz)</h5>
@@ -172,7 +152,7 @@
         </div>
     </div>
 
-    <!-- 3. KULLANICI LİSTESİ -->
+    <!-- 2. KULLANICI LİSTESİ -->
     <div class="card card-custom p-4 mb-4 shadow border-info">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-users"></i> Kullanıcılar ({{ users|length }})</h5>
@@ -231,7 +211,7 @@
         </div>
     </div>
 
-    <!-- 4. ŞİFRE TALEPLERİ -->
+    <!-- 3. ŞİFRE TALEPLERİ -->
     <div class="card card-custom p-4 mb-4 shadow border-warning">
         <h5 class="fw-bold text-warning mb-3"><i class="fa-solid fa-envelope-open-text"></i> Şifre Sıfırlama Talepleri ({{ reset_requests|length }})</h5>
         <div class="table-responsive">
@@ -269,7 +249,7 @@
         </div>
     </div>
 
-    <!-- 5. ÜRÜN YÖNETİMİ -->
+    <!-- 4. ÜRÜN YÖNETİMİ -->
     <div class="row g-4">
         <div class="col-lg-5">
             <div class="card card-custom p-4 mb-4 shadow">
