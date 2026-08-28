@@ -43,7 +43,7 @@
         .search-input:focus { outline: none; border-color: var(--accent-blue); background-color: #182238; color: #fff; }
         .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.85rem; }
 
-        .sub-bar { background-color: #0d1322; border-bottom: 1px solid var(--border-color); padding: 6px 0; width: 100%; overflow: hidden; }
+        .sub-bar { background-color: #0d1322; border-bottom: 1px solid var(--border-color); padding: 6px 0; width: 100%; overflow: visible !important; }
         .scroll-categories {
             display: flex; align-items: center; gap: 6px; overflow-x: auto; white-space: nowrap; width: 100%; padding-bottom: 2px;
             scrollbar-width: none; -webkit-overflow-scrolling: touch;
@@ -56,11 +56,11 @@
         .cat-badge-btn:hover, .cat-badge-btn.active { color: #fff; background-color: #1e293b; border-color: #334155; }
         .btn-kategoriler-menu { background-color: #2563eb; color: #fff; font-weight: 700; border-radius: 6px; padding: 5px 12px; font-size: 0.78rem; flex-shrink: 0; border: none; }
 
-        /* Dropdown Hover ve Dikkat Çekici Çekiliş Linki */
-        .dropdown-hover-container { position: relative; display: inline-block; }
+        /* Dropdown Hover ve Açılma Düzeltmesi */
+        .dropdown-hover-container { position: relative; display: inline-block; overflow: visible !important; }
         .custom-dropdown-menu {
             display: none; position: absolute; top: 105%; left: 0; background-color: #111827;
-            border: 1px solid #334155; min-width: 220px; z-index: 9999; flex-direction: column; gap: 3px;
+            border: 1px solid #334155; min-width: 220px; z-index: 99999 !important; flex-direction: column; gap: 3px;
         }
         .dropdown-hover-container:hover .custom-dropdown-menu { display: flex; }
         .dropdown-cat-item {
@@ -180,9 +180,9 @@
     </div>
 </header>
 
-<!-- SOL ÜSTTE HOVER İLE AÇILAN MENÜ & DİKKAT ÇEKİCİ ÇEKİLİŞLER EKLENDİ -->
-<nav class="sub-bar">
-    <div class="container d-flex align-items-center gap-2">
+<!-- SOL ÜSTTE HOVER İLE AÇILAN KATEGORİ MENÜSÜ VE ÇEKİLİŞLER -->
+<nav class="sub-bar" style="overflow: visible !important;">
+    <div class="container d-flex align-items-center gap-2" style="overflow: visible !important;">
         
         <div class="dropdown-hover-container position-relative">
             <button class="btn-kategoriler-menu dropdown-toggle" type="button" id="catMenuBtn">
@@ -198,7 +198,6 @@
                 </a>
                 {% endfor %}
                 <div class="dropdown-divider my-1 border-secondary"></div>
-                <!-- DİKKAT ÇEKİCİ ÇEKİLİŞLER LİNKE EKLENDİ -->
                 <a href="/giveaways" class="dropdown-cat-item text-warning fw-bold pulse-giveaway-link">
                     <i class="fa-solid fa-gift text-warning fa-bounce"></i> 🎁 Topluluk Çekilişleri
                 </a>
