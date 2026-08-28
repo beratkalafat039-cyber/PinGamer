@@ -36,7 +36,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
     <div class="container">
-        <!-- HARF HARF RENKLENDİRİLMİŞ DİNAMİK BAŞLIK & LOGO -->
+        <!-- DİNAMİK LOGO VE BAŞLIK -->
         <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none 
            {% if settings.logo_position == 'top' %}flex-column text-center{% elif settings.logo_position == 'right' %}flex-row-reverse{% else %}flex-row{% endif %}" 
            href="/">
@@ -61,14 +61,28 @@
                     </a>
                 {% endif %}
 
-                <a href="/giveaways" class="btn btn-outline-warning btn-sm fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
-                <a href="/wheel" class="btn btn-outline-warning btn-sm"><i class="fa-solid fa-dharmachakra"></i> Şans Çarkı</a>
-                <a href="/deposit" class="btn btn-success btn-sm fw-bold"><i class="fa-solid fa-wallet"></i> + Bakiye ({{ "%.2f"|format(balance) }} TL)</a>
-                <a href="/orders" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-box"></i> Siparişlerim</a>
+                <!-- ÇEKİLİŞ VE ÇARK LİNKLERİ AYRILDI -->
+                <a href="/giveaways" class="btn btn-warning btn-sm fw-bold">
+                    <i class="fa-solid fa-gift"></i> Çekilişler
+                </a>
+                <a href="/wheel" class="btn btn-outline-warning btn-sm fw-bold">
+                    <i class="fa-solid fa-dharmachakra"></i> Şans Çarkı
+                </a>
+                <a href="/deposit" class="btn btn-success btn-sm fw-bold">
+                    <i class="fa-solid fa-wallet"></i> + Bakiye ({{ "%.2f"|format(balance) }} TL)
+                </a>
+                <a href="/orders" class="btn btn-outline-light btn-sm">
+                    <i class="fa-solid fa-box"></i> Siparişlerim
+                </a>
                 <span class="text-light small ms-2"><i class="fa-solid fa-user"></i> {{ username }}</span>
                 <a href="/logout" class="btn btn-outline-danger btn-sm">Çıkış</a>
             {% else %}
-                <a href="/giveaways" class="btn btn-outline-warning btn-sm fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
+                <a href="/giveaways" class="btn btn-warning btn-sm fw-bold">
+                    <i class="fa-solid fa-gift"></i> Çekilişler
+                </a>
+                <a href="/wheel" class="btn btn-outline-warning btn-sm fw-bold">
+                    <i class="fa-solid fa-dharmachakra"></i> Şans Çarkı
+                </a>
                 <a href="/login" class="btn btn-outline-light btn-sm">Giriş Yap</a>
                 <a href="/register" class="btn btn-primary btn-sm">Kayıt Ol</a>
             {% endif %}
@@ -141,13 +155,14 @@
     </div>
 </div>
 
-<!-- CANLI DESTEK -->
+<!-- CANLI DESTEK BUTONU -->
 <div id="live-support-btn" style="position: fixed; bottom: 25px; right: 25px; z-index: 1000;">
     <button class="btn btn-warning rounded-circle p-3 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 60px; height: 60px;">
         <i class="fa-solid fa-headset fa-xl text-dark"></i>
     </button>
 </div>
 
+<!-- CANLI DESTEK PENCERESİ -->
 <div id="support-modal" style="display: none; position: fixed; bottom: 95px; right: 25px; width: 360px; z-index: 1000; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background-color: #1e293b; border: 1px solid #334155;">
     <div class="bg-dark p-3 text-white d-flex justify-content-between align-items-center border-bottom border-secondary">
         <div>
