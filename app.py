@@ -83,14 +83,20 @@ def init_db():
                     title TEXT,
                     price REAL,
                     image TEXT,
-                    stock INTEGER DEFAULT 234,
+                    stock INTEGER DEFAULT 1,
                     main_category TEXT DEFAULT 'oyun',
-                    sub_category TEXT DEFAULT 'epin'
+                    sub_category TEXT DEFAULT 'epin',
+                    seller_name TEXT DEFAULT 'Yönetici',
+                    seller_id INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'Onaylandı',
+                    created_at TEXT
                 );
             ''')
             try:
-                cursor.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS main_category TEXT DEFAULT 'oyun';")
-                cursor.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS sub_category TEXT DEFAULT 'epin';")
+                cursor.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS seller_name TEXT DEFAULT 'Yönetici';")
+                cursor.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS seller_id INTEGER DEFAULT 0;")
+                cursor.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Onaylandı';")
+                cursor.execute("ALTER TABLE products ADD COLUMN IF NOT EXISTS created_at TEXT;")
                 conn.commit()
             except Exception:
                 pass
@@ -131,7 +137,7 @@ def init_db():
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id SERIAL PRIMARY KEY,
-                    site_title TEXT DEFAULT 'EPIN & SMM PAZARI',
+                    site_title TEXT DEFAULT 'Hesap.com.tr',
                     site_logo TEXT DEFAULT '',
                     font_family TEXT DEFAULT 'Orbitron',
                     logo_position TEXT DEFAULT 'left',
@@ -152,12 +158,14 @@ def init_db():
             ''')
             conn.commit()
 
-            # Varsayılan Kategoriler
             varsayilan_kategoriler = [
                 ("oyun", "Oyun E-Pin", "fa-solid fa-gamepad"),
-                ("sosyal", "Sosyal Medya Hizmetleri", "fa-solid fa-hashtag"),
-                ("hile", "Yazılım & Hileler", "fa-solid fa-skull-crossbones"),
-                ("hesap", "Oyun Hesapları", "fa-solid fa-id-card")
+                ("sosyal", "Sosyal Medya", "fa-solid fa-heart"),
+                ("pubg", "PUBG Mobile", "fa-solid fa-shield"),
+                ("valorant", "Valorant", "fa-solid fa-v"),
+                ("lol", "League of Legends", "fa-solid fa-gem"),
+                ("roblox", "Roblox", "fa-solid fa-cube"),
+                ("cs2", "CS2", "fa-solid fa-crosshairs")
             ]
             for slug, name, icon in varsayilan_kategoriler:
                 cursor.execute("SELECT id FROM categories WHERE slug = %s", (slug,))
@@ -168,7 +176,7 @@ def init_db():
             cursor.execute("SELECT id FROM site_settings LIMIT 1")
             if not cursor.fetchone():
                 cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
-                               ('EPIN & SMM PAZARI', '', 'Orbitron', 'left', 40, 22, '#eab308', '[]'))
+                               ('Hesap.com.tr', '', 'Orbitron', 'left', 40, 22, '#38bdf8', '[]'))
             conn.commit()
         else:
             cursor.execute('''
@@ -203,14 +211,20 @@ def init_db():
                     title TEXT,
                     price REAL,
                     image TEXT,
-                    stock INTEGER DEFAULT 234,
+                    stock INTEGER DEFAULT 1,
                     main_category TEXT DEFAULT 'oyun',
-                    sub_category TEXT DEFAULT 'epin'
+                    sub_category TEXT DEFAULT 'epin',
+                    seller_name TEXT DEFAULT 'Yönetici',
+                    seller_id INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'Onaylandı',
+                    created_at TEXT
                 )
             ''')
             try:
-                cursor.execute("ALTER TABLE products ADD COLUMN main_category TEXT DEFAULT 'oyun'")
-                cursor.execute("ALTER TABLE products ADD COLUMN sub_category TEXT DEFAULT 'epin'")
+                cursor.execute("ALTER TABLE products ADD COLUMN seller_name TEXT DEFAULT 'Yönetici'")
+                cursor.execute("ALTER TABLE products ADD COLUMN seller_id INTEGER DEFAULT 0")
+                cursor.execute("ALTER TABLE products ADD COLUMN status TEXT DEFAULT 'Onaylandı'")
+                cursor.execute("ALTER TABLE products ADD COLUMN created_at TEXT")
                 conn.commit()
             except Exception:
                 pass
@@ -251,7 +265,7 @@ def init_db():
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    site_title TEXT DEFAULT 'EPIN & SMM PAZARI',
+                    site_title TEXT DEFAULT 'Hesap.com.tr',
                     site_logo TEXT DEFAULT '',
                     font_family TEXT DEFAULT 'Orbitron',
                     logo_position TEXT DEFAULT 'left',
@@ -274,9 +288,12 @@ def init_db():
 
             varsayilan_kategoriler = [
                 ("oyun", "Oyun E-Pin", "fa-solid fa-gamepad"),
-                ("sosyal", "Sosyal Medya Hizmetleri", "fa-solid fa-hashtag"),
-                ("hile", "Yazılım & Hileler", "fa-solid fa-skull-crossbones"),
-                ("hesap", "Oyun Hesapları", "fa-solid fa-id-card")
+                ("sosyal", "Sosyal Medya", "fa-solid fa-heart"),
+                ("pubg", "PUBG Mobile", "fa-solid fa-shield"),
+                ("valorant", "Valorant", "fa-solid fa-v"),
+                ("lol", "League of Legends", "fa-solid fa-gem"),
+                ("roblox", "Roblox", "fa-solid fa-cube"),
+                ("cs2", "CS2", "fa-solid fa-crosshairs")
             ]
             for slug, name, icon in varsayilan_kategoriler:
                 cursor.execute("SELECT id FROM categories WHERE slug = ?", (slug,))
@@ -287,7 +304,7 @@ def init_db():
             cursor.execute("SELECT id FROM site_settings LIMIT 1")
             if not cursor.fetchone():
                 cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
-                               ('EPIN & SMM PAZARI', '', 'Orbitron', 'left', 40, 22, '#eab308', '[]'))
+                               ('Hesap.com.tr', '', 'Orbitron', 'left', 40, 22, '#38bdf8', '[]'))
             conn.commit()
 
         cursor.close()
@@ -299,13 +316,13 @@ init_db()
 
 def get_site_settings():
     default_settings = {
-        "title": "EPIN & SMM PAZARI",
+        "title": "Hesap.com.tr",
         "logo": "",
-        "font_family": "Orbitron",
+        "font_family": "Montserrat",
         "logo_position": "left",
-        "logo_height": 40,
+        "logo_height": 38,
         "font_size": 22,
-        "text_color": "#eab308",
+        "text_color": "#38bdf8",
         "letter_colors": "[]",
         "formatted_letters": []
     }
@@ -320,13 +337,13 @@ def get_site_settings():
             if isinstance(row, dict):
                 title = row.get("site_title") or default_settings["title"]
                 raw_colors = row.get("letter_colors") or "[]"
-                base_color = row.get("text_color") or "#eab308"
+                base_color = row.get("text_color") or "#38bdf8"
                 settings_data = {
                     "title": title,
                     "logo": row.get("site_logo") or "",
-                    "font_family": row.get("font_family") or "Orbitron",
+                    "font_family": row.get("font_family") or "Montserrat",
                     "logo_position": row.get("logo_position") or "left",
-                    "logo_height": row.get("logo_height") or 40,
+                    "logo_height": row.get("logo_height") or 38,
                     "font_size": row.get("font_size") or 22,
                     "text_color": base_color,
                     "letter_colors": raw_colors
@@ -334,13 +351,13 @@ def get_site_settings():
             else:
                 title = row[1] or default_settings["title"]
                 raw_colors = row[8] if len(row) > 8 and row[8] else "[]"
-                base_color = row[7] if len(row) > 7 and row[7] else "#eab308"
+                base_color = row[7] if len(row) > 7 and row[7] else "#38bdf8"
                 settings_data = {
                     "title": title,
                     "logo": row[2] or "",
-                    "font_family": row[3] if len(row) > 3 and row[3] else "Orbitron",
+                    "font_family": row[3] if len(row) > 3 and row[3] else "Montserrat",
                     "logo_position": row[4] if len(row) > 4 and row[4] else "left",
-                    "logo_height": row[5] if len(row) > 5 and row[5] else 40,
+                    "logo_height": row[5] if len(row) > 5 and row[5] else 38,
                     "font_size": row[6] if len(row) > 6 and row[6] else 22,
                     "text_color": base_color,
                     "letter_colors": raw_colors
@@ -361,7 +378,7 @@ def get_site_settings():
     except Exception as e:
         print(f"Site ayarları getirme hatası: {e}")
     
-    default_settings["formatted_letters"] = [{"char": c, "color": "#eab308"} for c in default_settings["title"]]
+    default_settings["formatted_letters"] = [{"char": c, "color": "#38bdf8"} for c in default_settings["title"]]
     return default_settings
 
 def generate_game_code(product_title):
@@ -384,14 +401,10 @@ def generate_game_code(product_title):
         p1 = "".join(random.choices(chars, k=4))
         p2 = "".join(random.choices(chars, k=4))
         return f"SMM-KEY-{p1}-{p2}"
-    elif "hile" in title_lower or "aimbot" in title_lower or "esp" in title_lower or "bypass" in title_lower:
-        p1 = "".join(random.choices(chars, k=4))
-        p2 = "".join(random.choices(chars, k=4))
-        return f"CHEAT-PRO-{p1}-{p2}"
     else:
         p1 = "".join(random.choices(chars, k=4))
         p2 = "".join(random.choices(chars, k=4))
-        return f"EPIN-{p1}-{p2}"
+        return f"HESAP-{p1}-{p2}"
 
 def get_current_user():
     user_id = session.get("user_id")
@@ -414,7 +427,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user_id" not in session:
-            flash("Bu sayfayı görüntülemek için lütfen önce giriş yapın!", "warning")
+            flash("Bu işlemi gerçekleştirmek için lütfen giriş yapın!", "warning")
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated_function
@@ -433,39 +446,13 @@ def admin_required(f):
 
 # --- BANKA VE POS KART DOĞRULAMA ---
 TURKISH_BINS = {
-    "454671": ("Ziraat Bankası", "Visa"),
-    "542374": ("Ziraat Bankası", "Mastercard"),
-    "979201": ("Ziraat Bankası", "Troy"),
-    "454359": ("Türkiye İş Bankası", "Visa"),
-    "454360": ("Türkiye İş Bankası", "Visa"),
-    "589283": ("Türkiye İş Bankası", "Mastercard"),
-    "540036": ("Garanti BBVA", "Mastercard"),
-    "517041": ("Garanti BBVA", "Mastercard"),
-    "554960": ("Garanti BBVA", "Mastercard"),
-    "405040": ("Garanti BBVA", "Visa"),
-    "552608": ("Akbank", "Mastercard"),
-    "589004": ("Akbank", "Mastercard"),
-    "435509": ("Akbank", "Visa"),
-    "979207": ("Akbank", "Troy"),
-    "545103": ("Yapı Kredi", "Mastercard"),
-    "516888": ("Yapı Kredi", "Mastercard"),
-    "450634": ("Yapı Kredi", "Visa"),
-    "491005": ("VakıfBank", "Visa"),
-    "415792": ("VakıfBank", "Visa"),
-    "542119": ("VakıfBank", "Mastercard"),
-    "979288": ("VakıfBank", "Troy"),
-    "531157": ("QNB Finansbank", "Mastercard"),
-    "498749": ("QNB Finansbank", "Visa"),
-    "415565": ("QNB Finansbank", "Visa"),
-    "447505": ("Halkbank", "Visa"),
-    "552879": ("Halkbank", "Mastercard"),
-    "453144": ("Halkbank", "Visa"),
-    "460345": ("DenizBank", "Visa"),
-    "476662": ("DenizBank", "Visa"),
-    "520019": ("DenizBank", "Mastercard"),
-    "404809": ("Papara Card", "Mastercard"),
-    "543719": ("Paycell", "Mastercard"),
-    "516741": ("Tosla", "Mastercard"),
+    "454671": ("Ziraat Bankası", "Visa"), "542374": ("Ziraat Bankası", "Mastercard"), "979201": ("Ziraat Bankası", "Troy"),
+    "454359": ("Türkiye İş Bankası", "Visa"), "454360": ("Türkiye İş Bankası", "Visa"), "589283": ("Türkiye İş Bankası", "Mastercard"),
+    "540036": ("Garanti BBVA", "Mastercard"), "517041": ("Garanti BBVA", "Mastercard"), "554960": ("Garanti BBVA", "Mastercard"),
+    "552608": ("Akbank", "Mastercard"), "589004": ("Akbank", "Mastercard"), "435509": ("Akbank", "Visa"),
+    "545103": ("Yapı Kredi", "Mastercard"), "516888": ("Yapı Kredi", "Mastercard"), "450634": ("Yapı Kredi", "Visa"),
+    "491005": ("VakıfBank", "Visa"), "415792": ("VakıfBank", "Visa"), "542119": ("VakıfBank", "Mastercard"),
+    "404809": ("Papara Card", "Mastercard"), "543719": ("Paycell", "Mastercard"), "516741": ("Tosla", "Mastercard"),
     "454314": ("İninal", "Visa")
 }
 
@@ -569,9 +556,9 @@ def support_start():
 
     welcome_messages = {
         "odeme": f"Merhaba! Ben {agent_name}, Finans ve Bakiye departmanındanım. Ödeme veya bakiye yükleme işleminizle ilgili nasıl yardımcı olabilirim?",
-        "epin": f"Merhaba! Ben {agent_name}, Kod ve Teslimat birimindenim. Satın aldığınız e-pin veya oyun koduyla ilgili detayları paylaşabilir misiniz?",
-        "sosyal": f"Merhaba! Ben {agent_name}, Sosyal Medya Hizmetleri uzmanıyım. Takipçi, beğeni veya izlenme siparişinizle ilgili yardımcı olmaktan memnuniyet duyarım.",
-        "teknik": f"Merhaba! Ben {agent_name}, Teknik Destek ekibindenim. Sitede karşılaştığınız teknik sorunu detaylandırır mısınız?"
+        "epin": f"Merhaba! Ben {agent_name}, Kod ve Teslimat birimindenim. Satın aldığınız e-pin veya hesap teslimatıyla ilgili detayları paylaşabilir misiniz?",
+        "sosyal": f"Merhaba! Ben {agent_name}, Sosyal Medya Hizmetleri uzmanıyım. Siparişinizle ilgili yardımcı olmaktan memnuniyet duyarım.",
+        "teknik": f"Merhaba! Ben {agent_name}, Teknik Destek ekibindenim. Karşılaştığınız sorunu detaylandırır mısınız?"
     }
 
     return jsonify({
@@ -589,26 +576,17 @@ def support_message():
     topic = data.get("topic", "genel")
 
     if any(k in user_msg for k in ["bakiye", "yükle", "kart", "para", "ödeme", "pos"]):
-        reply = "Bakiye yükleme işlemleriniz 3D Secure onayının ardından anında hesabınıza yansımaktadır. Herhangi bir gecikme durumunda işlem ID numaranızı kontrol edebilirim."
-    elif any(k in user_msg for k in ["kod", "gelmedi", "çalışmıyor", "hatalı", "vp", "uc", "steam"]):
-        reply = "Tüm kodlar sistemimizde anlık ve lisanslı olarak üretilmektedir. 'Siparişlerim' sekmesinden teslim edilen kodu kopyalayıp ilgili platformda aktifleştirebilirsiniz."
-    elif any(k in user_msg for k in ["takipçi", "beğeni", "izlenme", "tiktok", "instagram", "düşüş"]):
-        reply = "Sosyal medya siparişleri sıraya alınarak 5-15 dakika içinde organik olarak gönderilmeye başlar. Profilinizin gizli (özel) olmadığından emin olunuz."
-    elif any(k in user_msg for k in ["hile", "aimbot", "esp", "bypass", "ban"]):
-        reply = "Hile ve yazılım lisans anahtarlarınız anında teslim edilir. Kurulum talimatları sipariş detayıyla birlikte iletilmektedir."
-    elif any(k in user_msg for k in ["çekiliş", "kazanan", "giveaway", "ödül", "bilet"]):
-        reply = "Aktif çekilişlerimize 'Çekilişler' sayfasından ücretsiz veya ücretli katılabilirsiniz!"
-    elif any(k in user_msg for k in ["admin", "yetki", "berat", "lvbelc5baba", "şifre"]):
-        reply = "Yönetici ve hesap güvenliği işlemleriniz kayıt altına alınmıştır. Şifre sıfırlama taleplerini 'Şifremi Unuttum' ekranından iletebilirsiniz."
+        reply = "Bakiye yükleme işlemleriniz 3D Secure onayının ardından anında hesabınıza yansımaktadır. Herhangi bir gecikme durumunda işlem ID numaranızı iletebilirsiniz."
+    elif any(k in user_msg for k in ["kod", "gelmedi", "çalışmıyor", "hatalı", "vp", "uc", "steam", "hesap"]):
+        reply = "Satın aldığınız ürünün bilgileri ve teslimat kodları 'Siparişlerim' sayfasına anında yansıtılmaktadır."
+    elif any(k in user_msg for k in ["ilan", "talep", "onay", "3 ilan"]):
+        reply = "Kullanıcı ilan talepleri moderatör ekibimiz tarafından incelenip en kısa sürede onaylanarak pazar alanında listelenir."
     elif any(k in user_msg for k in ["merhaba", "selam", "sa", "günaydın", "iyi günler"]):
         reply = "Tekrar merhaba! Sorununuzu çözebilmemiz için detayları iletmeniz yeterlidir."
     else:
-        reply = "Konuyu anladım, sistem kayıtlarımızı ve sipariş veritabanını inceliyorum. Lütfen hatta kalınız."
+        reply = "Konuyu anladım, sistem kayıtlarımızı inceliyorum. Lütfen hatta kalınız."
 
-    return jsonify({
-        "success": True,
-        "reply": reply
-    })
+    return jsonify({"success": True, "reply": reply})
 
 # --- GENEL SAYFA ROTALARI ---
 
@@ -625,12 +603,84 @@ def home():
     cursor.execute("SELECT * FROM categories ORDER BY id ASC")
     categories = cursor.fetchall()
     
-    cursor.execute("SELECT * FROM products ORDER BY id DESC")
+    # Sadece ONAYLANMIŞ ilanlar ana sayfada listelenir
+    cursor.execute("SELECT * FROM products WHERE status = 'Onaylandı' ORDER BY id DESC")
     products = cursor.fetchall()
     cursor.close()
     conn.close()
         
     return render_template("index.html", balance=balance, username=username, is_admin=is_admin, products=products, categories=categories, settings=settings)
+
+# --- KULLANICI İLAN EKLEME (3 İLAN LİMİTİ & TALEP SİSTEMİ) ---
+@app.route("/user/add-listing", methods=["GET", "POST"])
+@login_required
+def user_add_listing():
+    user = get_current_user()
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+
+    # Kullanıcının aktif/bekleyen ilan sayısını kontrol et
+    cursor.execute(f"SELECT COUNT(*) FROM products WHERE seller_id = {p}", (user["id"],))
+    count_row = cursor.fetchone()
+    current_count = count_row[0] if not isinstance(count_row, dict) else list(count_row.values())[0]
+
+    if request.method == "POST":
+        if current_count >= 3:
+            cursor.close()
+            conn.close()
+            flash("⛔ Maksimum ilan sınırına ulaştınız! Her kullanıcı en fazla 3 ilan ekleyebilir.", "danger")
+            return redirect(url_for("home"))
+
+        title = request.form.get("title", "").strip()
+        price = float(request.form.get("price", 0.0))
+        category = request.form.get("main_category", "oyun").strip()
+        sub_cat = request.form.get("sub_category", "genel").strip()
+        image_url = request.form.get("image_url", "").strip()
+
+        # Bilgisayardan dosya yüklendiyse
+        img_file = request.files.get("listing_image")
+        final_image = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"
+
+        if img_file and img_file.filename and allowed_file(img_file.filename):
+            ext = img_file.filename.rsplit(".", 1)[1].lower()
+            fname = f"listing_{int(datetime.datetime.now().timestamp())}_{random.randint(100,999)}.{ext}"
+            img_file.save(os.path.join(UPLOAD_FOLDER, fname))
+            final_image = f"/static/uploads/{fname}"
+        elif image_url:
+            final_image = image_url
+
+        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+        cursor.execute(f'''
+            INSERT INTO products (title, price, image, stock, main_category, sub_category, seller_name, seller_id, status, created_at)
+            VALUES ({p}, {p}, {p}, 1, {p}, {p}, {p}, {p}, 'Onay Bekliyor', {p})
+        ''', (title, price, final_image, category, sub_cat, user["username"], user["id"], now))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        send_discord_log(
+            title="📥 Yeni Kullanıcı İlan Talebi!",
+            description=f"**Kullanıcı:** `{user['username']}`\n**İlan Başlığı:** {title}\n**Fiyat:** {price:.2f} TL\n**Kategori:** {category.upper()}\nAdmin panelinden onaylayabilirsiniz.",
+            color=16753920
+        )
+
+        flash("✅ İlan talebiniz başarıyla gönderildi! Moderatör onayından sonra pazarda yayına alınacaktır.", "success")
+        return redirect(url_for("home"))
+
+    cursor.execute("SELECT * FROM categories ORDER BY id ASC")
+    categories = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    return render_template("add_listing.html", 
+                           balance=float(user["balance"] or 0.0), 
+                           username=user["username"], 
+                           is_admin=is_admin, 
+                           categories=categories, 
+                           current_count=current_count, 
+                           settings=get_site_settings())
 
 # --- ÇEKİLİŞ SAYFASI & KATILMA ---
 @app.route("/giveaways")
@@ -781,7 +831,7 @@ def login():
             session["failed_attempts"] = failed_attempts
             
             if failed_attempts >= 3:
-                flash(f"⚠️ {failed_attempts} defa hatalı giriş yaptınız! Şifrenizi unuttuysanız aşağıdaki alandan sıfırlama talebinde bulunabilirsiniz.", "warning")
+                flash(f"⚠️ {failed_attempts} defa hatalı giriş yaptınız! Şifrenizi unuttuysanız sıfırlama talebinde bulunabilirsiniz.", "warning")
             else:
                 flash("Kullanıcı adı veya şifre hatalı!", "danger")
             return redirect(url_for("login"))
@@ -820,17 +870,12 @@ def forgot_password():
 
         send_discord_log(
             title="📩 Yeni Şifre Sıfırlama Talebi",
-            description=(
-                f"**Kullanıcı:** `{username}`\n"
-                f"**İletişim E-Posta:** `{email}`\n"
-                f"**Tarih:** {now}\n"
-                f"Yönetici panelinden şifresini güncelleyebilirsiniz."
-            ),
+            description=f"**Kullanıcı:** `{username}`\n**İletişim E-Posta:** `{email}`\n**Tarih:** {now}",
             color=16753920
         )
 
         session["failed_attempts"] = 0
-        flash("✅ Şifre sıfırlama talebiniz yöneticiye iletildi. En kısa sürede e-postanız üzerinden sizinle iletişime geçilecektir.", "success")
+        flash("✅ Şifre sıfırlama talebiniz iletildi.", "success")
         return redirect(url_for("login"))
 
     return render_template("forgot_password.html", settings=get_site_settings())
@@ -939,13 +984,7 @@ def spin():
 
     send_discord_log(
         title="🎰 Şans Slotu Çevrildi!",
-        description=(
-            f"**Kullanıcı:** `{user['username']}`\n"
-            f"**Kasa:** {tier.upper()} ({cost:.2f} TL)\n"
-            f"**Kazanılan:** 🎉 {chosen['reward']}\n"
-            f"**Kod:** `{code}`\n"
-            f"**Kalan Bakiye:** {new_balance:.2f} TL"
-        ),
+        description=f"**Kullanıcı:** `{user['username']}`\n**Kasa:** {tier.upper()} ({cost:.2f} TL)\n**Kazanılan:** 🎉 {chosen['reward']}\n**Kod:** `{code}`",
         color=15844367
     )
 
@@ -999,14 +1038,7 @@ def deposit():
         trx_id = f"TRX{random.randint(100000, 999999)}"
         send_discord_log(
             title="💳 Bakiye Yüklendi",
-            description=(
-                f"**Kullanıcı:** `{user['username']}`\n"
-                f"**Banka:** `{bank_name}`\n"
-                f"**Kart:** `**** **** **** {clean_num[-4:]}` ({card_brand})\n"
-                f"**İşlem ID:** `{trx_id}`\n"
-                f"**Yüklenen:** {amount_val:.2f} TL\n"
-                f"**Güncel Bakiye:** {new_balance:.2f} TL"
-            ),
+            description=f"**Kullanıcı:** `{user['username']}`\n**Banka:** `{bank_name}`\n**Yüklenen:** {amount_val:.2f} TL\n**Güncel Bakiye:** {new_balance:.2f} TL",
             color=3066993
         )
 
@@ -1050,28 +1082,13 @@ def buy(product_id):
     cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, {p}, {p}, {p})",
                    (user["id"], product["title"], product["price"], delivered_code, now))
     
-    cursor.execute(f"SELECT stock FROM products WHERE id = {p}", (product_id,))
-    stock_row = cursor.fetchone()
-    remaining_stock = stock_row["stock"] if isinstance(stock_row, dict) else stock_row[0]
-    
-    cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
-    bal_row = cursor.fetchone()
-    new_balance = bal_row["balance"] if isinstance(bal_row, dict) else bal_row[0]
-    
     conn.commit()
     cursor.close()
     conn.close()
 
     send_discord_log(
         title="🛒 Satın Alma Gerçekleşti",
-        description=(
-            f"**Kullanıcı:** `{user['username']}`\n"
-            f"**Ürün:** {product['title']}\n"
-            f"**Ödenen:** {product['price']:.2f} TL\n"
-            f"**Kod:** `{delivered_code}`\n"
-            f"**Kalan Stok:** {remaining_stock} Adet\n"
-            f"**Kalan Bakiye:** {new_balance:.2f} TL"
-        ),
+        description=f"**Kullanıcı:** `{user['username']}`\n**Ürün:** {product['title']}\n**Ödenen:** {product['price']:.2f} TL\n**Kod:** `{delivered_code}`",
         color=15158332
     )
 
@@ -1110,8 +1127,12 @@ def admin_panel():
     cursor.execute("SELECT * FROM categories ORDER BY id ASC")
     categories = cursor.fetchall()
     
+    # Tüm onaylı ve onay bekleyen ilanları çek
     cursor.execute("SELECT * FROM products ORDER BY id DESC")
     products = cursor.fetchall()
+
+    # Kullanıcı ilan taleplerini filtrele
+    pending_listings = [p for p in products if p["status"] == "Onay Bekliyor"]
     
     cursor.execute("SELECT * FROM orders ORDER BY id DESC")
     all_orders = cursor.fetchall()
@@ -1141,14 +1162,42 @@ def admin_panel():
                            is_super=is_super, 
                            super_admin_name=SUPER_ADMIN_USERNAME,
                            users=all_users, 
-                           products=products, 
-                           categories=categories,
+                           products=products,
+                           pending_listings=pending_listings,
+                           categories=categories, 
                            orders=all_orders,
                            reset_requests=reset_reqs,
                            giveaways=admin_giveaways,
                            settings=get_site_settings())
 
-# --- YENİ KATEGORİ (SAYFA) EKLEME ---
+# --- İLAN ONAYLAMA & REDDETME ---
+@app.route("/admin/listing/approve/<int:product_id>", methods=["POST"])
+@admin_required
+def admin_approve_listing(product_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"UPDATE products SET status = 'Onaylandı' WHERE id = {p}", (product_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("✅ İlan başarıyla onaylandı ve pazarda yayına alındı!", "success")
+    return redirect(url_for("admin_panel"))
+
+@app.route("/admin/listing/reject/<int:product_id>", methods=["POST"])
+@admin_required
+def admin_reject_listing(product_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"DELETE FROM products WHERE id = {p}", (product_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("❌ İlan talebi reddedildi ve silindi.", "info")
+    return redirect(url_for("admin_panel"))
+
+# --- YENİ KATEGORİ EKLEME & SİLME ---
 @app.route("/admin/category/add", methods=["POST"])
 @admin_required
 def admin_add_category():
@@ -1168,7 +1217,7 @@ def admin_add_category():
     try:
         cursor.execute(f"INSERT INTO categories (slug, name, icon) VALUES ({p}, {p}, {p})", (slug, name, icon))
         conn.commit()
-        flash(f"'{name}' kategorisi/sayfası başarıyla eklendi!", "success")
+        flash(f"'{name}' kategorisi eklendi!", "success")
     except Exception:
         flash("Bu kategori kodu zaten mevcut!", "danger")
     finally:
@@ -1177,7 +1226,6 @@ def admin_add_category():
 
     return redirect(url_for("admin_panel"))
 
-# --- KATEGORİ SİLME ---
 @app.route("/admin/category/delete/<int:cat_id>", methods=["POST"])
 @admin_required
 def admin_delete_category(cat_id):
@@ -1191,16 +1239,16 @@ def admin_delete_category(cat_id):
     flash("Kategori silindi.", "info")
     return redirect(url_for("admin_panel"))
 
-# --- SAYFA DÜZENLERİ & HARF RENKLERİ GÜNCELLEME ---
+# --- SAYFA DÜZENLERİ GÜNCELLEME ---
 @app.route("/admin/settings/update", methods=["POST"])
 @admin_required
 def admin_update_settings():
     new_title = request.form.get("site_title", "").strip()
-    font_family = request.form.get("font_family", "Orbitron").strip()
+    font_family = request.form.get("font_family", "Montserrat").strip()
     logo_position = request.form.get("logo_position", "left").strip()
-    logo_height = int(request.form.get("logo_height", 40))
+    logo_height = int(request.form.get("logo_height", 38))
     font_size = int(request.form.get("font_size", 22))
-    text_color = request.form.get("text_color", "#eab308").strip()
+    text_color = request.form.get("text_color", "#38bdf8").strip()
     letter_colors = request.form.get("letter_colors", "[]").strip()
 
     if not new_title:
@@ -1244,10 +1292,10 @@ def admin_update_settings():
     cursor.close()
     conn.close()
 
-    flash("🎨 Sayfa düzenleri ve logo ayarları başarıyla kaydedildi!", "success")
+    flash("🎨 Görünüm ayarları başarıyla kaydedildi!", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ADMIN: ÇEKİLİŞ EKLEME ---
+# --- ÇEKİLİŞ ROTALARI ---
 @app.route("/admin/giveaway/add", methods=["POST"])
 @admin_required
 def admin_add_giveaway():
@@ -1271,17 +1319,9 @@ def admin_add_giveaway():
     cursor.close()
     conn.close()
 
-    type_text = f"Ücretli ({ticket_price:.2f} TL)" if is_paid else "Ücretsiz"
-    send_discord_log(
-        title="🎁 Yeni Çekiliş Başlatıldı!",
-        description=f"**Başlık:** {title}\n**Ödül:** {reward}\n**Tür:** {type_text}",
-        color=3066993
-    )
-
-    flash("Yeni çekiliş başarıyla yayınlandı.", "success")
+    flash("Yeni çekiliş yayınlandı.", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ADMIN: ÇEKİLİŞE RASTGELE KATILIMCI EKLEME ---
 @app.route("/admin/giveaway/add-random-participant/<int:giveaway_id>", methods=["POST"])
 @admin_required
 def admin_add_random_participant(giveaway_id):
@@ -1299,10 +1339,9 @@ def admin_add_random_participant(giveaway_id):
     cursor.close()
     conn.close()
 
-    flash(f"🎲 '{random_user}' kullanıcısı çekilişe başarıyla eklendi!", "success")
+    flash(f"🎲 '{random_user}' çekilişe eklendi!", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ADMIN: ÇEKİLİŞTEN KATILIMCI SİLME ---
 @app.route("/admin/giveaway/remove-participant/<int:participant_id>", methods=["POST"])
 @admin_required
 def admin_remove_participant(participant_id):
@@ -1313,11 +1352,9 @@ def admin_remove_participant(participant_id):
     conn.commit()
     cursor.close()
     conn.close()
-
-    flash("Katılımcı çekilişten başarıyla çıkarıldı.", "info")
+    flash("Katılımcı çıkarıldı.", "info")
     return redirect(url_for("admin_panel"))
 
-# --- ADMIN: ÇEKİLİŞİ ÇEK / KAZANANI BELİRLE ---
 @app.route("/admin/giveaway/draw/<int:giveaway_id>", methods=["POST"])
 @admin_required
 def admin_draw_giveaway(giveaway_id):
@@ -1331,7 +1368,7 @@ def admin_draw_giveaway(giveaway_id):
     if not gw or gw["status"] != "Aktif":
         cursor.close()
         conn.close()
-        flash("Bu çekiliş zaten tamamlanmış veya geçersiz!", "warning")
+        flash("Bu çekiliş zaten tamamlanmış!", "warning")
         return redirect(url_for("admin_panel"))
 
     cursor.execute(f"SELECT username, user_id FROM giveaway_participants WHERE giveaway_id = {p}", (giveaway_id,))
@@ -1359,28 +1396,16 @@ def admin_draw_giveaway(giveaway_id):
     cursor.close()
     conn.close()
 
-    send_discord_log(
-        title="🏆 Çekiliş Sonuçlandı!",
-        description=(
-            f"**Çekiliş:** `{gw['title']}`\n"
-            f"**Ödül:** `{gw['reward']}`\n"
-            f"**Kazanan:** 👑 `{winner_name}`\n"
-            f"**Teslim Edilen Kod:** `{reward_code}`"
-        ),
-        color=15844367
-    )
-
-    flash(f"🎉 Çekiliş çekildi! Kazanan: '{winner_name}' | Ödül Kodu: '{reward_code}'", "success")
+    flash(f"🎉 Çekiliş çekildi! Kazanan: '{winner_name}'", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ADMIN: ÇEKİLİŞ SİLME ---
 @app.route("/admin/giveaway/delete/<int:giveaway_id>", methods=["POST"])
 @admin_required
 def admin_delete_giveaway(giveaway_id):
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    cursor.execute(f"DELETE FROM giveaway_participants WHERE id = {p}", (giveaway_id,))
+    cursor.execute(f"DELETE FROM giveaway_participants WHERE giveaway_id = {p}", (giveaway_id,))
     cursor.execute(f"DELETE FROM giveaways WHERE id = {p}", (giveaway_id,))
     conn.commit()
     cursor.close()
@@ -1388,91 +1413,15 @@ def admin_delete_giveaway(giveaway_id):
     flash("Çekiliş silindi.", "info")
     return redirect(url_for("admin_panel"))
 
-# --- RASTGELE HESAP OLUŞTURMA ---
-@app.route("/admin/user/generate-random", methods=["POST"])
-@admin_required
-def admin_generate_random_user():
-    random_id = random.randint(1000, 9999)
-    random_username = f"user_{random_id}"
-    random_raw_password = "".join(random.choices(string.ascii_letters + string.digits, k=8))
-    hashed_pw = generate_password_hash(random_raw_password)
-    test_balance = 500.0
-
-    conn = get_db()
-    cursor = conn.cursor()
-    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    
-    try:
-        cursor.execute(f"INSERT INTO users (username, password, balance, is_admin) VALUES ({p}, {p}, {p}, 0)",
-                       (random_username, hashed_pw, test_balance))
-        conn.commit()
-        flash(f"🎲 Rastgele Hesap Oluşturuldu! Kullanıcı: '{random_username}' | Şifre: '{random_raw_password}' | Bakiye: 500 TL", "success")
-    except Exception as e:
-        flash(f"Hesap oluşturulurken hata: {e}", "danger")
-    finally:
-        cursor.close()
-        conn.close()
-
-    return redirect(url_for("admin_panel"))
-
-# --- GENİŞLETİLMİŞ VE ÇOK ÇEŞİTLİ RASTGELE İLAN OLUŞTURMA ---
-@app.route("/admin/product/generate-random", methods=["POST"])
-@admin_required
-def admin_generate_random_product():
-    random_templates = [
-        # 1. HİLE & YAZILIMLAR
-        {"title": "PUBG Mobile VIP Magic Bullet & Sekmeme Hilesi", "price": 185.0, "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "hile", "sub_cat": "pubg"},
-        {"title": "Valorant ESP & Aimbot undetected Özel Sürüm", "price": 290.0, "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "hile", "sub_cat": "valorant"},
-        {"title": "CS2 Wallhack & Legit Triggerbot Key", "price": 140.0, "image": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400", "main_cat": "hile", "sub_cat": "steam"},
-        {"title": "League of Legends Script & Evade Suite", "price": 210.0, "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "hile", "sub_cat": "genel"},
-        
-        # 2. HESAPLAR
-        {"title": "Valorant Asil Vandal + Yağmacı Bıçaklı Hesap", "price": 450.0, "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "hesap", "sub_cat": "valorant"},
-        {"title": "PUBG Mobile Buz Diyarı 4. Seviye Hesap", "price": 680.0, "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "hesap", "sub_cat": "pubg"},
-        {"title": "Steam 50+ Oyunlu CS2 Seçkin Hesap", "price": 320.0, "image": "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", "main_cat": "hesap", "sub_cat": "steam"},
-        {"title": "GTA 5 + 1 Milyar Para & Level Modlu Hesap", "price": 110.0, "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400", "main_cat": "hesap", "sub_cat": "genel"},
-
-        # 3. OYUN E-PİNLERİ
-        {"title": f"Valorant {random.choice([1200, 2480, 5350, 11000])} VP", "price": random.choice([150, 290, 580, 1150]), "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "oyun", "sub_cat": "valorant"},
-        {"title": f"PUBG Mobile {random.choice([325, 660, 1800, 3850])} UC", "price": random.choice([110, 210, 550, 1100]), "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "oyun", "sub_cat": "pubg"},
-        {"title": f"Steam {random.choice([10, 20, 50, 100])} USD Cüzdan Kodu", "price": random.choice([340, 680, 1700, 3400]), "image": "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", "main_cat": "oyun", "sub_cat": "steam"},
-        {"title": "Roblox 800 Robux Hediye Kartı", "price": 240.0, "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400", "main_cat": "oyun", "sub_cat": "genel"},
-
-        # 4. SOSYAL MEDYA
-        {"title": f"Instagram {random.choice(['2.500', '5.000', '10.000'])} Organik Takipçi", "price": random.choice([55, 95, 175]), "image": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", "main_cat": "sosyal", "sub_cat": "instagram"},
-        {"title": f"Instagram {random.choice(['5.000', '10.000', '25.000'])} Keşfet Etkili Beğeni", "price": random.choice([30, 60, 120]), "image": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", "main_cat": "sosyal", "sub_cat": "instagram"},
-        {"title": f"TikTok {random.choice(['10.000', '50.000', '100.000'])} İzlenme & Paylaşım", "price": random.choice([40, 110, 190]), "image": "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", "main_cat": "sosyal", "sub_cat": "tiktok"},
-        {"title": "TikTok Canlı Yayın 1.000 Bot İzleyici (1 Saat)", "price": 85.0, "image": "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", "main_cat": "sosyal", "sub_cat": "tiktok"},
-        {"title": f"YouTube {random.choice(['1.000', '4.000'])} İzlenme & Abone Paketi", "price": random.choice([130, 320]), "image": "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400", "main_cat": "sosyal", "sub_cat": "youtube"},
-        {"title": "Discord 3 Aylık Nitro Boost Linki", "price": 75.0, "image": "https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=400", "main_cat": "sosyal", "sub_cat": "genel"}
-    ]
-    
-    item = random.choice(random_templates)
-    stock = random.randint(150, 999)
-
-    conn = get_db()
-    cursor = conn.cursor()
-    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    cursor.execute(f"INSERT INTO products (title, price, image, stock, main_category, sub_category) VALUES ({p}, {p}, {p}, {p}, {p}, {p})",
-                   (item["title"], float(item["price"]), item["image"], stock, item["main_cat"], item["sub_cat"]))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    flash(f"🎲 Rastgele İlan Oluşturuldu: '{item['title']}'", "success")
-    return redirect(url_for("admin_panel"))
-
-# --- KULLANICI SİLME ---
+# --- DİĞER ADMİN İŞLEMLERİ ---
 @app.route("/admin/user/delete/<int:user_id>", methods=["POST"])
 @admin_required
 def admin_delete_user(user_id):
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    
     cursor.execute(f"SELECT username FROM users WHERE id = {p}", (user_id,))
     target = cursor.fetchone()
-    
     if target:
         if target["username"] == SUPER_ADMIN_USERNAME:
             flash("⛔ Ana Süper Yönetici hesabı silinemez!", "danger")
@@ -1481,19 +1430,16 @@ def admin_delete_user(user_id):
             cursor.execute(f"DELETE FROM users WHERE id = {p}", (user_id,))
             conn.commit()
             flash(f"'{target['username']}' kullanıcısı silindi.", "info")
-
     cursor.close()
     conn.close()
     return redirect(url_for("admin_panel"))
 
-# --- ŞİFRE SIFIRLAMA ---
 @app.route("/admin/user/reset-password", methods=["POST"])
 @admin_required
 def admin_reset_user_password():
     target_username = request.form.get("username")
     new_password = request.form.get("new_password", "").strip()
     request_id = request.form.get("request_id")
-
     if not new_password:
         flash("Yeni şifre boş bırakılamaz!", "danger")
         return redirect(url_for("admin_panel"))
@@ -1502,19 +1448,15 @@ def admin_reset_user_password():
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-
     cursor.execute(f"UPDATE users SET password = {p} WHERE username = {p}", (hashed_pw, target_username))
     if request_id:
         cursor.execute(f"UPDATE reset_requests SET status = 'Tamamlandı' WHERE id = {p}", (request_id,))
-    
     conn.commit()
     cursor.close()
     conn.close()
-
     flash(f"'{target_username}' şifresi güncellendi!", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ADMIN YETKİ ---
 @app.route("/admin/user/toggle-admin/<int:user_id>", methods=["POST"])
 @admin_required
 def admin_toggle_role(user_id):
@@ -1526,24 +1468,17 @@ def admin_toggle_role(user_id):
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    
     cursor.execute(f"SELECT is_admin, username FROM users WHERE id = {p}", (user_id,))
     target = cursor.fetchone()
-    
-    if target:
-        if target["username"] == SUPER_ADMIN_USERNAME:
-            flash("Ana Süper Yöneticinin yetkisi değiştirilemez!", "warning")
-        else:
-            new_role = 0 if target["is_admin"] else 1
-            cursor.execute(f"UPDATE users SET is_admin = {p} WHERE id = {p}", (new_role, user_id))
-            conn.commit()
-            flash(f"'{target['username']}' yetkisi güncellendi.", "success")
-
+    if target and target["username"] != SUPER_ADMIN_USERNAME:
+        new_role = 0 if target["is_admin"] else 1
+        cursor.execute(f"UPDATE users SET is_admin = {p} WHERE id = {p}", (new_role, user_id))
+        conn.commit()
+        flash(f"'{target['username']}' yetkisi güncellendi.", "success")
     cursor.close()
     conn.close()
     return redirect(url_for("admin_panel"))
 
-# --- MANUEL ÜRÜN EKLEME ---
 @app.route("/admin/product/add", methods=["POST"])
 @admin_required
 def admin_add_product():
@@ -1558,8 +1493,11 @@ def admin_add_product():
         conn = get_db()
         cursor = conn.cursor()
         p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-        cursor.execute(f"INSERT INTO products (title, price, image, stock, main_category, sub_category) VALUES ({p}, {p}, {p}, {p}, {p}, {p})",
-                       (title, price, image, stock, main_cat, sub_cat))
+        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+        cursor.execute(f'''
+            INSERT INTO products (title, price, image, stock, main_category, sub_category, seller_name, seller_id, status, created_at) 
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, 'Yönetici', 0, 'Onaylandı', {p})
+        ''', (title, price, image, stock, main_cat, sub_cat, now))
         conn.commit()
         cursor.close()
         conn.close()
@@ -1581,7 +1519,6 @@ def admin_update_product(product_id):
     conn.commit()
     cursor.close()
     conn.close()
-
     flash("Ürün güncellendi.", "success")
     return redirect(url_for("admin_panel"))
 
@@ -1611,7 +1548,6 @@ def admin_set_balance():
     conn.commit()
     cursor.close()
     conn.close()
-
     flash("Bakiye güncellendi.", "success")
     return redirect(url_for("admin_panel"))
 
