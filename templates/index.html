@@ -56,7 +56,6 @@
         .cat-badge-btn:hover, .cat-badge-btn.active { color: #fff; background-color: #1e293b; border-color: #334155; }
         .btn-kategoriler-menu { background-color: #2563eb; color: #fff; font-weight: 700; border-radius: 6px; padding: 5px 12px; font-size: 0.78rem; flex-shrink: 0; border: none; }
 
-        /* Dropdown Hover ve Açılma Düzeltmesi */
         .dropdown-hover-container { position: relative; display: inline-block; overflow: visible !important; }
         .custom-dropdown-menu {
             display: none; position: absolute; top: 105%; left: 0; background-color: #111827;
@@ -180,10 +179,11 @@
     </div>
 </header>
 
-<!-- SOL ÜSTTE HOVER İLE AÇILAN KATEGORİ MENÜSÜ VE ÇEKİLİŞLER -->
+<!-- ALT BAR: TÜM KATEGORİLER (SOL) VE ÖZEL LİSTE (SAĞ) -->
 <nav class="sub-bar" style="overflow: visible !important;">
     <div class="container d-flex align-items-center gap-2" style="overflow: visible !important;">
         
+        <!-- SOL: TÜM KATEGORİLER DROPDOWN -->
         <div class="dropdown-hover-container position-relative">
             <button class="btn-kategoriler-menu dropdown-toggle" type="button" id="catMenuBtn">
                 <i class="fa-solid fa-bars"></i> Tüm Kategoriler
@@ -207,14 +207,17 @@
             </div>
         </div>
 
+        <!-- SAĞ: SADECE VALORANT, PUBG, LOL, CS2 VE ÇEKİLİŞLER -->
         <div class="scroll-categories">
             <button class="cat-badge-btn active" onclick="filterMain('all', this)">
                 <i class="fa-solid fa-border-all"></i> Tümü
             </button>
             {% for cat in categories %}
-            <button class="cat-badge-btn" onclick="filterMain('{{ cat.slug }}', this)">
-                <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
-            </button>
+                {% if cat.slug in ['valorant', 'pubg', 'lol', 'cs2'] %}
+                <button class="cat-badge-btn" onclick="filterMain('{{ cat.slug }}', this)">
+                    <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
+                </button>
+                {% endif %}
             {% endfor %}
             <a href="/giveaways" class="cat-badge-btn text-warning fw-bold border border-warning px-2 py-1" style="background: rgba(234, 179, 8, 0.1);">
                 <i class="fa-solid fa-gift"></i> Çekilişler
