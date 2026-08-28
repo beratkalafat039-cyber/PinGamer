@@ -30,7 +30,15 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
     <div class="container">
-        <a class="navbar-brand fw-bold text-warning fs-4" href="/"><i class="{{ settings.icon }}"></i> {{ settings.title }}</a>
+        <!-- BİLGİSAYARDAN YÜKLENEN LOGO VE BAŞLIK -->
+        <a class="navbar-brand fw-bold text-warning fs-4 d-flex align-items-center" href="/">
+            {% if settings.logo %}
+                <img src="{{ settings.logo }}" alt="Logo" style="height: 38px; max-width: 140px; object-fit: contain;" class="me-2 rounded">
+            {% else %}
+                <i class="fa-solid fa-gamepad me-2"></i>
+            {% endif %}
+            <span>{{ settings.title }}</span>
+        </a>
         
         <div class="d-flex align-items-center gap-2">
             {% if username %}
