@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from functools import wraps
 import os
 import re
@@ -11,6 +12,14 @@ import sqlite3
 
 app = Flask(__name__)
 app.secret_key = "epin-super-gizli-anahtar-12345"
+
+# Görsel Yükleme Klasörü Ayarları
+UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "webp", "ico"}
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1525268830635429930/Lwnf7QQj43IMSHJDrGgj68YpQc0ZKLZ5BF_0nPNQYTMegtVC0ZqlTcfROtV5iZtTmw98"
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -99,7 +108,6 @@ def init_db():
                 );
             ''')
             
-            # Çekiliş Tabloları (Ücretli & Ücretsiz Destekli)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS giveaways (
                     id SERIAL PRIMARY KEY,
@@ -121,17 +129,23 @@ def init_db():
             except Exception:
                 pass
 
-            # Site Ayarları Tablosu (Logo & Başlık)
+            # Site Ayarları Tablosu (PostgreSQL)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id SERIAL PRIMARY KEY,
                     site_title TEXT DEFAULT 'EPIN & SMM PAZARI',
-                    site_icon TEXT DEFAULT 'fa-solid fa-gamepad'
+                    site_logo TEXT DEFAULT ''
                 );
             ''')
-            cursor.execute("SELECT COUNT(*) FROM site_settings")
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("INSERT INTO site_settings (site_title, site_icon) VALUES ('EPIN & SMM PAZARI', 'fa-solid fa-gamepad')")
+            try:
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS site_logo TEXT DEFAULT '';")
+                conn.commit()
+            except Exception:
+                pass
+
+            cursor.execute("SELECT id FROM site_settings LIMIT 1")
+            if not cursor.fetchone():
+                cursor.execute("INSERT INTO site_settings (site_title, site_logo) VALUES (%s, %s)", ('EPIN & SMM PAZARI', ''))
             conn.commit()
 
             cursor.execute('''
@@ -241,12 +255,18 @@ def init_db():
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     site_title TEXT DEFAULT 'EPIN & SMM PAZARI',
-                    site_icon TEXT DEFAULT 'fa-solid fa-gamepad'
+                    site_logo TEXT DEFAULT ''
                 )
             ''')
-            cursor.execute("SELECT COUNT(*) FROM site_settings")
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("INSERT INTO site_settings (site_title, site_icon) VALUES ('EPIN & SMM PAZARI', 'fa-solid fa-gamepad')")
+            try:
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN site_logo TEXT DEFAULT ''")
+                conn.commit()
+            except Exception:
+                pass
+
+            cursor.execute("SELECT id FROM site_settings LIMIT 1")
+            if not cursor.fetchone():
+                cursor.execute("INSERT INTO site_settings (site_title, site_logo) VALUES (?, ?)", ('EPIN & SMM PAZARI', ''))
             conn.commit()
 
             cursor.execute('''
@@ -284,7 +304,7 @@ def init_db():
 
 init_db()
 
-# --- SİTE AYARLARINI GETİRME YARDIMCISI ---
+# --- SİTE AYARLARINI GETİRME (GÜVENLİ VE HATASIZ) ---
 def get_site_settings():
     try:
         conn = get_db()
@@ -294,10 +314,12 @@ def get_site_settings():
         cursor.close()
         conn.close()
         if row:
-            return {"title": row["site_title"], "icon": row["site_icon"]}
-    except Exception:
-        pass
-    return {"title": "EPIN & SMM PAZARI", "icon": "fa-solid fa-gamepad"}
+            title = row["site_title"] if isinstance(row, dict) else row[1]
+            logo = row["site_logo"] if isinstance(row, dict) else row[2]
+            return {"title": title or "EPIN & SMM PAZARI", "logo": logo or ""}
+    except Exception as e:
+        print(f"Site ayarları getirme hatası: {e}")
+    return {"title": "EPIN & SMM PAZARI", "logo": ""}
 
 # --- KOD ÜRETİM MOTORU ---
 def generate_game_code(product_title):
@@ -363,7 +385,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- BANKA VE POS KART DOĞRULAMA (BIN + LUHN) ---
+# --- BANKA VE POS KART DOĞRULAMA ---
 TURKISH_BINS = {
     "454671": ("Ziraat Bankası", "Visa"),
     "542374": ("Ziraat Bankası", "Mastercard"),
@@ -468,7 +490,7 @@ def send_discord_log(title, description, color):
     except Exception as e:
         print(f"Discord Hatası: {e}")
 
-# --- CANLI DESTEK VERİ HAVUZU & 4/1 KURALI ---
+# --- CANLI DESTEK ---
 SUPPORT_AGENTS = {
     "erkek": ["Ahmet K.", "Murat Y.", "Emre T.", "Can B.", "Burak D.", "Kaan S."],
     "kadin": ["Elif S.", "Zeynep T.", "Ayşe M.", "Seda B.", "Merve K.", "Gizem A."]
@@ -527,7 +549,7 @@ def support_message():
     elif any(k in user_msg for k in ["takipçi", "beğeni", "izlenme", "tiktok", "instagram", "düşüş"]):
         reply = "Sosyal medya siparişleri sıraya alınarak 5-15 dakika içinde organik olarak gönderilmeye başlar. Profilinizin gizli (özel) olmadığından emin olunuz."
     elif any(k in user_msg for k in ["çekiliş", "kazanan", "giveaway", "ödül", "bilet"]):
-        reply = "Aktif çekilişlerimize 'Çekilişler' sayfasından ücretsiz veya ücretli (biletli) katılabilirsiniz! Kazananlar adil şekilde seçilir."
+        reply = "Aktif çekilişlerimize 'Çekilişler' sayfasından ücretsiz veya ücretli katılabilirsiniz!"
     elif any(k in user_msg for k in ["admin", "yetki", "berat", "lvbelc5baba", "şifre"]):
         reply = "Yönetici ve hesap güvenliği işlemleriniz kayıt altına alınmıştır. Şifre sıfırlama taleplerini 'Şifremi Unuttum' ekranından iletebilirsiniz."
     elif any(k in user_msg for k in ["merhaba", "selam", "sa", "günaydın", "iyi günler"]):
@@ -559,7 +581,7 @@ def home():
         
     return render_template("index.html", balance=balance, username=username, is_admin=is_admin, products=products, settings=settings)
 
-# --- ÇEKİLİŞ SAYFASI & ÜCRETLİ/ÜCRETSİZ KATILMA ---
+# --- ÇEKİLİŞ SAYFASI & KATILMA ---
 @app.route("/giveaways")
 def giveaways():
     user = get_current_user()
@@ -619,7 +641,6 @@ def join_giveaway(giveaway_id):
         flash("Bu çekilişe zaten katıldınız!", "warning")
         return redirect(url_for("giveaways"))
 
-    # Eğer ücretli çekilişse bakiye kontrolü ve düşüşü yap
     is_paid = bool(gw["is_paid"])
     ticket_price = float(gw["ticket_price"] or 0.0)
 
@@ -1070,21 +1091,41 @@ def admin_panel():
                            giveaways=admin_giveaways,
                            settings=get_site_settings())
 
-# --- ADMIN: LOGO & BAŞLIK GÜNCELLEME ---
+# --- ADMIN: LOGO (RESİM YÜKLEME) & BAŞLIK GÜNCELLEME ---
 @app.route("/admin/settings/update", methods=["POST"])
 @admin_required
 def admin_update_settings():
     new_title = request.form.get("site_title", "").strip()
-    new_icon = request.form.get("site_icon", "").strip()
-
     if not new_title:
         flash("Site başlığı boş bırakılamaz!", "danger")
         return redirect(url_for("admin_panel"))
 
+    logo_file = request.files.get("logo_file")
+    logo_path = None
+
+    if logo_file and logo_file.filename and allowed_file(logo_file.filename):
+        ext = logo_file.filename.rsplit(".", 1)[1].lower()
+        filename = f"logo_{int(datetime.datetime.now().timestamp())}.{ext}"
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        logo_file.save(filepath)
+        logo_path = f"/static/uploads/{filename}"
+
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    cursor.execute(f"UPDATE site_settings SET site_title = {p}, site_icon = {p}", (new_title, new_icon))
+
+    cursor.execute("SELECT id, site_logo FROM site_settings LIMIT 1")
+    current_settings = cursor.fetchone()
+
+    if current_settings:
+        row_id = current_settings["id"] if isinstance(current_settings, dict) else current_settings[0]
+        old_logo = current_settings["site_logo"] if isinstance(current_settings, dict) else current_settings[1]
+        final_logo = logo_path if logo_path else (old_logo or "")
+        cursor.execute(f"UPDATE site_settings SET site_title = {p}, site_logo = {p} WHERE id = {p}", (new_title, final_logo, row_id))
+    else:
+        final_logo = logo_path if logo_path else ""
+        cursor.execute(f"INSERT INTO site_settings (site_title, site_logo) VALUES ({p}, {p})", (new_title, final_logo))
+
     conn.commit()
     cursor.close()
     conn.close()
@@ -1092,7 +1133,7 @@ def admin_update_settings():
     flash("Web sitesi başlığı ve logosu başarıyla güncellendi!", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ADMIN: ÇEKİLİŞ EKLEME (ÜCRETLİ / ÜCRETSİZ) ---
+# --- ADMIN: ÇEKİLİŞ EKLEME ---
 @app.route("/admin/giveaway/add", methods=["POST"])
 @admin_required
 def admin_add_giveaway():
@@ -1119,7 +1160,7 @@ def admin_add_giveaway():
     type_text = f"Ücretli ({ticket_price:.2f} TL)" if is_paid else "Ücretsiz"
     send_discord_log(
         title="🎁 Yeni Çekiliş Başlatıldı!",
-        description=f"**Başlık:** {title}\n**Ödül:** {reward}\n**Tür:** {type_text}\nKatılmak için siteyi ziyaret edin!",
+        description=f"**Başlık:** {title}\n**Ödül:** {reward}\n**Tür:** {type_text}",
         color=3066993
     )
 
