@@ -19,7 +19,6 @@
         .form-control:focus, .form-select:focus { background-color: #0f172a; border-color: #eab308; color: #fff; }
         .preview-box { background-color: #0f172a; border: 2px dashed #eab308; border-radius: 12px; min-height: 110px; display: flex; align-items: center; justify-content: center; padding: 20px; }
         
-        /* Harf Renk Seçim Kartları */
         .letter-color-card {
             background: #0f172a;
             border: 1px solid #334155;
@@ -70,7 +69,7 @@
       {% endif %}
     {% endwith %}
 
-    <!-- CANLI ÖNİZLEME ALANI -->
+    <!-- CANLI ÖNİZLEME -->
     <div class="card card-custom p-4 mb-4 shadow border-warning">
         <h6 class="fw-bold text-light mb-3"><i class="fa-solid fa-eye"></i> Canlı Önizleme (Navbar'daki Anlık Görünüm)</h6>
         <div class="preview-box" id="previewContainer">
@@ -80,9 +79,7 @@
                 {% else %}
                     <i id="previewIcon" class="fa-solid fa-gamepad fs-3 text-warning"></i>
                 {% endif %}
-                <span id="previewTitle" style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800;">
-                    <!-- Harfler JS ile buraya canlı doldurulur -->
-                </span>
+                <span id="previewTitle" style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800;"></span>
             </div>
         </div>
     </div>
@@ -93,13 +90,11 @@
             <input type="hidden" name="letter_colors" id="letterColorsJson" value="{{ settings.letter_colors }}">
             
             <div class="row g-3 mb-4">
-                <!-- SİTE BAŞLIĞI -->
                 <div class="col-md-6">
                     <label class="form-label small text-secondary fw-bold">Site Başlığı (Metin)</label>
                     <input type="text" id="inputTitle" name="site_title" class="form-control" value="{{ settings.title }}" required oninput="rebuildLetterPickers(); updateLivePreview();">
                 </div>
 
-                <!-- YAZI FONTU -->
                 <div class="col-md-6">
                     <label class="form-label small text-secondary fw-bold">Yazı Fontu</label>
                     <select id="selectFont" name="font_family" class="form-select" onchange="updateLivePreview()">
@@ -113,12 +108,11 @@
                     </select>
                 </div>
 
-                <!-- HARF HARF RENK SEÇİM ALANI (YENİ) -->
+                <!-- HARF RENK SEÇİM ALANI -->
                 <div class="col-12 p-3 bg-dark rounded border border-secondary mt-3">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                         <label class="form-label mb-0 fw-bold text-warning"><i class="fa-solid fa-paintbrush"></i> Harf Harf Renk Seçici</label>
                         
-                        <!-- HAZIR PALET BUTONLARI -->
                         <div class="d-flex gap-1 flex-wrap">
                             <button type="button" class="btn btn-outline-info btn-sm py-0 px-2" onclick="applyPreset('rainbow')">🌈 Gökkuşağı / RGB</button>
                             <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="applyPreset('fire')">🔥 Neon Ateş</button>
@@ -127,12 +121,9 @@
                         </div>
                     </div>
 
-                    <div id="letterPickersContainer" class="d-flex flex-wrap align-items-center">
-                        <!-- JS Tarafından Dinamik Üretilecek Harf Kutuları -->
-                    </div>
+                    <div id="letterPickersContainer" class="d-flex flex-wrap align-items-center"></div>
                 </div>
 
-                <!-- LOGO KONUMU -->
                 <div class="col-md-4">
                     <label class="form-label small text-secondary fw-bold">Logo Konumu</label>
                     <select id="selectPosition" name="logo_position" class="form-select" onchange="updateLivePreview()">
@@ -142,26 +133,22 @@
                     </select>
                 </div>
 
-                <!-- LOGO BÜYÜKLÜĞÜ -->
                 <div class="col-md-4">
                     <label class="form-label small text-secondary fw-bold">Logo Yüksekliği: <span id="logoHeightVal" class="text-warning">{{ settings.logo_height }}px</span></label>
                     <input type="range" id="inputLogoHeight" name="logo_height" class="form-range" min="24" max="80" value="{{ settings.logo_height }}" oninput="updateLivePreview()">
                 </div>
 
-                <!-- YAZI BÜYÜKLÜĞÜ -->
                 <div class="col-md-4">
                     <label class="form-label small text-secondary fw-bold">Font Boyutu: <span id="fontSizeVal" class="text-warning">{{ settings.font_size }}px</span></label>
                     <input type="range" id="inputFontSize" name="font_size" class="form-range" min="16" max="36" value="{{ settings.font_size }}" oninput="updateLivePreview()">
                 </div>
 
-                <!-- LOGO GÖRSELİ DEĞİŞTİR -->
                 <div class="col-md-12">
                     <label class="form-label small text-secondary fw-bold">Logo Görseli Seç (Bilgisayardan)</label>
                     <input type="file" name="logo_file" id="inputLogoFile" class="form-control" accept="image/*" onchange="previewLocalImage(event)">
                 </div>
             </div>
 
-            <!-- GİZLİ TEK RENK (VARSAYILAN) -->
             <input type="hidden" name="text_color" id="inputColor" value="{{ settings.text_color }}">
 
             <button type="submit" class="btn btn-warning btn-lg fw-bold w-100 py-3 shadow">
@@ -246,7 +233,6 @@ function updateLivePreview() {
     titleEl.style.fontFamily = font;
     titleEl.style.fontSize = fontS + 'px';
 
-    // Harfleri span olarak oluştur
     titleEl.innerHTML = '';
     for (let i = 0; i < title.length; i++) {
         const span = document.createElement('span');
@@ -259,7 +245,6 @@ function updateLivePreview() {
         logoEl.style.height = logoH + 'px';
     }
 
-    // Konumlandırma
     if (pos === 'top') {
         brand.className = 'd-flex flex-column align-items-center gap-2 text-center';
         if (logoEl) brand.insertBefore(logoEl, titleEl);
