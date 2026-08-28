@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ settings.title }} - Güvenilir Oyun & Hesap Pazarı</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,21 +22,45 @@
             --accent-green: #10b981;
         }
 
-        body {
+        /* TAŞMAYI KÖKTEN ENGELLEYEN GLOBAL KURAL */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden !important;
             background-color: var(--bg-dark);
             color: #f3f4f6;
             font-family: 'Montserrat', sans-serif;
             letter-spacing: -0.2px;
+            margin: 0;
+            padding: 0;
         }
 
-        /* 1. ÜST HEADER (TOP NAV) */
+        .container, .container-fluid {
+            width: 100%;
+            max-width: 100%;
+            padding-right: 12px;
+            padding-left: 12px;
+            overflow: hidden;
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 1140px;
+            }
+        }
+
+        /* 1. TOP HEADER */
         .top-navbar {
             background-color: #0b0f19;
             border-bottom: 1px solid var(--border-color);
-            padding: 14px 0;
+            padding: 10px 0;
+            width: 100%;
         }
         .search-container {
-            max-width: 480px;
             width: 100%;
             position: relative;
         }
@@ -45,8 +69,8 @@
             border: 1px solid #243048;
             color: #fff;
             border-radius: 8px;
-            padding: 10px 16px 10px 42px;
-            font-size: 0.9rem;
+            padding: 8px 14px 8px 36px;
+            font-size: 0.85rem;
             width: 100%;
         }
         .search-input:focus {
@@ -57,102 +81,119 @@
         }
         .search-icon {
             position: absolute;
-            left: 14px;
+            left: 12px;
             top: 50%;
             transform: translateY(-50%);
             color: #64748b;
+            font-size: 0.85rem;
         }
 
-        /* 2. KATEGORİ ŞERİDİ (SUB-BAR) */
+        /* 2. KATEGORİ ŞERİDİ (EKRANI ESNETMEYEN KAYDIRMA) */
         .sub-bar {
             background-color: #0d1322;
             border-bottom: 1px solid var(--border-color);
-            padding: 8px 0;
+            padding: 6px 0;
+            width: 100%;
+            overflow: hidden;
+        }
+        .scroll-categories {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            white-space: nowrap;
+            width: 100%;
+            padding-bottom: 2px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .scroll-categories::-webkit-scrollbar {
+            display: none;
         }
         .cat-badge-btn {
             background-color: transparent;
             color: #94a3b8;
-            border: none;
-            font-size: 0.85rem;
+            border: 1px solid transparent;
+            font-size: 0.78rem;
             font-weight: 600;
-            padding: 6px 14px;
+            padding: 5px 10px;
             border-radius: 6px;
             transition: 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
+            flex-shrink: 0;
+            text-decoration: none;
         }
         .cat-badge-btn:hover, .cat-badge-btn.active {
             color: #fff;
             background-color: #1e293b;
+            border-color: #334155;
         }
         .btn-kategoriler-menu {
             background-color: #2563eb;
             color: #fff;
             font-weight: 700;
             border-radius: 6px;
-            padding: 6px 16px;
-            font-size: 0.85rem;
+            padding: 5px 12px;
+            font-size: 0.78rem;
+            flex-shrink: 0;
+            border: none;
         }
 
-        /* 3. HERO MAVİ BANNER */
+        /* 3. HERO BANNER */
         .hero-banner {
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1d4ed8 100%);
-            border-radius: 16px;
-            padding: 35px 40px;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
         }
 
-        /* 4. SOL FİLTRELEME SÜTUNU */
+        /* 4. FİLTRELER */
         .filter-sidebar {
             background-color: var(--sidebar-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
+            border-radius: 10px;
+            padding: 14px;
+            width: 100%;
         }
 
-        /* 5. MODERN KART TASARIMI */
+        /* 5. İLAN KARTLARI */
         .product-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
-            transition: transform 0.2s, border-color 0.2s;
+            width: 100%;
             position: relative;
         }
-        .product-card:hover {
-            transform: translateY(-4px);
-            border-color: #3b82f6;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
         .card-banner-img {
-            height: 190px;
+            height: 140px;
             width: 100%;
             object-fit: cover;
         }
         .coksatan-badge {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
+            top: 6px;
+            left: 6px;
+            background: rgba(0,0,0,0.8);
             border: 1px solid #f43f5e;
             color: #fb7185;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             font-weight: 800;
-            padding: 3px 8px;
+            padding: 2px 5px;
             border-radius: 4px;
-            letter-spacing: 1px;
         }
         .seller-avatar {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border-radius: 4px;
             background-color: #3b82f6;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: bold;
         }
         .buy-action-btn {
@@ -160,18 +201,46 @@
             border: 1px solid #334155;
             color: #38bdf8;
             border-radius: 6px;
-            padding: 6px 12px;
+            padding: 4px 8px;
             font-weight: 700;
-            transition: 0.2s;
+            font-size: 0.75rem;
         }
-        .buy-action-btn:hover {
-            background-color: #38bdf8;
-            color: #000;
+
+        /* MOBİL ÖZEL AYARLAR */
+        @media (max-width: 768px) {
+            .card-banner-img {
+                height: 110px;
+            }
+            .product-card .card-body {
+                padding: 8px !important;
+            }
+            .product-card .card-title {
+                font-size: 0.75rem !important;
+                line-height: 1.2;
+            }
+            .product-price-text {
+                font-size: 0.85rem !important;
+            }
+            .hero-banner {
+                padding: 14px !important;
+            }
+            .hero-banner h3 {
+                font-size: 1.1rem !important;
+            }
+            .hero-banner p {
+                display: none !important;
+            }
+            #support-modal {
+                width: calc(100vw - 30px) !important;
+                right: 15px !important;
+                left: 15px !important;
+                bottom: 80px !important;
+            }
         }
 
         /* CANLI DESTEK */
-        .typing-bubble { background-color: #334155; display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 14px; width: fit-content; }
-        .typing-dot { width: 6px; height: 6px; background-color: #94a3b8; border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out both; }
+        .typing-bubble { background-color: #334155; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 12px; width: fit-content; }
+        .typing-dot { width: 5px; height: 5px; background-color: #94a3b8; border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
@@ -179,61 +248,68 @@
 </head>
 <body>
 
-<!-- 1. ÜST HEADER (LOGO, ARAMA, BUTONLAR) -->
+<!-- 1. ÜST HEADER -->
 <header class="top-navbar">
-    <div class="container d-flex justify-content-between align-items-center gap-3">
+    <div class="container d-flex justify-content-between align-items-center gap-2">
         
         <!-- LOGO & BAŞLIK -->
-        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none m-0" href="/">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none m-0 p-0" href="/" style="max-width: 50%;">
             {% if settings.logo %}
-                <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px; object-fit: contain;" class="rounded">
+                <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px; max-height: 32px; object-fit: contain;" class="rounded">
             {% else %}
-                <i class="fa-solid fa-bolt text-info fs-3"></i>
+                <i class="fa-solid fa-bolt text-info fs-5"></i>
             {% endif %}
             
-            <span style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800;">
+            <span class="text-truncate" style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800;">
                 {% for item in settings.formatted_letters %}
                     <span style="color: {{ item.color }};">{{ item.char }}</span>
                 {% endfor %}
             </span>
         </a>
 
-        <!-- HESAP.COM.TR TARZI ARAMA ÇUBUĞU -->
-        <div class="search-container d-none d-md-block">
+        <!-- MASAÜSTÜ ARAMA ÇUBUĞU -->
+        <div class="search-container d-none d-lg-block">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
-            <input type="text" id="liveSearchInput" class="search-input" placeholder="Oyun, epin, ilan ara..." oninput="onSearchFilter(this.value)">
+            <input type="text" class="search-input" placeholder="Oyun, epin, ilan ara..." oninput="onSearchFilter(this.value)">
         </div>
 
         <!-- SAĞ BUTONLAR -->
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-1">
             {% if username %}
-                <!-- KULLANICI İLAN EKLE (3 İLAN HAKKI) -->
-                <a href="/user/add-listing" class="btn btn-warning btn-sm fw-bold px-3 py-2 shadow-sm text-dark">
-                    <i class="fa-solid fa-plus"></i> İlan Ekle
+                <a href="/user/add-listing" class="btn btn-warning btn-sm fw-bold px-2 py-1 text-dark" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-plus"></i> <span class="d-none d-sm-inline">İlan Ekle</span>
                 </a>
-                <a href="/deposit" class="btn btn-success btn-sm fw-bold px-3 py-2 shadow-sm">
-                    <i class="fa-solid fa-wallet"></i> Bakiye Yükle ({{ "%.2f"|format(balance) }} TL)
+                <a href="/deposit" class="btn btn-success btn-sm fw-bold px-2 py-1" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-wallet"></i> <span class="d-none d-md-inline">{{ "%.2f"|format(balance) }} TL</span>
                 </a>
 
                 {% if is_admin %}
-                    <a href="/admin" class="btn btn-danger btn-sm fw-bold py-2"><i class="fa-solid fa-shield-halved"></i> Admin</a>
+                    <a href="/admin" class="btn btn-danger btn-sm fw-bold px-2 py-1"><i class="fa-solid fa-shield-halved"></i></a>
                 {% endif %}
 
-                <a href="/orders" class="btn btn-outline-light btn-sm py-2"><i class="fa-solid fa-box"></i></a>
-                <a href="/logout" class="btn btn-outline-danger btn-sm py-2"><i class="fa-solid fa-right-from-bracket"></i></a>
+                <a href="/orders" class="btn btn-outline-light btn-sm px-2 py-1"><i class="fa-solid fa-box"></i></a>
+                <a href="/logout" class="btn btn-outline-danger btn-sm px-2 py-1"><i class="fa-solid fa-right-from-bracket"></i></a>
             {% else %}
-                <a href="/login" class="btn btn-warning btn-sm fw-bold px-3 py-2 text-dark">Kayıt Ol / Giriş Yap</a>
+                <a href="/login" class="btn btn-warning btn-sm fw-bold px-2 py-1 text-dark" style="font-size: 0.75rem;">Giriş Yap</a>
             {% endif %}
+        </div>
+    </div>
+
+    <!-- MOBİL İÇİN ARAMA ÇUBUĞU -->
+    <div class="container mt-2 d-block d-lg-none">
+        <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" class="search-input" placeholder="Oyun veya ilan ara..." oninput="onSearchFilter(this.value)">
         </div>
     </div>
 </header>
 
-<!-- 2. KATEGORİ ŞERİDİ (SUB-NAVBAR) -->
+<!-- 2. KATEGORİ ŞERİDİ (PARMAKLA KAYDIRILABİLİR) -->
 <nav class="sub-bar">
-    <div class="container d-flex justify-content-between align-items-center overflow-x-auto py-1 gap-2">
-        <div class="d-flex align-items-center gap-1">
-            <button class="btn btn-kategoriler-menu d-flex align-items-center gap-2" onclick="filterMain('all', this)">
-                <i class="fa-solid fa-bars"></i> Kategoriler
+    <div class="container">
+        <div class="scroll-categories">
+            <button class="btn-kategoriler-menu" onclick="filterMain('all', this)">
+                <i class="fa-solid fa-bars"></i> Menü
             </button>
             <button class="cat-badge-btn active" onclick="filterMain('all', this)">
                 <i class="fa-solid fa-border-all"></i> Tümü
@@ -243,22 +319,18 @@
                 <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
             </button>
             {% endfor %}
-        </div>
-
-        <div class="d-flex align-items-center gap-2 text-nowrap">
             <a href="/giveaways" class="cat-badge-btn text-warning fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
-            <a href="/wheel" class="cat-badge-btn text-info fw-bold"><i class="fa-solid fa-dharmachakra"></i> Şans Çarkı</a>
-            <span class="text-secondary small ms-2"><i class="fa-solid fa-bolt text-warning"></i> 7/24 Anında Teslimat</span>
+            <a href="/wheel" class="cat-badge-btn text-info fw-bold"><i class="fa-solid fa-dharmachakra"></i> Çark</a>
         </div>
     </div>
 </nav>
 
-<!-- ANA İÇERİK ALANI -->
-<div class="container py-4">
+<!-- ANA İÇERİK -->
+<div class="container py-3">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show p-3 mb-4 shadow" role="alert">
+          <div class="alert alert-{{ category }} alert-dismissible fade show p-2 mb-3 small shadow" role="alert">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
@@ -266,87 +338,78 @@
       {% endif %}
     {% endwith %}
 
-    <!-- 3. MAVİ HERO DUYURU BANNER'I (FOTOĞRAFTAKİ GİBİ) -->
-    <div class="hero-banner mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div style="max-width: 650px;">
-            <h3 class="fw-bold text-white mb-2" id="heroTitle">PUBG Mobile & Oyun İlanları Pazarı</h3>
-            <p class="text-light opacity-90 small mb-0">
-                Oyuncuların ilan pazarında sunduğu hesaplar ve e-pinler. Pazarda uygun bütçeye çeşitli envanterli profillere hemen ulaşabilirsiniz.
+    <!-- 3. HERO BANNER -->
+    <div class="hero-banner mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold text-white mb-1" id="heroTitle" style="font-size: 1.25rem;">PUBG Mobile & Oyun İlanları Pazarı</h3>
+            <p class="text-light opacity-90 small mb-0 d-none d-sm-block">
+                Uygun bütçeyle envanterli hesaplara ve anında teslim e-pinlere hemen ulaşın.
             </p>
         </div>
-        <a href="/user/add-listing" class="btn btn-light btn-lg fw-bold text-primary px-4 py-2 shadow">
+        <a href="/user/add-listing" class="btn btn-light btn-sm fw-bold text-primary px-3 py-1 shadow">
             İLAN EKLE <i class="fa-solid fa-plus ms-1"></i>
         </a>
     </div>
 
-    <!-- 4. SOL FİLTRELER & SAĞ İLAN GRID'İ (HESAP.COM.TR DÜZENİ) -->
-    <div class="row g-4">
-        <!-- SOL FİLTRELEME ALANI -->
+    <!-- MOBİL FİLTRE BUTONU -->
+    <div class="d-block d-lg-none mb-2">
+        <button class="btn btn-outline-secondary btn-sm w-100 fw-bold py-1 text-light" type="button" data-bs-toggle="collapse" data-bs-target="#mobileFilterCollapse">
+            <i class="fa-solid fa-filter text-info"></i> Filtreleri Göster / Gizle
+        </button>
+    </div>
+
+    <!-- 4. FİLTRELER & İLAN GRID'İ -->
+    <div class="row g-2 g-md-3">
+        <!-- SOL FİLTRELER -->
         <div class="col-lg-3">
-            <div class="filter-sidebar">
-                <h6 class="fw-bold text-light mb-3 pb-2 border-bottom border-secondary">
-                    <i class="fa-solid fa-filter text-info"></i> DİĞER FİLTRELER
-                </h6>
+            <div class="collapse d-lg-block" id="mobileFilterCollapse">
+                <div class="filter-sidebar">
+                    <h6 class="fw-bold text-light mb-2 pb-1 border-bottom border-secondary" style="font-size: 0.8rem;">
+                        <i class="fa-solid fa-filter text-info"></i> FİLTRELEME
+                    </h6>
 
-                <!-- GARANTİ SEÇİMİ -->
-                <div class="mb-3">
-                    <label class="form-label small text-secondary fw-bold">Garanti Durumu</label>
-                    <select class="form-select form-select-sm bg-dark text-white border-secondary">
-                        <option>Tümü</option>
-                        <option>İlk Sahibi Garantili</option>
-                        <option>E-Posta Değişen</option>
-                        <option>Anında Teslimat</option>
-                    </select>
-                </div>
-
-                <!-- FİYAT ARALIĞI -->
-                <div class="mb-3">
-                    <label class="form-label small text-secondary fw-bold">Fiyat Aralığı (TL)</label>
-                    <div class="d-flex gap-2">
-                        <input type="number" id="filterMinPrice" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="En Az" oninput="applyAdvancedFilters()">
-                        <input type="number" id="filterMaxPrice" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="En Çok" oninput="applyAdvancedFilters()">
+                    <div class="mb-2">
+                        <label class="form-label small text-secondary fw-bold" style="font-size: 0.7rem;">Fiyat Aralığı (TL)</label>
+                        <div class="d-flex gap-1">
+                            <input type="number" id="filterMinPrice" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Min" oninput="applyAdvancedFilters()">
+                            <input type="number" id="filterMaxPrice" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Max" oninput="applyAdvancedFilters()">
+                        </div>
                     </div>
-                </div>
 
-                <!-- OTOMATİK TESLİMAT ANAHTARI -->
-                <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" id="autoDeliveryCheck" checked>
-                    <label class="form-check-label small text-light fw-bold" for="autoDeliveryCheck">⚡ Otomatik Teslimat</label>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="autoDeliveryCheck" checked>
+                        <label class="form-check-label small text-light fw-bold" for="autoDeliveryCheck" style="font-size: 0.75rem;">⚡ Otomatik Teslimat</label>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- SAĞ İLAN KARTLARI LİSTESİ -->
+        <!-- SAĞ İLAN GRID'İ (MOBİLDE TAM 2'Lİ DÜZEN) -->
         <div class="col-lg-9">
-            <div class="row g-3" id="products-grid">
+            <div class="row g-2" id="products-grid">
                 {% for p in products %}
-                <div class="col-sm-6 col-md-4 product-item" data-main="{{ p.main_category }}" data-sub="{{ p.sub_category }}" data-price="{{ p.price }}" data-title="{{ p.title|lower }}">
-                    <div class="card product-card h-100 text-white shadow">
+                <div class="col-6 col-md-4 product-item" data-main="{{ p.main_category }}" data-sub="{{ p.sub_category }}" data-price="{{ p.price }}" data-title="{{ p.title|lower }}">
+                    <div class="card product-card h-100 text-white shadow-sm">
                         
-                        <!-- ÇOK SATAN ETİKETİ -->
                         <span class="coksatan-badge">🔥 ÇOK SATAN</span>
                         <img src="{{ p.image }}" class="card-banner-img" alt="{{ p.title }}">
 
-                        <div class="card-body d-flex flex-column justify-content-between p-3">
+                        <div class="card-body d-flex flex-column justify-content-between p-2">
                             <div>
-                                <!-- SATICI ADI VE ROZET -->
-                                <div class="d-flex align-items-center gap-2 mb-2">
+                                <div class="d-flex align-items-center gap-1 mb-1">
                                     <div class="seller-avatar">{{ p.seller_name[0]|upper }}</div>
-                                    <span class="small text-secondary fw-bold">{{ p.seller_name }}</span>
-                                    <span class="badge bg-dark border border-secondary text-warning ms-auto" style="font-size: 0.65rem;">PRO</span>
+                                    <span class="small text-secondary fw-bold text-truncate" style="font-size: 0.7rem;">{{ p.seller_name }}</span>
                                 </div>
 
-                                <h6 class="card-title fw-bold text-light mb-1" style="font-size: 0.95rem;">{{ p.title }}</h6>
-                                <small class="text-secondary d-block mb-2">Teslimat: <span class="text-success fw-bold">Anında Kod</span></small>
+                                <h6 class="card-title fw-bold text-light mb-1 text-truncate" style="font-size: 0.8rem;" title="{{ p.title }}">{{ p.title }}</h6>
+                                <small class="text-success fw-bold d-block mb-1" style="font-size: 0.65rem;">⚡ Anında Kod</small>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
-                                <div>
-                                    <span class="fs-5 fw-bold text-light">{{ "%.2f"|format(p.price) }} TL</span>
-                                </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1 pt-1 border-top border-secondary">
+                                <span class="fw-bold text-light product-price-text" style="font-size: 0.9rem;">{{ "%.2f"|format(p.price) }} ₺</span>
                                 <form action="/buy/{{ p.id }}" method="POST">
-                                    <button type="submit" class="btn buy-action-btn btn-sm" {% if p.stock <= 0 %}disabled{% endif %}>
-                                        <i class="fa-solid fa-cart-shopping"></i> Satın Al
+                                    <button type="submit" class="btn buy-action-btn" {% if p.stock <= 0 %}disabled{% endif %}>
+                                        <i class="fa-solid fa-cart-shopping"></i> <span class="d-none d-sm-inline">Al</span>
                                     </button>
                                 </form>
                             </div>
@@ -354,9 +417,9 @@
                     </div>
                 </div>
                 {% else %}
-                <div class="col-12 text-center py-5">
-                    <i class="fa-solid fa-box-open fa-3x text-secondary mb-3"></i>
-                    <h5 class="text-secondary">Bu kategoride henüz aktif ilan bulunmamaktadır.</h5>
+                <div class="col-12 text-center py-4">
+                    <i class="fa-solid fa-box-open fa-2x text-secondary mb-2"></i>
+                    <h6 class="text-secondary">Bu kategoride henüz aktif ilan bulunmamaktadır.</h6>
                 </div>
                 {% endfor %}
             </div>
@@ -364,67 +427,66 @@
     </div>
 </div>
 
-<!-- CANLI DESTEK WIDGET -->
-<div id="live-support-btn" style="position: fixed; bottom: 25px; right: 25px; z-index: 1000;">
-    <button class="btn btn-primary rounded-circle p-3 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 60px; height: 60px; background-color: #2563eb; border: none;">
-        <i class="fa-solid fa-headset fa-xl text-white"></i>
+<!-- CANLI DESTEK BUTONU -->
+<div id="live-support-btn" style="position: fixed; bottom: 15px; right: 15px; z-index: 1000;">
+    <button class="btn btn-primary rounded-circle p-2 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 48px; height: 48px; background-color: #2563eb; border: none;">
+        <i class="fa-solid fa-headset fa-lg text-white"></i>
     </button>
 </div>
 
-<div id="support-modal" style="display: none; position: fixed; bottom: 95px; right: 25px; width: 360px; z-index: 1000; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background-color: #1e293b; border: 1px solid #334155;">
-    <div class="bg-dark p-3 text-white d-flex justify-content-between align-items-center border-bottom border-secondary">
+<div id="support-modal" style="display: none; position: fixed; bottom: 75px; right: 15px; width: 320px; z-index: 1000; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background-color: #1e293b; border: 1px solid #334155;">
+    <div class="bg-dark p-2 text-white d-flex justify-content-between align-items-center border-bottom border-secondary">
         <div>
-            <h6 class="mb-0 fw-bold text-warning"><i class="fa-solid fa-comments"></i> 7/24 Canlı Destek</h6>
-            <small id="agent-subtext" class="text-secondary" style="font-size: 0.75rem;">Müşteri Hizmetleri</small>
+            <h6 class="mb-0 fw-bold text-warning" style="font-size: 0.8rem;"><i class="fa-solid fa-comments"></i> 7/24 Canlı Destek</h6>
+            <small id="agent-subtext" class="text-secondary" style="font-size: 0.65rem;">Müşteri Hizmetleri</small>
         </div>
         <button class="btn-close btn-close-white" onclick="closeSupport()"></button>
     </div>
 
-    <div id="support-survey" class="p-4 text-white">
-        <h6 class="fw-bold mb-2">Destek Talebi Başlatın</h6>
-        <p class="small text-secondary mb-3">Doğru uzmanın bağlanabilmesi için lütfen konuyu seçiniz.</p>
+    <div id="support-survey" class="p-3 text-white">
+        <h6 class="fw-bold mb-1" style="font-size: 0.8rem;">Destek Talebi Başlatın</h6>
+        <p class="small text-secondary mb-2" style="font-size: 0.7rem;">Uzmanın bağlanabilmesi için konuyu seçin.</p>
         
-        <div class="mb-3">
-            <label class="form-label small text-secondary">Adınız</label>
-            <input type="text" id="survey-name" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Adınız Soyadınız" value="{{ username or '' }}">
+        <div class="mb-2">
+            <label class="form-label small text-secondary mb-1" style="font-size: 0.7rem;">Adınız</label>
+            <input type="text" id="survey-name" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Adınız" value="{{ username or '' }}">
         </div>
 
         <div class="mb-3">
-            <label class="form-label small text-secondary">Sorununuzun Konusu</label>
+            <label class="form-label small text-secondary mb-1" style="font-size: 0.7rem;">Konu</label>
             <select id="survey-topic" class="form-select form-select-sm bg-dark text-white border-secondary">
-                <option value="odeme">💳 Bakiye & Ödeme İşlemleri</option>
-                <option value="epin">🎮 E-Pin & Oyun Kodu Teslimatı</option>
+                <option value="odeme">💳 Bakiye & Ödeme</option>
+                <option value="epin">🎮 E-Pin & Hesap Teslimatı</option>
                 <option value="sosyal">📲 Sosyal Medya Hizmetleri</option>
                 <option value="teknik">⚙️ Hesap & Teknik Destek</option>
             </select>
         </div>
 
-        <button class="btn btn-primary w-100 fw-bold btn-sm py-2 shadow" onclick="startSupportChat()">
+        <button class="btn btn-primary w-100 fw-bold btn-sm py-1 shadow" onclick="startSupportChat()">
             <i class="fa-solid fa-bolt"></i> Uzmana Bağlan
         </button>
     </div>
 
     <div id="support-chat" style="display: none;">
-        <div id="chat-messages" style="height: 300px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;"></div>
+        <div id="chat-messages" style="height: 220px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem;"></div>
 
-        <div id="typing-indicator" class="px-3 py-1 mb-2" style="display: none;">
+        <div id="typing-indicator" class="px-2 py-1 mb-1" style="display: none;">
             <div class="typing-bubble shadow-sm">
-                <span class="text-secondary small me-2" id="typing-agent-name" style="font-size: 0.75rem;">Temsilci</span>
+                <span class="text-secondary small me-1" id="typing-agent-name" style="font-size: 0.65rem;">Temsilci</span>
                 <div class="typing-dot"></div>
                 <div class="typing-dot"></div>
                 <div class="typing-dot"></div>
             </div>
         </div>
 
-        <div class="p-2 bg-dark border-top border-secondary d-flex gap-2">
-            <input type="text" id="chat-input" class="form-control form-control-sm bg-secondary text-white border-0" placeholder="Mesajınızı yazın..." onkeydown="handleInputKey(event)">
+        <div class="p-2 bg-dark border-top border-secondary d-flex gap-1">
+            <input type="text" id="chat-input" class="form-control form-control-sm bg-secondary text-white border-0" placeholder="Mesajınız..." onkeydown="handleInputKey(event)">
             <button id="send-btn" class="btn btn-primary btn-sm" onclick="sendUserMessage()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 </div>
 
 <script>
-// --- KUSURSUZ KATEGORİ VE ARAMA FİLTRESİ ---
 let currentMainCategory = 'all';
 let searchKeyword = '';
 
@@ -433,16 +495,14 @@ function filterMain(slug, btn) {
     if (btn) btn.classList.add('active');
     currentMainCategory = slug;
 
-    // Hero başlığını güncelle
     const titles = {
         'all': 'Tüm Oyun & İlan Pazarı',
         'pubg': 'PUBG Mobile Hesap & UC Pazarı',
-        'valorant': 'Valorant VP & Hesap Satın Al',
-        'sosyal': 'Sosyal Medya Takipçi & İzlenme Hizmetleri',
+        'valorant': 'Valorant VP & Hesap Pazarı',
+        'sosyal': 'Sosyal Medya Hizmetleri Pazarı',
         'hile': 'Oyun Yazılımları & VIP Paketler'
     };
     document.getElementById('heroTitle').innerText = titles[slug] || (slug.toUpperCase() + ' İlan Pazarı');
-
     applyAdvancedFilters();
 }
 
@@ -473,7 +533,7 @@ function applyAdvancedFilters() {
     });
 }
 
-// CANLI DESTEK SCRİPTLERİ
+// CANLI DESTEK
 let currentAgent = null;
 let currentTopic = null;
 let inactivityTimer = null;
@@ -486,16 +546,16 @@ function toggleSupportModal() {
 function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
-        appendSystemMessage("⚠️ 30 saniye boyunca işlem yapılmadığı için görüşme sonlandırılmıştır.");
+        appendSystemMessage("⚠️ 30 saniye işlem yapılmadığı için sohbet kapatıldı.");
         document.getElementById('chat-input').disabled = true;
         document.getElementById('send-btn').disabled = true;
     }, 30000);
 }
 
 function calculateTypingDelay(text) {
-    const readingTime = Math.floor(Math.random() * 1200) + 800;
-    const typingTime = text.length * 28;
-    return Math.min(readingTime + typingTime, 5000);
+    const readingTime = Math.floor(Math.random() * 800) + 600;
+    const typingTime = text.length * 20;
+    return Math.min(readingTime + typingTime, 4000);
 }
 
 function startSupportChat() {
@@ -522,7 +582,7 @@ function startSupportChat() {
                     appendAgentMessage(data.initial_message);
                     resetInactivityTimer();
                 }, calculateTypingDelay(data.initial_message));
-            }, 600);
+            }, 500);
         }
     });
 }
@@ -551,7 +611,7 @@ function sendUserMessage() {
                 resetInactivityTimer();
             }, calculateTypingDelay(data.reply));
         });
-    }, 700);
+    }, 500);
 }
 
 function showTyping() { document.getElementById('typing-indicator').style.display = 'block'; }
@@ -559,17 +619,17 @@ function hideTyping() { document.getElementById('typing-indicator').style.displa
 function handleInputKey(e) { if (e.key === 'Enter') sendUserMessage(); }
 function appendUserMessage(text) {
     const area = document.getElementById('chat-messages');
-    area.innerHTML += `<div class="align-self-end text-white p-2 rounded-3" style="max-width: 80%; background-color: #2563eb;">${text}</div>`;
+    area.innerHTML += `<div class="align-self-end text-white p-2 rounded-3" style="max-width: 82%; background-color: #2563eb;">${text}</div>`;
     area.scrollTop = area.scrollHeight;
 }
 function appendAgentMessage(text) {
     const area = document.getElementById('chat-messages');
-    area.innerHTML += `<div class="align-self-start text-white p-2 rounded-3" style="max-width: 80%; background-color: #334155;"><strong class="text-warning small d-block">${currentAgent}</strong>${text}</div>`;
+    area.innerHTML += `<div class="align-self-start text-white p-2 rounded-3" style="max-width: 82%; background-color: #334155;"><strong class="text-warning small d-block" style="font-size:0.65rem;">${currentAgent}</strong>${text}</div>`;
     area.scrollTop = area.scrollHeight;
 }
 function appendSystemMessage(text) {
     const area = document.getElementById('chat-messages');
-    area.innerHTML += `<div class="text-center text-muted small py-1">${text}</div>`;
+    area.innerHTML += `<div class="text-center text-muted small py-1" style="font-size:0.65rem;">${text}</div>`;
     area.scrollTop = area.scrollHeight;
 }
 function closeSupport() {
