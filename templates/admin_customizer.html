@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sayfa Düzenleri & Harf Renkleri - Yönetici Paneli</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- GOOGLE FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&family=Orbitron:wght@700;900&family=Poppins:wght@600;800&family=Righteous&family=Inter:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        body { background-color: #0b1120; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card-custom { background-color: #1e293b; border: 1px solid #334155; border-radius: 14px; }
+        .form-control, .form-select { background-color: #0f172a; border: 1px solid #334155; color: #fff; }
+        .form-control:focus, .form-select:focus { background-color: #0f172a; border-color: #eab308; color: #fff; }
+        .preview-box { background-color: #0f172a; border: 2px dashed #eab308; border-radius: 12px; min-height: 110px; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        
+        /* Harf Renk Seçim Kartları */
+        .letter-color-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 6px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            width: 55px;
+            margin: 4px;
+        }
+        .letter-label {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 4px;
+            height: 24px;
+        }
+        .letter-picker {
+            width: 36px;
+            height: 28px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="py-4">
+
+<div class="container" style="max-width: 960px;">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+        <div>
+            <h3 class="fw-bold text-warning mb-0"><i class="fa-solid fa-palette"></i> Başlık & Harf Harf Renk Tasarımı</h3>
+            <small class="text-secondary">Her harfin rengini ayrı belirleyin veya hazır RGB/Neon paletleri uygulayın.</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-shield-halved"></i> Yönetim Paneli</a>
+            <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağaza</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} p-3 small mb-4 shadow-sm">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- CANLI ÖNİZLEME ALANI -->
+    <div class="card card-custom p-4 mb-4 shadow border-warning">
+        <h6 class="fw-bold text-light mb-3"><i class="fa-solid fa-eye"></i> Canlı Önizleme (Navbar'daki Anlık Görünüm)</h6>
+        <div class="preview-box" id="previewContainer">
+            <div id="previewBrand" class="d-flex align-items-center gap-2">
+                {% if settings.logo %}
+                    <img id="previewLogo" src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px; object-fit: contain;">
+                {% else %}
+                    <i id="previewIcon" class="fa-solid fa-gamepad fs-3 text-warning"></i>
+                {% endif %}
+                <span id="previewTitle" style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800;">
+                    <!-- Harfler JS ile buraya canlı doldurulur -->
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DÜZENLEME FORMU -->
+    <div class="card card-custom p-4 shadow">
+        <form action="/admin/settings/update" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="letter_colors" id="letterColorsJson" value="{{ settings.letter_colors }}">
+            
+            <div class="row g-3 mb-4">
+                <!-- SİTE BAŞLIĞI -->
+                <div class="col-md-6">
+                    <label class="form-label small text-secondary fw-bold">Site Başlığı (Metin)</label>
+                    <input type="text" id="inputTitle" name="site_title" class="form-control" value="{{ settings.title }}" required oninput="rebuildLetterPickers(); updateLivePreview();">
+                </div>
+
+                <!-- YAZI FONTU -->
+                <div class="col-md-6">
+                    <label class="form-label small text-secondary fw-bold">Yazı Fontu</label>
+                    <select id="selectFont" name="font_family" class="form-select" onchange="updateLivePreview()">
+                        <option value="Orbitron" {% if settings.font_family == 'Orbitron' %}selected{% endif %}>Orbitron (Gaming / Fütüristik)</option>
+                        <option value="Montserrat" {% if settings.font_family == 'Montserrat' %}selected{% endif %}>Montserrat (Modern & Kalın)</option>
+                        <option value="Poppins" {% if settings.font_family == 'Poppins' %}selected{% endif %}>Poppins (Şık & Yuvarlak)</option>
+                        <option value="Bebas Neue" {% if settings.font_family == 'Bebas Neue' %}selected{% endif %}>Bebas Neue (Büyük & Vurgulu)</option>
+                        <option value="Righteous" {% if settings.font_family == 'Righteous' %}selected{% endif %}>Righteous (Arcade / Retro)</option>
+                        <option value="Inter" {% if settings.font_family == 'Inter' %}selected{% endif %}>Inter (Sade & Kurumsal)</option>
+                        <option value="Segoe UI" {% if settings.font_family == 'Segoe UI' %}selected{% endif %}>Segoe UI (Klasik)</option>
+                    </select>
+                </div>
+
+                <!-- HARF HARF RENK SEÇİM ALANI (YENİ) -->
+                <div class="col-12 p-3 bg-dark rounded border border-secondary mt-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <label class="form-label mb-0 fw-bold text-warning"><i class="fa-solid fa-paintbrush"></i> Harf Harf Renk Seçici</label>
+                        
+                        <!-- HAZIR PALET BUTONLARI -->
+                        <div class="d-flex gap-1 flex-wrap">
+                            <button type="button" class="btn btn-outline-info btn-sm py-0 px-2" onclick="applyPreset('rainbow')">🌈 Gökkuşağı / RGB</button>
+                            <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="applyPreset('fire')">🔥 Neon Ateş</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" onclick="applyPreset('cyber')">💎 Cyberpunk</button>
+                            <button type="button" class="btn btn-outline-warning btn-sm py-0 px-2" onclick="applyPreset('gold')">👑 Altın Sarı</button>
+                        </div>
+                    </div>
+
+                    <div id="letterPickersContainer" class="d-flex flex-wrap align-items-center">
+                        <!-- JS Tarafından Dinamik Üretilecek Harf Kutuları -->
+                    </div>
+                </div>
+
+                <!-- LOGO KONUMU -->
+                <div class="col-md-4">
+                    <label class="form-label small text-secondary fw-bold">Logo Konumu</label>
+                    <select id="selectPosition" name="logo_position" class="form-select" onchange="updateLivePreview()">
+                        <option value="left" {% if settings.logo_position == 'left' %}selected{% endif %}>Solunda (Yazının Solunda)</option>
+                        <option value="right" {% if settings.logo_position == 'right' %}selected{% endif %}>Sağında (Yazının Sağında)</option>
+                        <option value="top" {% if settings.logo_position == 'top' %}selected{% endif %}>Üstünde (Yazının Üstünde / Ortalı)</option>
+                    </select>
+                </div>
+
+                <!-- LOGO BÜYÜKLÜĞÜ -->
+                <div class="col-md-4">
+                    <label class="form-label small text-secondary fw-bold">Logo Yüksekliği: <span id="logoHeightVal" class="text-warning">{{ settings.logo_height }}px</span></label>
+                    <input type="range" id="inputLogoHeight" name="logo_height" class="form-range" min="24" max="80" value="{{ settings.logo_height }}" oninput="updateLivePreview()">
+                </div>
+
+                <!-- YAZI BÜYÜKLÜĞÜ -->
+                <div class="col-md-4">
+                    <label class="form-label small text-secondary fw-bold">Font Boyutu: <span id="fontSizeVal" class="text-warning">{{ settings.font_size }}px</span></label>
+                    <input type="range" id="inputFontSize" name="font_size" class="form-range" min="16" max="36" value="{{ settings.font_size }}" oninput="updateLivePreview()">
+                </div>
+
+                <!-- LOGO GÖRSELİ DEĞİŞTİR -->
+                <div class="col-md-12">
+                    <label class="form-label small text-secondary fw-bold">Logo Görseli Seç (Bilgisayardan)</label>
+                    <input type="file" name="logo_file" id="inputLogoFile" class="form-control" accept="image/*" onchange="previewLocalImage(event)">
+                </div>
+            </div>
+
+            <!-- GİZLİ TEK RENK (VARSAYILAN) -->
+            <input type="hidden" name="text_color" id="inputColor" value="{{ settings.text_color }}">
+
+            <button type="submit" class="btn btn-warning btn-lg fw-bold w-100 py-3 shadow">
+                <i class="fa-solid fa-floppy-disk"></i> Harf Renklerini & Görünümü Kaydet
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentLetterColors = [];
+try {
+    currentLetterColors = JSON.parse(document.getElementById('letterColorsJson').value);
+} catch (e) {
+    currentLetterColors = [];
+}
+
+function rebuildLetterPickers() {
+    const title = document.getElementById('inputTitle').value;
+    const container = document.getElementById('letterPickersContainer');
+    container.innerHTML = '';
+
+    const newColors = [];
+    for (let i = 0; i < title.length; i++) {
+        const char = title[i];
+        const displayChar = char === ' ' ? '␣' : char;
+        const color = currentLetterColors[i] || '#eab308';
+        newColors.push(color);
+
+        container.innerHTML += `
+            <div class="letter-color-card">
+                <span class="letter-label">${displayChar}</span>
+                <input type="color" class="letter-picker" value="${color}" onchange="onLetterColorChange(${i}, this.value)">
+            </div>
+        `;
+    }
+    currentLetterColors = newColors;
+    document.getElementById('letterColorsJson').value = JSON.stringify(currentLetterColors);
+}
+
+function onLetterColorChange(index, newColor) {
+    currentLetterColors[index] = newColor;
+    document.getElementById('letterColorsJson').value = JSON.stringify(currentLetterColors);
+    updateLivePreview();
+}
+
+function applyPreset(type) {
+    const title = document.getElementById('inputTitle').value;
+    const rainbowPalette = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#a855f7', '#ec4899'];
+    const firePalette = ['#eab308', '#f59e0b', '#f97316', '#ef4444', '#dc2626'];
+    const cyberPalette = ['#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'];
+
+    for (let i = 0; i < title.length; i++) {
+        if (type === 'rainbow') {
+            currentLetterColors[i] = rainbowPalette[i % rainbowPalette.length];
+        } else if (type === 'fire') {
+            currentLetterColors[i] = firePalette[i % firePalette.length];
+        } else if (type === 'cyber') {
+            currentLetterColors[i] = cyberPalette[i % cyberPalette.length];
+        } else if (type === 'gold') {
+            currentLetterColors[i] = '#eab308';
+        }
+    }
+    rebuildLetterPickers();
+    updateLivePreview();
+}
+
+function updateLivePreview() {
+    const title = document.getElementById('inputTitle').value;
+    const font = document.getElementById('selectFont').value;
+    const pos = document.getElementById('selectPosition').value;
+    const logoH = document.getElementById('inputLogoHeight').value;
+    const fontS = document.getElementById('inputFontSize').value;
+
+    document.getElementById('logoHeightVal').innerText = logoH + 'px';
+    document.getElementById('fontSizeVal').innerText = fontS + 'px';
+
+    const brand = document.getElementById('previewBrand');
+    const titleEl = document.getElementById('previewTitle');
+    const logoEl = document.getElementById('previewLogo');
+
+    titleEl.style.fontFamily = font;
+    titleEl.style.fontSize = fontS + 'px';
+
+    // Harfleri span olarak oluştur
+    titleEl.innerHTML = '';
+    for (let i = 0; i < title.length; i++) {
+        const span = document.createElement('span');
+        span.innerText = title[i];
+        span.style.color = currentLetterColors[i] || '#eab308';
+        titleEl.appendChild(span);
+    }
+
+    if (logoEl) {
+        logoEl.style.height = logoH + 'px';
+    }
+
+    // Konumlandırma
+    if (pos === 'top') {
+        brand.className = 'd-flex flex-column align-items-center gap-2 text-center';
+        if (logoEl) brand.insertBefore(logoEl, titleEl);
+    } else if (pos === 'right') {
+        brand.className = 'd-flex flex-row align-items-center gap-2';
+        if (logoEl) brand.appendChild(logoEl);
+    } else {
+        brand.className = 'd-flex flex-row align-items-center gap-2';
+        if (logoEl) brand.insertBefore(logoEl, titleEl);
+    }
+}
+
+function previewLocalImage(event) {
+    const reader = new FileReader();
+    reader.onload = function() {
+        let logoEl = document.getElementById('previewLogo');
+        const iconEl = document.getElementById('previewIcon');
+        if (iconEl) iconEl.remove();
+
+        if (!logoEl) {
+            logoEl = document.createElement('img');
+            logoEl.id = 'previewLogo';
+            document.getElementById('previewBrand').prepend(logoEl);
+        }
+        logoEl.src = reader.result;
+        updateLivePreview();
+    };
+    if (event.target.files[0]) {
+        reader.readAsDataURL(event.target.files[0]);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    rebuildLetterPickers();
+    updateLivePreview();
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
