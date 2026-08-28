@@ -11,7 +11,6 @@
         body { background-color: #0b1120; color: #f8fafc; font-family: 'Montserrat', sans-serif; }
         .card-custom { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; }
         
-        /* KASA RULO ANİMASYON ALANI */
         .roulette-container {
             position: relative;
             width: 100%;
@@ -23,7 +22,6 @@
             border-radius: 12px;
             overflow: hidden;
         }
-        /* ORTADAKİ DİKEY ŞERİT */
         .roulette-pointer {
             position: absolute;
             top: 0;
@@ -85,7 +83,6 @@
         </div>
     </div>
 
-    <!-- KASA SEÇİM LİSTESİ (UÇUZDAN PAHALIYA 5 KASA) -->
     <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-layer-group text-info"></i> Kasalar (Ucuzdan Pahalıya)</h5>
     <div class="row g-3 mb-5">
         {% for cid, case in cases.items() %}
@@ -103,7 +100,6 @@
     </div>
 </div>
 
-<!-- KASA AÇMA ANİMASYON MODALI -->
 <div class="modal fade" id="caseModal" data-bs-backdrop="static" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content bg-dark text-white border border-secondary">
@@ -113,7 +109,6 @@
             </div>
             <div class="modal-body text-center py-4">
                 
-                <!-- RULO ALANI -->
                 <div class="roulette-container mb-4 shadow">
                     <div class="roulette-pointer"></div>
                     <div class="roulette-track" id="rouletteTrack"></div>
@@ -125,7 +120,6 @@
                     </button>
                 </div>
 
-                <!-- KAZANILAN ÖDÜL BİLDİRİMİ -->
                 <div id="winResultArea" style="display: none;" class="mt-3">
                     <h4 class="text-success fw-bold mb-1">🎉 TEBRİKLER, KAZANDINIZ!</h4>
                     <p id="winItemName" class="fw-bold fs-5 text-light mb-1"></p>
@@ -143,7 +137,6 @@ let activeCaseId = null;
 let activeCasePrice = 0;
 let modalInstance = null;
 
-// Kasaya ait item havuzları (Önizleme ve simülasyon için)
 const casesItemsData = {
     {% for cid, case in cases.items() %}
     "{{ cid }}": [
@@ -176,7 +169,6 @@ function buildInitialTrack(caseId) {
     track.innerHTML = '';
 
     const items = casesItemsData[caseId];
-    // Rulo görünümü için öğeleri çoğaltıyoruz
     let html = '';
     for (let i = 0; i < 60; i++) {
         const randItem = items[Math.floor(Math.random() * items.length)];
@@ -209,9 +201,7 @@ function startSpin() {
 
         document.getElementById('userBalance').innerText = data.new_balance;
 
-        // Kazanan itemi track üzerine yerleştir (örneğin 45. sıraya)
         const track = document.getElementById('rouletteTrack');
-        const items = casesItemsData[activeCaseId];
         const winningIndex = 45;
         
         const childNodes = track.children;
@@ -224,7 +214,6 @@ function startSpin() {
             childNodes[winningIndex].style.borderBottom = `4px solid ${data.item.color}`;
         }
 
-        // Kaydırma mesafesini hesapla (Her item 140px genişlikte)
         const itemWidth = 140;
         const containerWidth = document.querySelector('.roulette-container').offsetWidth;
         const targetOffset = (winningIndex * itemWidth) - (containerWidth / 2) + (itemWidth / 2) + (Math.random() * 60 - 30);
@@ -234,7 +223,6 @@ function startSpin() {
 
         setTimeout(() => {
             document.getElementById('spinBtn').style.display = 'none';
-            document.getElementById('winItemName.innerText = data.item.name + " (" + data.item.type + ") - " + data.item.price + " ₺";
             document.getElementById('winItemName').innerText = data.item.name + " (" + data.item.type + ")";
             document.getElementById('winItemCode').innerText = data.code;
             document.getElementById('winResultArea').style.display = 'block';
