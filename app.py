@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
 from functools import wraps
 import os
 import re
+import json
 import requests
 import datetime
 import random
@@ -13,7 +13,6 @@ import sqlite3
 app = Flask(__name__)
 app.secret_key = "epin-super-gizli-anahtar-12345"
 
-# Görsel Yükleme Klasörü Ayarları
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "webp", "ico"}
@@ -24,7 +23,6 @@ def allowed_file(filename):
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1525268830635429930/Lwnf7QQj43IMSHJDrGgj68YpQc0ZKLZ5BF_0nPNQYTMegtVC0ZqlTcfROtV5iZtTmw98"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# --- TEK ANA SÜPER YÖNETİCİ ---
 SUPER_ADMIN_USERNAME = "Lvbelc5baba"
 
 HAS_POSTGRES = False
@@ -129,23 +127,35 @@ def init_db():
             except Exception:
                 pass
 
-            # Site Ayarları Tablosu (PostgreSQL)
+            # Site Ayarları Tablosu (Harf Renkleri Eklenmiş)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id SERIAL PRIMARY KEY,
                     site_title TEXT DEFAULT 'EPIN & SMM PAZARI',
-                    site_logo TEXT DEFAULT ''
+                    site_logo TEXT DEFAULT '',
+                    font_family TEXT DEFAULT 'Orbitron',
+                    logo_position TEXT DEFAULT 'left',
+                    logo_height INTEGER DEFAULT 40,
+                    font_size INTEGER DEFAULT 22,
+                    text_color TEXT DEFAULT '#eab308',
+                    letter_colors TEXT DEFAULT ''
                 );
             ''')
             try:
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS site_logo TEXT DEFAULT '';")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS font_family TEXT DEFAULT 'Orbitron';")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_position TEXT DEFAULT 'left';")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_height INTEGER DEFAULT 40;")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS font_size INTEGER DEFAULT 22;")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS text_color TEXT DEFAULT '#eab308';")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS letter_colors TEXT DEFAULT '';")
                 conn.commit()
             except Exception:
                 pass
 
             cursor.execute("SELECT id FROM site_settings LIMIT 1")
             if not cursor.fetchone():
-                cursor.execute("INSERT INTO site_settings (site_title, site_logo) VALUES (%s, %s)", ('EPIN & SMM PAZARI', ''))
+                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
+                               ('EPIN & SMM PAZARI', '', 'Orbitron', 'left', 40, 22, '#eab308', '[]'))
             conn.commit()
 
             cursor.execute('''
@@ -255,18 +265,30 @@ def init_db():
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     site_title TEXT DEFAULT 'EPIN & SMM PAZARI',
-                    site_logo TEXT DEFAULT ''
+                    site_logo TEXT DEFAULT '',
+                    font_family TEXT DEFAULT 'Orbitron',
+                    logo_position TEXT DEFAULT 'left',
+                    logo_height INTEGER DEFAULT 40,
+                    font_size INTEGER DEFAULT 22,
+                    text_color TEXT DEFAULT '#eab308',
+                    letter_colors TEXT DEFAULT ''
                 )
             ''')
             try:
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN site_logo TEXT DEFAULT ''")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN font_family TEXT DEFAULT 'Orbitron'")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN logo_position TEXT DEFAULT 'left'")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN logo_height INTEGER DEFAULT 40")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN font_size INTEGER DEFAULT 22")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN text_color TEXT DEFAULT '#eab308'")
+                cursor.execute("ALTER TABLE site_settings ADD COLUMN letter_colors TEXT DEFAULT ''")
                 conn.commit()
             except Exception:
                 pass
 
             cursor.execute("SELECT id FROM site_settings LIMIT 1")
             if not cursor.fetchone():
-                cursor.execute("INSERT INTO site_settings (site_title, site_logo) VALUES (?, ?)", ('EPIN & SMM PAZARI', ''))
+                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                               ('EPIN & SMM PAZARI', '', 'Orbitron', 'left', 40, 22, '#eab308', '[]'))
             conn.commit()
 
             cursor.execute('''
@@ -304,8 +326,19 @@ def init_db():
 
 init_db()
 
-# --- SİTE AYARLARINI GETİRME (GÜVENLİ VE HATASIZ) ---
+# --- SİTE AYARLARI VE HARF HARF RENK FORMATLAYICI ---
 def get_site_settings():
+    default_settings = {
+        "title": "EPIN & SMM PAZARI",
+        "logo": "",
+        "font_family": "Orbitron",
+        "logo_position": "left",
+        "logo_height": 40,
+        "font_size": 22,
+        "text_color": "#eab308",
+        "letter_colors": "[]",
+        "formatted_letters": []
+    }
     try:
         conn = get_db()
         cursor = conn.cursor()
@@ -314,12 +347,53 @@ def get_site_settings():
         cursor.close()
         conn.close()
         if row:
-            title = row["site_title"] if isinstance(row, dict) else row[1]
-            logo = row["site_logo"] if isinstance(row, dict) else row[2]
-            return {"title": title or "EPIN & SMM PAZARI", "logo": logo or ""}
+            if isinstance(row, dict):
+                title = row.get("site_title") or default_settings["title"]
+                raw_colors = row.get("letter_colors") or "[]"
+                base_color = row.get("text_color") or "#eab308"
+                settings_data = {
+                    "title": title,
+                    "logo": row.get("site_logo") or "",
+                    "font_family": row.get("font_family") or "Orbitron",
+                    "logo_position": row.get("logo_position") or "left",
+                    "logo_height": row.get("logo_height") or 40,
+                    "font_size": row.get("font_size") or 22,
+                    "text_color": base_color,
+                    "letter_colors": raw_colors
+                }
+            else:
+                title = row[1] or default_settings["title"]
+                raw_colors = row[8] if len(row) > 8 and row[8] else "[]"
+                base_color = row[7] if len(row) > 7 and row[7] else "#eab308"
+                settings_data = {
+                    "title": title,
+                    "logo": row[2] or "",
+                    "font_family": row[3] if len(row) > 3 and row[3] else "Orbitron",
+                    "logo_position": row[4] if len(row) > 4 and row[4] else "left",
+                    "logo_height": row[5] if len(row) > 5 and row[5] else 40,
+                    "font_size": row[6] if len(row) > 6 and row[6] else 22,
+                    "text_color": base_color,
+                    "letter_colors": raw_colors
+                }
+
+            # Harfleri ve renkleri eşleştir
+            try:
+                color_list = json.loads(settings_data["letter_colors"])
+            except Exception:
+                color_list = []
+
+            formatted = []
+            for i, char in enumerate(settings_data["title"]):
+                c = color_list[i] if i < len(color_list) and color_list[i] else settings_data["text_color"]
+                formatted.append({"char": char, "color": c})
+
+            settings_data["formatted_letters"] = formatted
+            return settings_data
     except Exception as e:
         print(f"Site ayarları getirme hatası: {e}")
-    return {"title": "EPIN & SMM PAZARI", "logo": ""}
+    
+    default_settings["formatted_letters"] = [{"char": c, "color": "#eab308"} for c in default_settings["title"]]
+    return default_settings
 
 # --- KOD ÜRETİM MOTORU ---
 def generate_game_code(product_title):
@@ -1091,14 +1165,29 @@ def admin_panel():
                            giveaways=admin_giveaways,
                            settings=get_site_settings())
 
-# --- ADMIN: LOGO (RESİM YÜKLEME) & BAŞLIK GÜNCELLEME ---
+# --- YENİ: HARF HARF RENK & SAYFA DÜZENLERİ PANELİ ---
+@app.route("/admin/customizer")
+@admin_required
+def admin_customizer():
+    user = get_current_user()
+    is_super = (user["username"] == SUPER_ADMIN_USERNAME)
+    settings = get_site_settings()
+    return render_template("admin_customizer.html", username=user["username"], is_super=is_super, settings=settings)
+
 @app.route("/admin/settings/update", methods=["POST"])
 @admin_required
 def admin_update_settings():
     new_title = request.form.get("site_title", "").strip()
+    font_family = request.form.get("font_family", "Orbitron").strip()
+    logo_position = request.form.get("logo_position", "left").strip()
+    logo_height = int(request.form.get("logo_height", 40))
+    font_size = int(request.form.get("font_size", 22))
+    text_color = request.form.get("text_color", "#eab308").strip()
+    letter_colors = request.form.get("letter_colors", "[]").strip()
+
     if not new_title:
         flash("Site başlığı boş bırakılamaz!", "danger")
-        return redirect(url_for("admin_panel"))
+        return redirect(url_for("admin_customizer"))
 
     logo_file = request.files.get("logo_file")
     logo_path = None
@@ -1121,17 +1210,24 @@ def admin_update_settings():
         row_id = current_settings["id"] if isinstance(current_settings, dict) else current_settings[0]
         old_logo = current_settings["site_logo"] if isinstance(current_settings, dict) else current_settings[1]
         final_logo = logo_path if logo_path else (old_logo or "")
-        cursor.execute(f"UPDATE site_settings SET site_title = {p}, site_logo = {p} WHERE id = {p}", (new_title, final_logo, row_id))
+        cursor.execute(f'''
+            UPDATE site_settings 
+            SET site_title = {p}, site_logo = {p}, font_family = {p}, logo_position = {p}, logo_height = {p}, font_size = {p}, text_color = {p}, letter_colors = {p} 
+            WHERE id = {p}
+        ''', (new_title, final_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors, row_id))
     else:
         final_logo = logo_path if logo_path else ""
-        cursor.execute(f"INSERT INTO site_settings (site_title, site_logo) VALUES ({p}, {p})", (new_title, final_logo))
+        cursor.execute(f'''
+            INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) 
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p})
+        ''', (new_title, final_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors))
 
     conn.commit()
     cursor.close()
     conn.close()
 
-    flash("Web sitesi başlığı ve logosu başarıyla güncellendi!", "success")
-    return redirect(url_for("admin_panel"))
+    flash("🎨 Harf renkleri, sayfa düzenleri ve logo başarıyla kaydedildi!", "success")
+    return redirect(url_for("admin_customizer"))
 
 # --- ADMIN: ÇEKİLİŞ EKLEME ---
 @app.route("/admin/giveaway/add", methods=["POST"])
