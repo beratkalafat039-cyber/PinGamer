@@ -69,6 +69,15 @@ def init_db():
             cursor.execute("UPDATE users SET is_admin = 1 WHERE username = %s;", (SUPER_ADMIN_USERNAME,))
 
             cursor.execute('''
+                CREATE TABLE IF NOT EXISTS categories (
+                    id SERIAL PRIMARY KEY,
+                    slug TEXT UNIQUE,
+                    name TEXT,
+                    icon TEXT
+                );
+            ''')
+
+            cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
                     id SERIAL PRIMARY KEY,
                     title TEXT,
@@ -119,13 +128,6 @@ def init_db():
                     created_at TEXT
                 );
             ''')
-            try:
-                cursor.execute("ALTER TABLE giveaways ADD COLUMN IF NOT EXISTS is_paid INTEGER DEFAULT 0;")
-                cursor.execute("ALTER TABLE giveaways ADD COLUMN IF NOT EXISTS ticket_price REAL DEFAULT 0.0;")
-                conn.commit()
-            except Exception:
-                pass
-
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id SERIAL PRIMARY KEY,
@@ -139,23 +141,6 @@ def init_db():
                     letter_colors TEXT DEFAULT ''
                 );
             ''')
-            try:
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS font_family TEXT DEFAULT 'Orbitron';")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_position TEXT DEFAULT 'left';")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS logo_height INTEGER DEFAULT 40;")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS font_size INTEGER DEFAULT 22;")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS text_color TEXT DEFAULT '#eab308';")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS letter_colors TEXT DEFAULT '';")
-                conn.commit()
-            except Exception:
-                pass
-
-            cursor.execute("SELECT id FROM site_settings LIMIT 1")
-            if not cursor.fetchone():
-                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
-                               ('EPIN & SMM PAZARI', '', 'Orbitron', 'left', 40, 22, '#eab308', '[]'))
-            conn.commit()
-
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS giveaway_participants (
                     id SERIAL PRIMARY KEY,
@@ -167,21 +152,23 @@ def init_db():
             ''')
             conn.commit()
 
-            varsayilan_urunler = [
-                ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234, "oyun", "valorant"),
-                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234, "oyun", "pubg"),
-                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234, "oyun", "steam"),
-                ("Instagram 1.000 Türk Takipçi", 45.0, "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", 500, "sosyal", "instagram"),
-                ("Instagram 5.000 Beğeni Paketi", 35.0, "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", 500, "sosyal", "instagram"),
-                ("TikTok 10.000 İzlenme & Beğeni", 40.0, "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", 500, "sosyal", "tiktok"),
-                ("YouTube 1.000 Abone & 4.000 Saat", 180.0, "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400", 200, "sosyal", "youtube")
+            # Varsayılan Kategoriler
+            varsayilan_kategoriler = [
+                ("oyun", "Oyun E-Pin", "fa-solid fa-gamepad"),
+                ("sosyal", "Sosyal Medya Hizmetleri", "fa-solid fa-hashtag"),
+                ("hile", "Yazılım & Hileler", "fa-solid fa-skull-crossbones"),
+                ("hesap", "Oyun Hesapları", "fa-solid fa-id-card")
             ]
-            for title, price, img, stock, main_cat, sub_cat in varsayilan_urunler:
-                cursor.execute("SELECT id FROM products WHERE title = %s", (title,))
-                row = cursor.fetchone()
-                if not row:
-                    cursor.execute("INSERT INTO products (title, price, image, stock, main_category, sub_category) VALUES (%s, %s, %s, %s, %s, %s)", 
-                                   (title, price, img, stock, main_cat, sub_cat))
+            for slug, name, icon in varsayilan_kategoriler:
+                cursor.execute("SELECT id FROM categories WHERE slug = %s", (slug,))
+                if not cursor.fetchone():
+                    cursor.execute("INSERT INTO categories (slug, name, icon) VALUES (%s, %s, %s)", (slug, name, icon))
+            conn.commit()
+
+            cursor.execute("SELECT id FROM site_settings LIMIT 1")
+            if not cursor.fetchone():
+                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
+                               ('EPIN & SMM PAZARI', '', 'Orbitron', 'left', 40, 22, '#eab308', '[]'))
             conn.commit()
         else:
             cursor.execute('''
@@ -200,6 +187,15 @@ def init_db():
                 pass
 
             cursor.execute("UPDATE users SET is_admin = 1 WHERE username = ?", (SUPER_ADMIN_USERNAME,))
+
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS categories (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    slug TEXT UNIQUE,
+                    name TEXT,
+                    icon TEXT
+                )
+            ''')
 
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
@@ -252,13 +248,6 @@ def init_db():
                     created_at TEXT
                 )
             ''')
-            try:
-                cursor.execute("ALTER TABLE giveaways ADD COLUMN is_paid INTEGER DEFAULT 0")
-                cursor.execute("ALTER TABLE giveaways ADD COLUMN ticket_price REAL DEFAULT 0.0")
-                conn.commit()
-            except Exception:
-                pass
-
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -272,23 +261,6 @@ def init_db():
                     letter_colors TEXT DEFAULT ''
                 )
             ''')
-            try:
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN font_family TEXT DEFAULT 'Orbitron'")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN logo_position TEXT DEFAULT 'left'")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN logo_height INTEGER DEFAULT 40")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN font_size INTEGER DEFAULT 22")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN text_color TEXT DEFAULT '#eab308'")
-                cursor.execute("ALTER TABLE site_settings ADD COLUMN letter_colors TEXT DEFAULT ''")
-                conn.commit()
-            except Exception:
-                pass
-
-            cursor.execute("SELECT id FROM site_settings LIMIT 1")
-            if not cursor.fetchone():
-                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
-                               ('EPIN & SMM PAZARI', '', 'Orbitron', 'left', 40, 22, '#eab308', '[]'))
-            conn.commit()
-
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS giveaway_participants (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -300,21 +272,22 @@ def init_db():
             ''')
             conn.commit()
 
-            varsayilan_urunler = [
-                ("Valorant 1200 VP", 150.0, "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", 234, "oyun", "valorant"),
-                ("PUBG Mobile 660 UC", 210.0, "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", 234, "oyun", "pubg"),
-                ("Steam 10 USD Cüzdan", 320.0, "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", 234, "oyun", "steam"),
-                ("Instagram 1.000 Türk Takipçi", 45.0, "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", 500, "sosyal", "instagram"),
-                ("Instagram 5.000 Beğeni Paketi", 35.0, "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", 500, "sosyal", "instagram"),
-                ("TikTok 10.000 İzlenme & Beğeni", 40.0, "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", 500, "sosyal", "tiktok"),
-                ("YouTube 1.000 Abone & 4.000 Saat", 180.0, "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400", 200, "sosyal", "youtube")
+            varsayilan_kategoriler = [
+                ("oyun", "Oyun E-Pin", "fa-solid fa-gamepad"),
+                ("sosyal", "Sosyal Medya Hizmetleri", "fa-solid fa-hashtag"),
+                ("hile", "Yazılım & Hileler", "fa-solid fa-skull-crossbones"),
+                ("hesap", "Oyun Hesapları", "fa-solid fa-id-card")
             ]
-            for title, price, img, stock, main_cat, sub_cat in varsayilan_urunler:
-                cursor.execute("SELECT id FROM products WHERE title = ?", (title,))
-                row = cursor.fetchone()
-                if not row:
-                    cursor.execute("INSERT INTO products (title, price, image, stock, main_category, sub_category) VALUES (?, ?, ?, ?, ?, ?)", 
-                                   (title, price, img, stock, main_cat, sub_cat))
+            for slug, name, icon in varsayilan_kategoriler:
+                cursor.execute("SELECT id FROM categories WHERE slug = ?", (slug,))
+                if not cursor.fetchone():
+                    cursor.execute("INSERT INTO categories (slug, name, icon) VALUES (?, ?, ?)", (slug, name, icon))
+            conn.commit()
+
+            cursor.execute("SELECT id FROM site_settings LIMIT 1")
+            if not cursor.fetchone():
+                cursor.execute("INSERT INTO site_settings (site_title, site_logo, font_family, logo_position, logo_height, font_size, text_color, letter_colors) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                               ('EPIN & SMM PAZARI', '', 'Orbitron', 'left', 40, 22, '#eab308', '[]'))
             conn.commit()
 
         cursor.close()
@@ -324,7 +297,6 @@ def init_db():
 
 init_db()
 
-# --- SİTE AYARLARINI GETİRME ---
 def get_site_settings():
     default_settings = {
         "title": "EPIN & SMM PAZARI",
@@ -392,7 +364,6 @@ def get_site_settings():
     default_settings["formatted_letters"] = [{"char": c, "color": "#eab308"} for c in default_settings["title"]]
     return default_settings
 
-# --- KOD ÜRETİM MOTORU ---
 def generate_game_code(product_title):
     title_lower = product_title.lower()
     chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -413,6 +384,10 @@ def generate_game_code(product_title):
         p1 = "".join(random.choices(chars, k=4))
         p2 = "".join(random.choices(chars, k=4))
         return f"SMM-KEY-{p1}-{p2}"
+    elif "hile" in title_lower or "aimbot" in title_lower or "esp" in title_lower or "bypass" in title_lower:
+        p1 = "".join(random.choices(chars, k=4))
+        p2 = "".join(random.choices(chars, k=4))
+        return f"CHEAT-PRO-{p1}-{p2}"
     else:
         p1 = "".join(random.choices(chars, k=4))
         p2 = "".join(random.choices(chars, k=4))
@@ -619,6 +594,8 @@ def support_message():
         reply = "Tüm kodlar sistemimizde anlık ve lisanslı olarak üretilmektedir. 'Siparişlerim' sekmesinden teslim edilen kodu kopyalayıp ilgili platformda aktifleştirebilirsiniz."
     elif any(k in user_msg for k in ["takipçi", "beğeni", "izlenme", "tiktok", "instagram", "düşüş"]):
         reply = "Sosyal medya siparişleri sıraya alınarak 5-15 dakika içinde organik olarak gönderilmeye başlar. Profilinizin gizli (özel) olmadığından emin olunuz."
+    elif any(k in user_msg for k in ["hile", "aimbot", "esp", "bypass", "ban"]):
+        reply = "Hile ve yazılım lisans anahtarlarınız anında teslim edilir. Kurulum talimatları sipariş detayıyla birlikte iletilmektedir."
     elif any(k in user_msg for k in ["çekiliş", "kazanan", "giveaway", "ödül", "bilet"]):
         reply = "Aktif çekilişlerimize 'Çekilişler' sayfasından ücretsiz veya ücretli katılabilirsiniz!"
     elif any(k in user_msg for k in ["admin", "yetki", "berat", "lvbelc5baba", "şifre"]):
@@ -645,12 +622,15 @@ def home():
 
     conn = get_db()
     cursor = conn.cursor()
+    cursor.execute("SELECT * FROM categories ORDER BY id ASC")
+    categories = cursor.fetchall()
+    
     cursor.execute("SELECT * FROM products ORDER BY id DESC")
     products = cursor.fetchall()
     cursor.close()
     conn.close()
         
-    return render_template("index.html", balance=balance, username=username, is_admin=is_admin, products=products, settings=settings)
+    return render_template("index.html", balance=balance, username=username, is_admin=is_admin, products=products, categories=categories, settings=settings)
 
 # --- ÇEKİLİŞ SAYFASI & KATILMA ---
 @app.route("/giveaways")
@@ -1126,6 +1106,9 @@ def admin_panel():
     
     cursor.execute("SELECT id, username, balance, is_admin FROM users ORDER BY id DESC")
     all_users = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM categories ORDER BY id ASC")
+    categories = cursor.fetchall()
     
     cursor.execute("SELECT * FROM products ORDER BY id DESC")
     products = cursor.fetchall()
@@ -1159,10 +1142,54 @@ def admin_panel():
                            super_admin_name=SUPER_ADMIN_USERNAME,
                            users=all_users, 
                            products=products, 
+                           categories=categories,
                            orders=all_orders,
                            reset_requests=reset_reqs,
                            giveaways=admin_giveaways,
                            settings=get_site_settings())
+
+# --- YENİ KATEGORİ (SAYFA) EKLEME ---
+@app.route("/admin/category/add", methods=["POST"])
+@admin_required
+def admin_add_category():
+    name = request.form.get("name", "").strip()
+    slug = request.form.get("slug", "").strip().lower()
+    icon = request.form.get("icon", "fa-solid fa-folder").strip()
+
+    if not name or not slug:
+        flash("Kategori adı ve kısa kodu (slug) zorunludur!", "danger")
+        return redirect(url_for("admin_panel"))
+
+    slug = re.sub(r'[^a-z0-9_-]', '', slug)
+
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    try:
+        cursor.execute(f"INSERT INTO categories (slug, name, icon) VALUES ({p}, {p}, {p})", (slug, name, icon))
+        conn.commit()
+        flash(f"'{name}' kategorisi/sayfası başarıyla eklendi!", "success")
+    except Exception:
+        flash("Bu kategori kodu zaten mevcut!", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for("admin_panel"))
+
+# --- KATEGORİ SİLME ---
+@app.route("/admin/category/delete/<int:cat_id>", methods=["POST"])
+@admin_required
+def admin_delete_category(cat_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"DELETE FROM categories WHERE id = {p}", (cat_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Kategori silindi.", "info")
+    return redirect(url_for("admin_panel"))
 
 # --- SAYFA DÜZENLERİ & HARF RENKLERİ GÜNCELLEME ---
 @app.route("/admin/settings/update", methods=["POST"])
@@ -1353,7 +1380,7 @@ def admin_delete_giveaway(giveaway_id):
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    cursor.execute(f"DELETE FROM giveaway_participants WHERE giveaway_id = {p}", (giveaway_id,))
+    cursor.execute(f"DELETE FROM giveaway_participants WHERE id = {p}", (giveaway_id,))
     cursor.execute(f"DELETE FROM giveaways WHERE id = {p}", (giveaway_id,))
     conn.commit()
     cursor.close()
@@ -1388,18 +1415,36 @@ def admin_generate_random_user():
 
     return redirect(url_for("admin_panel"))
 
-# --- RASTGELE İLAN OLUŞTURMA ---
+# --- GENİŞLETİLMİŞ VE ÇOK ÇEŞİTLİ RASTGELE İLAN OLUŞTURMA ---
 @app.route("/admin/product/generate-random", methods=["POST"])
 @admin_required
 def admin_generate_random_product():
     random_templates = [
+        # 1. HİLE & YAZILIMLAR
+        {"title": "PUBG Mobile VIP Magic Bullet & Sekmeme Hilesi", "price": 185.0, "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "hile", "sub_cat": "pubg"},
+        {"title": "Valorant ESP & Aimbot undetected Özel Sürüm", "price": 290.0, "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "hile", "sub_cat": "valorant"},
+        {"title": "CS2 Wallhack & Legit Triggerbot Key", "price": 140.0, "image": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400", "main_cat": "hile", "sub_cat": "steam"},
+        {"title": "League of Legends Script & Evade Suite", "price": 210.0, "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "hile", "sub_cat": "genel"},
+        
+        # 2. HESAPLAR
+        {"title": "Valorant Asil Vandal + Yağmacı Bıçaklı Hesap", "price": 450.0, "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "hesap", "sub_cat": "valorant"},
+        {"title": "PUBG Mobile Buz Diyarı 4. Seviye Hesap", "price": 680.0, "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "hesap", "sub_cat": "pubg"},
+        {"title": "Steam 50+ Oyunlu CS2 Seçkin Hesap", "price": 320.0, "image": "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", "main_cat": "hesap", "sub_cat": "steam"},
+        {"title": "GTA 5 + 1 Milyar Para & Level Modlu Hesap", "price": 110.0, "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400", "main_cat": "hesap", "sub_cat": "genel"},
+
+        # 3. OYUN E-PİNLERİ
         {"title": f"Valorant {random.choice([1200, 2480, 5350, 11000])} VP", "price": random.choice([150, 290, 580, 1150]), "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400", "main_cat": "oyun", "sub_cat": "valorant"},
         {"title": f"PUBG Mobile {random.choice([325, 660, 1800, 3850])} UC", "price": random.choice([110, 210, 550, 1100]), "image": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400", "main_cat": "oyun", "sub_cat": "pubg"},
         {"title": f"Steam {random.choice([10, 20, 50, 100])} USD Cüzdan Kodu", "price": random.choice([340, 680, 1700, 3400]), "image": "https://images.unsplash.com/photo-1612287232231-30c14dbbb227?w=400", "main_cat": "oyun", "sub_cat": "steam"},
+        {"title": "Roblox 800 Robux Hediye Kartı", "price": 240.0, "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400", "main_cat": "oyun", "sub_cat": "genel"},
+
+        # 4. SOSYAL MEDYA
         {"title": f"Instagram {random.choice(['2.500', '5.000', '10.000'])} Organik Takipçi", "price": random.choice([55, 95, 175]), "image": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", "main_cat": "sosyal", "sub_cat": "instagram"},
         {"title": f"Instagram {random.choice(['5.000', '10.000', '25.000'])} Keşfet Etkili Beğeni", "price": random.choice([30, 60, 120]), "image": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400", "main_cat": "sosyal", "sub_cat": "instagram"},
         {"title": f"TikTok {random.choice(['10.000', '50.000', '100.000'])} İzlenme & Paylaşım", "price": random.choice([40, 110, 190]), "image": "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", "main_cat": "sosyal", "sub_cat": "tiktok"},
-        {"title": f"YouTube {random.choice(['1.000', '4.000'])} İzlenme & Abone Paketi", "price": random.choice([130, 320]), "image": "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400", "main_cat": "sosyal", "sub_cat": "youtube"}
+        {"title": "TikTok Canlı Yayın 1.000 Bot İzleyici (1 Saat)", "price": 85.0, "image": "https://images.unsplash.com/photo-1596558450255-7c0b7be9d56a?w=400", "main_cat": "sosyal", "sub_cat": "tiktok"},
+        {"title": f"YouTube {random.choice(['1.000', '4.000'])} İzlenme & Abone Paketi", "price": random.choice([130, 320]), "image": "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400", "main_cat": "sosyal", "sub_cat": "youtube"},
+        {"title": "Discord 3 Aylık Nitro Boost Linki", "price": 75.0, "image": "https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=400", "main_cat": "sosyal", "sub_cat": "genel"}
     ]
     
     item = random.choice(random_templates)
