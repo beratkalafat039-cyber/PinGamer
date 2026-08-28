@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Çekilişler - {{ settings.title }}</title>
+    <title>Şans Çarkı & Slot - {{ settings.title }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -13,190 +13,263 @@
 
     <style>
         body { background-color: #0b1120; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar-custom { background-color: #0f172a; border-bottom: 1px solid #1e293b; }
-        .giveaway-card { background-color: #1e293b; border: 1px solid #334155; border-radius: 14px; overflow: hidden; transition: transform 0.2s; }
-        .giveaway-card:hover { transform: translateY(-4px); }
-        .gw-img { height: 180px; object-fit: cover; width: 100%; }
-        .nav-pills .nav-link { color: #94a3b8; border-radius: 8px; font-weight: bold; }
-        .nav-pills .nav-link.active { background-color: #eab308; color: #000; }
+        .slot-box { background: linear-gradient(145deg, #1e293b, #0f172a); border: 2px solid #334155; border-radius: 16px; }
+        .tier-card { cursor: pointer; transition: 0.2s; border: 1px solid #334155; background-color: #1e293b; border-radius: 12px; }
+        .tier-card:hover, .tier-card.active { border-color: #eab308; transform: translateY(-3px); box-shadow: 0 0 15px rgba(234, 179, 8, 0.3); }
+        .display-wheel { height: 120px; font-size: 2.2rem; font-weight: 800; background-color: #020617; border: 3px solid #eab308; border-radius: 12px; }
+        .prob-table { background-color: #1e293b; border-radius: 12px; }
     </style>
 </head>
-<body>
+<body class="py-4">
 
-<nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
-    <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none 
-           {% if settings.logo_position == 'top' %}flex-column text-center{% elif settings.logo_position == 'right' %}flex-row-reverse{% else %}flex-row{% endif %}" 
-           href="/">
+<div class="container" style="max-width: 850px;">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/">
             {% if settings.logo %}
-                <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px; object-fit: contain;" class="rounded">
+                <img src="{{ settings.logo }}" alt="Logo" style="height: 34px; max-width: 120px; object-fit: contain;" class="rounded">
             {% else %}
-                <i class="fa-solid fa-gamepad text-warning" style="font-size: {{ settings.font_size }}px;"></i>
+                <i class="fa-solid fa-gamepad text-warning fs-4"></i>
             {% endif %}
-            
-            <span style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800; letter-spacing: 0.5px;">
+            <span style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800;">
                 {% for item in settings.formatted_letters %}
                     <span style="color: {{ item.color }};">{{ item.char }}</span>
                 {% endfor %}
             </span>
         </a>
-        
-        <div class="d-flex align-items-center gap-2">
-            {% if username %}
-                {% if is_admin %}
-                    <a href="/admin" class="btn btn-danger btn-sm fw-bold">
-                        <i class="fa-solid fa-shield-halved"></i> Yönetici Paneli
-                    </a>
-                {% endif %}
-
-                <a href="/giveaways" class="btn btn-warning btn-sm fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
-                <a href="/wheel" class="btn btn-outline-warning btn-sm"><i class="fa-solid fa-dharmachakra"></i> Şans Çarkı</a>
-                <a href="/deposit" class="btn btn-success btn-sm fw-bold"><i class="fa-solid fa-wallet"></i> + Bakiye ({{ "%.2f"|format(balance) }} TL)</a>
-                <a href="/orders" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-box"></i> Siparişlerim</a>
-                <span class="text-light small ms-2"><i class="fa-solid fa-user"></i> {{ username }}</span>
-                <a href="/logout" class="btn btn-outline-danger btn-sm">Çıkış</a>
-            {% else %}
-                <a href="/giveaways" class="btn btn-warning btn-sm fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
-                <a href="/login" class="btn btn-outline-light btn-sm">Giriş Yap</a>
-                <a href="/register" class="btn btn-primary btn-sm">Kayıt Ol</a>
-            {% endif %}
-        </div>
-    </div>
-</nav>
-
-<div class="container py-4">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show p-3 mb-4" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div>
-            <h4 class="fw-bold mb-0 text-warning"><i class="fa-solid fa-gift"></i> Topluluk Çekilişleri</h4>
-            <small class="text-secondary">Ücretsiz veya biletli çekilişlere katılın, e-pin ve hediye kodları kazanın!</small>
-        </div>
-
-        <ul class="nav nav-pills" id="gwTab">
-            <li class="nav-item">
-                <button class="nav-link active" onclick="switchGwTab('free', this)"><i class="fa-solid fa-ticket"></i> Ücretsiz Çekilişler</button>
-            </li>
-            <li class="nav-item">
-                <button class="nav-link" onclick="switchGwTab('paid', this)"><i class="fa-solid fa-gem"></i> Ücretli Çekilişler</button>
-            </li>
-        </ul>
+        <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağazaya Dön</a>
     </div>
 
-    <div class="row g-4" id="gw-grid">
-        {% for g in giveaways %}
-        <div class="col-md-6 col-lg-4 gw-item" data-type="{% if g.is_paid %}paid{% else %}free{% endif %}">
-            <div class="card giveaway-card h-100 text-white shadow">
-                {% if g.image %}
-                    <img src="{{ g.image }}" class="gw-img" alt="{{ g.title }}">
-                {% else %}
-                    <div class="gw-img d-flex align-items-center justify-content-center bg-dark text-warning fs-1">
-                        <i class="fa-solid fa-gift"></i>
-                    </div>
-                {% endif %}
-                
-                <div class="card-body d-flex flex-column justify-content-between p-4">
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="fw-bold text-light mb-0">{{ g.title }}</h5>
-                            {% if g.is_paid %}
-                                <span class="badge bg-danger"><i class="fa-solid fa-gem"></i> {{ "%.2f"|format(g.ticket_price) }} TL / Bilet</span>
-                            {% else %}
-                                <span class="badge bg-success"><i class="fa-solid fa-bolt"></i> Ücretsiz</span>
-                            {% endif %}
-                        </div>
-                        
-                        <p class="text-warning small fw-bold mb-3"><i class="fa-solid fa-trophy"></i> Ödül: {{ g.reward }}</p>
-                        
-                        <div class="d-flex justify-content-between align-items-center small text-secondary border-top border-secondary pt-2 mb-3">
-                            <span><i class="fa-solid fa-users"></i> {{ g.participant_count }} Katılımcı</span>
-                            <span><i class="fa-regular fa-clock"></i> {{ g.created_at }}</span>
-                        </div>
-
-                        {% if g.status != 'Aktif' %}
-                            <div class="p-2 bg-dark rounded border border-warning text-center small mb-3">
-                                <div class="text-secondary">🎉 Kazanan Talihli:</div>
-                                <strong class="text-warning fs-6">👑 {{ g.winner_username }}</strong>
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div>
-                        {% if g.status == 'Aktif' %}
-                            {% if username %}
-                                {% if g.is_joined %}
-                                    <button class="btn btn-secondary w-100 fw-bold disabled">
-                                        <i class="fa-solid fa-check"></i> Katıldınız
-                                    </button>
-                                {% else %}
-                                    <form action="/giveaways/join/{{ g.id }}" method="POST">
-                                        <button type="submit" class="btn btn-warning w-100 fw-bold shadow">
-                                            {% if g.is_paid %}
-                                                <i class="fa-solid fa-ticket"></i> Bileti Al & Katıl ({{ "%.2f"|format(g.ticket_price) }} TL)
-                                            {% else %}
-                                                <i class="fa-solid fa-ticket"></i> Çekilişe Ücretsiz Katıl
-                                            {% endif %}
-                                        </button>
-                                    </form>
-                                {% endif %}
-                            {% else %}
-                                <a href="/login" class="btn btn-outline-warning w-100 fw-bold">
-                                    Katılmak İçin Giriş Yapın
-                                </a>
-                            {% endif %}
-                        {% else %}
-                            <button class="btn btn-dark w-100 border-secondary text-muted disabled">
-                                Çekiliş Sona Erdi
-                            </button>
-                        {% endif %}
-                    </div>
-                </div>
+    <div class="row g-3 mb-4">
+        <div class="col-4">
+            <div class="tier-card p-3 text-center active" onclick="selectTier('bronze', 50, this)">
+                <h6 class="fw-bold text-secondary mb-1">🥉 Bronz Kasa</h6>
+                <span class="badge bg-dark border border-secondary mb-2">50 TL</span>
+                <div class="small text-warning fw-bold">1$ - 10$ Steam</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">+ 150 VP, 60 UC</div>
             </div>
         </div>
-        {% else %}
-        <div class="col-12 text-center py-5">
-            <i class="fa-solid fa-gift fa-3x text-secondary mb-3"></i>
-            <h5 class="text-secondary">Şu anda aktif bir çekiliş bulunmamaktadır.</h5>
+        <div class="col-4">
+            <div class="tier-card p-3 text-center" onclick="selectTier('silver', 150, this)">
+                <h6 class="fw-bold text-info mb-1">🥈 Gümüş Kasa</h6>
+                <span class="badge bg-dark border border-info mb-2">150 TL</span>
+                <div class="small text-info fw-bold">5$ - 30$ Steam</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">+ 600-1200 VP, UC</div>
+            </div>
         </div>
-        {% endfor %}
+        <div class="col-4">
+            <div class="tier-card p-3 text-center" onclick="selectTier('gold', 300, this)">
+                <h6 class="fw-bold text-warning mb-1">👑 VIP Altın Kasa</h6>
+                <span class="badge bg-warning text-dark fw-bold mb-2">300 TL</span>
+                <div class="small text-warning fw-bold">10$ - 100$ Steam!</div>
+                <div class="small text-muted" style="font-size: 0.75rem;">+ 11000 VP, 8100 UC</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slot-box p-4 text-center shadow-lg mb-4">
+        <div id="reward-display" class="display-wheel d-flex align-items-center justify-content-center text-warning shadow-inner mb-4">
+            🎰 Çevirmeye Hazır
+        </div>
+
+        <div class="d-flex justify-content-center gap-2">
+            <button id="spin-btn" class="btn btn-warning btn-lg fw-bold px-4 py-3 shadow" onclick="spinWheel(false)">
+                <i class="fa-solid fa-play"></i> ÇARKI ÇEVİR (<span id="btn-cost">50</span> TL)
+            </button>
+            <button id="sim-btn" class="btn btn-outline-info btn-lg fw-bold px-3 py-3" onclick="spinWheel(true)">
+                <i class="fa-solid fa-flask"></i> 🎮 Deneme Çevir (Ücretsiz)
+            </button>
+        </div>
+    </div>
+
+    <div id="result-box" class="card bg-dark border-warning p-3 text-center mb-4" style="display: none;">
+        <h5 class="text-success fw-bold mb-1" id="result-title">🎉 Tebrikler!</h5>
+        <p class="mb-2" id="won-item-text"></p>
+        <div class="d-flex justify-content-center align-items-center gap-2">
+            <span class="fs-5 fw-bold text-warning font-monospace" id="delivered-code"></span>
+        </div>
+        <small class="text-secondary mt-2" id="result-note">Kodunuz siparişlerime kaydedildi.</small>
+    </div>
+
+    <div class="card prob-table p-4 border-secondary">
+        <h6 class="fw-bold text-warning mb-3"><i class="fa-solid fa-percent"></i> Seçili Kasa Çıkma İhtimal Oranları (<span id="tier-name-display">Bronz Kasa</span>)</h6>
+        <div id="prob-list" class="row g-2 small"></div>
     </div>
 </div>
 
 <script>
-function switchGwTab(type, btn) {
-    document.querySelectorAll('#gwTab .nav-link').forEach(l => l.classList.remove('active'));
-    btn.classList.add('active');
-
-    const items = document.querySelectorAll('.gw-item');
-    items.forEach(item => {
-        const itemType = item.getAttribute('data-type');
-        if (itemType === type) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
-    });
+let audioCtx;
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-    const items = document.querySelectorAll('.gw-item');
-    items.forEach(item => {
-        if (item.getAttribute('data-type') !== 'free') {
-            item.style.display = 'none';
-        }
+function playTickSound() {
+    try {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.04);
+    } catch (e) {}
+}
+
+function playWinSound() {
+    try {
+        initAudio();
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.1);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime + idx * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + idx * 0.1 + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + idx * 0.1);
+            osc.stop(audioCtx.currentTime + idx * 0.1 + 0.3);
+        });
+    } catch (e) {}
+}
+
+const PROBABILITIES = {
+    bronze: [
+        { item: "1$ Steam USD", rate: "%30.0" },
+        { item: "150 Valorant VP", rate: "%25.0" },
+        { item: "60 PUBG Mobile UC", rate: "%18.0" },
+        { item: "2.5$ Steam USD", rate: "%10.0" },
+        { item: "600 Valorant VP", rate: "%8.0" },
+        { item: "5$ Steam USD", rate: "%4.0" },
+        { item: "325 PUBG Mobile UC", rate: "%2.5" },
+        { item: "10$ Steam USD", rate: "%1.5" },
+        { item: "1200 Valorant VP", rate: "%0.7" },
+        { item: "660 PUBG Mobile UC", rate: "%0.3" }
+    ],
+    silver: [
+        { item: "5$ Steam USD", rate: "%25.0" },
+        { item: "60 PUBG Mobile UC", rate: "%20.0" },
+        { item: "600 Valorant VP", rate: "%18.0" },
+        { item: "10$ Steam USD", rate: "%12.0" },
+        { item: "325 PUBG Mobile UC", rate: "%10.0" },
+        { item: "1200 Valorant VP", rate: "%7.0" },
+        { item: "20$ Steam USD", rate: "%4.0" },
+        { item: "660 PUBG Mobile UC", rate: "%2.0" },
+        { item: "30$ Steam USD", rate: "%1.5" },
+        { item: "2480 Valorant VP", rate: "%0.5" }
+    ],
+    gold: [
+        { item: "10$ Steam USD", rate: "%25.0" },
+        { item: "660 PUBG Mobile UC", rate: "%20.0" },
+        { item: "25$ Steam USD", rate: "%15.0" },
+        { item: "2480 Valorant VP", rate: "%12.0" },
+        { item: "1800 PUBG Mobile UC", rate: "%10.0" },
+        { item: "50$ Steam USD", rate: "%6.0" },
+        { item: "5350 Valorant VP", rate: "%5.0" },
+        { item: "3850 PUBG Mobile UC", rate: "%4.0" },
+        { item: "100$ Steam USD (Efsanevi)", rate: "%1.5" },
+        { item: "8100 PUBG Mobile UC", rate: "%1.0" },
+        { item: "11000 Valorant VP", rate: "%0.5" }
+    ]
+};
+
+let currentTier = 'bronze';
+let currentCost = 50;
+
+function updateProbTable(tier) {
+    const list = document.getElementById('prob-list');
+    list.innerHTML = '';
+    const names = { bronze: 'Bronz Kasa (50 TL)', silver: 'Gümüş Kasa (150 TL)', gold: 'VIP Altın Kasa (300 TL)' };
+    document.getElementById('tier-name-display').innerText = names[tier];
+
+    PROBABILITIES[tier].forEach(p => {
+        list.innerHTML += `
+            <div class="col-md-6 d-flex justify-content-between border-bottom border-secondary py-1">
+                <span>${p.item}</span>
+                <span class="badge bg-dark border border-secondary text-warning">${p.rate}</span>
+            </div>
+        `;
     });
-});
+}
+updateProbTable('bronze');
+
+function selectTier(tier, cost, element) {
+    document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('active'));
+    element.classList.add('active');
+    currentTier = tier;
+    currentCost = cost;
+    document.getElementById('btn-cost').innerText = cost;
+    updateProbTable(tier);
+}
+
+function spinWheel(isSim = false) {
+    const spinBtn = document.getElementById('spin-btn');
+    const simBtn = document.getElementById('sim-btn');
+    const display = document.getElementById('reward-display');
+    const resultBox = document.getElementById('result-box');
+    
+    spinBtn.disabled = true;
+    simBtn.disabled = true;
+    resultBox.style.display = 'none';
+
+    const items = ['1$ Steam USD', '150 VP', '5$ Steam USD', '60 PUBG UC', '10$ Steam USD', '1200 VP', '25$ Steam USD', '660 PUBG UC', '50$ Steam USD', '5350 VP', '100$ Steam USD', '11000 VP'];
+    let counter = 0;
+    
+    const interval = setInterval(() => {
+        display.innerText = items[counter % items.length];
+        playTickSound();
+        counter++;
+    }, 80);
+
+    fetch('/spin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier: currentTier, simulation: isSim })
+    })
+    .then(res => res.json())
+    .then(data => {
+        setTimeout(() => {
+            clearInterval(interval);
+            spinBtn.disabled = false;
+            simBtn.disabled = false;
+
+            if (data.success) {
+                playWinSound();
+                display.innerText = "🎉 " + data.reward;
+                
+                if (data.simulation) {
+                    document.getElementById('result-title').innerText = "🧪 Deneme / Simülasyon Çevirmesi";
+                    document.getElementById('result-note').innerText = "Simülasyon modunda bakiyeniz eksilmez ve gerçek kod verilmez.";
+                } else {
+                    document.getElementById('result-title').innerText = "🎉 Tebrikler! Ödül Kazandınız!";
+                    document.getElementById('result-note').innerText = "Kodunuz siparişlerime kaydedildi.";
+                    document.getElementById('user-balance').innerText = data.new_balance + " TL";
+                }
+
+                document.getElementById('won-item-text').innerText = data.reward_label;
+                document.getElementById('delivered-code').innerText = data.code;
+                resultBox.style.display = 'block';
+            } else {
+                display.innerText = "❌ Hata";
+                alert(data.error);
+            }
+        }, 1800);
+    })
+    .catch(err => {
+        clearInterval(interval);
+        spinBtn.disabled = false;
+        simBtn.disabled = false;
+        display.innerText = "❌ Hata Oluştu";
+    });
+}
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
