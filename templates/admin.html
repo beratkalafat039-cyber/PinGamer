@@ -107,7 +107,7 @@
 
     <div class="tab-content" id="adminTabContent">
         
-        <!-- 1. GENEL YÖNETİM & İLANLAR (MANUEL İLAN EKLEME VE BAKİYE GERİ GETİRİLDİ) -->
+        <!-- 1. GENEL YÖNETİM & İLANLAR -->
         <div class="tab-pane fade show active" id="tab-general">
             
             <!-- KULLANICILAR -->
@@ -373,21 +373,30 @@
             </div>
         </div>
 
-        <!-- 4. ÇEKİLİŞLER -->
+        <!-- 4. ÇEKİLİŞLER (ÜCRETLİ / ÜCRETSİZ SEÇENEKLİ GÜNCELLENDİ) -->
         <div class="tab-pane fade" id="tab-giveaways">
             <div class="card card-custom p-4 shadow border-warning mb-4">
                 <h5 class="fw-bold text-warning mb-3"><i class="fa-solid fa-gift"></i> Yeni Çekiliş Oluştur</h5>
                 <form action="/admin/giveaway/add" method="POST" class="row g-2">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <input type="text" name="title" class="form-control form-control-sm" required placeholder="Çekiliş Başlığı">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <input type="text" name="reward" class="form-control form-control-sm" required placeholder="Ödül (Örn: 2480 VP)">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <input type="url" name="image" class="form-control form-control-sm" placeholder="Görsel URL">
                     </div>
                     <div class="col-md-2">
+                        <select name="is_paid" class="form-select form-select-sm" id="gwTypeSelect" onchange="toggleGwPrice(this)">
+                            <option value="0">🎁 Ücretsiz</option>
+                            <option value="1">💎 Ücretli (Biletli)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2" id="gwPriceDiv" style="display: none;">
+                        <input type="number" step="0.01" name="ticket_price" class="form-control form-control-sm" placeholder="Bilet Fiyatı (TL)">
+                    </div>
+                    <div class="col-md-1">
                         <button type="submit" class="btn btn-warning btn-sm w-100 fw-bold">Yayınla</button>
                     </div>
                 </form>
@@ -397,7 +406,7 @@
                 <h5 class="fw-bold text-light mb-3">Mevcut Çekilişler</h5>
                 <table class="table table-dark-custom small mb-0">
                     <thead>
-                        <tr><th>ID</th><th>Başlık</th><th>Ödül</th><th>Katılımcı</th><th>Durum</th><th class="text-end">İşlemler</th></tr>
+                        <tr><th>ID</th><th>Başlık</th><th>Ödül</th><th>Tür</th><th>Katılımcı</th><th>Durum</th><th class="text-end">İşlemler</th></tr>
                     </thead>
                     <tbody>
                         {% for g in giveaways %}
@@ -405,6 +414,13 @@
                             <td>#{{ g.id }}</td>
                             <td class="fw-bold">{{ g.title }}</td>
                             <td>{{ g.reward }}</td>
+                            <td>
+                                {% if g.is_paid %}
+                                    <span class="badge bg-danger">Ücretli ({{ "%.2f"|format(g.ticket_price) }} TL)</span>
+                                {% else %}
+                                    <span class="badge bg-success">Ücretsiz</span>
+                                {% endif %}
+                            </td>
                             <td><span class="badge bg-secondary">{{ g.participant_count }} Kişi</span></td>
                             <td>
                                 {% if g.status == 'Aktif' %}<span class="badge bg-success">Aktif</span>
@@ -430,7 +446,7 @@
             </div>
         </div>
 
-        <!-- 5. GÖRÜNÜM, 8-BIT VE HARF ANİMASYONLARI (EKSİKSİZ VE FULL ENTEGRE) -->
+        <!-- 5. GÖRÜNÜM, 8-BIT VE HARF ANİMASYONLARI -->
         <div class="tab-pane fade" id="tab-customizer">
             
             <!-- CANLI ÖNİZLEME KUTUSU -->
@@ -539,6 +555,15 @@
 </div>
 
 <script>
+function toggleGwPrice(sel) {
+    const priceDiv = document.getElementById('gwPriceDiv');
+    if (sel.value === '1') {
+        priceDiv.style.display = 'block';
+    } else {
+        priceDiv.style.display = 'none';
+    }
+}
+
 // HARF RENK MOTORU
 let currentLetterColors = [];
 try {
@@ -611,7 +636,6 @@ function updateLivePreview() {
     titleEl.style.fontFamily = `'${font}', sans-serif`;
     titleEl.style.fontSize = fontS + 'px';
 
-    // Animasyon Sınıfı Ekle
     titleEl.className = anim !== 'none' ? `anim-${anim}` : '';
 
     titleEl.innerHTML = '';
