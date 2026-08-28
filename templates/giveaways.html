@@ -6,6 +6,11 @@
     <title>Çekilişler - {{ settings.title }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&family=Orbitron:wght@700;900&family=Poppins:wght@600;800&family=Righteous&family=Inter:wght@700&display=swap" rel="stylesheet">
+
     <style>
         body { background-color: #0b1120; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .navbar-custom { background-color: #0f172a; border-bottom: 1px solid #1e293b; }
@@ -20,14 +25,20 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
     <div class="container">
-        <!-- DİNAMİK LOGO & BAŞLIK -->
-        <a class="navbar-brand fw-bold text-warning fs-4 d-flex align-items-center" href="/">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none 
+           {% if settings.logo_position == 'top' %}flex-column text-center{% elif settings.logo_position == 'right' %}flex-row-reverse{% else %}flex-row{% endif %}" 
+           href="/">
             {% if settings.logo %}
-                <img src="{{ settings.logo }}" alt="Logo" style="height: 38px; max-width: 140px; object-fit: contain;" class="me-2 rounded">
+                <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px; object-fit: contain;" class="rounded">
             {% else %}
-                <i class="fa-solid fa-gamepad me-2"></i>
+                <i class="fa-solid fa-gamepad text-warning" style="font-size: {{ settings.font_size }}px;"></i>
             {% endif %}
-            <span>{{ settings.title }}</span>
+            
+            <span style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800; letter-spacing: 0.5px;">
+                {% for item in settings.formatted_letters %}
+                    <span style="color: {{ item.color }};">{{ item.char }}</span>
+                {% endfor %}
+            </span>
         </a>
         
         <div class="d-flex align-items-center gap-2">
@@ -71,7 +82,6 @@
             <small class="text-secondary">Ücretsiz veya biletli çekilişlere katılın, e-pin ve hediye kodları kazanın!</small>
         </div>
 
-        <!-- ÜCRETSİZ / ÜCRETLİ SEKMELERİ -->
         <ul class="nav nav-pills" id="gwTab">
             <li class="nav-item">
                 <button class="nav-link active" onclick="switchGwTab('free', this)"><i class="fa-solid fa-ticket"></i> Ücretsiz Çekilişler</button>
@@ -82,7 +92,6 @@
         </ul>
     </div>
 
-    <!-- ÇEKİLİŞ KARTLARI -->
     <div class="row g-4" id="gw-grid">
         {% for g in giveaways %}
         <div class="col-md-6 col-lg-4 gw-item" data-type="{% if g.is_paid %}paid{% else %}free{% endif %}">
