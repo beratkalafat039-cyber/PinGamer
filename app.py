@@ -127,7 +127,6 @@ def init_db():
             except Exception:
                 pass
 
-            # Site Ayarları Tablosu (Harf Renkleri Eklenmiş)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id SERIAL PRIMARY KEY,
@@ -326,7 +325,7 @@ def init_db():
 
 init_db()
 
-# --- SİTE AYARLARI VE HARF HARF RENK FORMATLAYICI ---
+# --- SİTE AYARLARINI GETİRME ---
 def get_site_settings():
     default_settings = {
         "title": "EPIN & SMM PAZARI",
@@ -376,7 +375,6 @@ def get_site_settings():
                     "letter_colors": raw_colors
                 }
 
-            # Harfleri ve renkleri eşleştir
             try:
                 color_list = json.loads(settings_data["letter_colors"])
             except Exception:
@@ -1165,7 +1163,7 @@ def admin_panel():
                            giveaways=admin_giveaways,
                            settings=get_site_settings())
 
-# --- YENİ: HARF HARF RENK & SAYFA DÜZENLERİ PANELİ ---
+# --- SAYFA DÜZENLERİ & HARF RENKLERİ SAYFASI ---
 @app.route("/admin/customizer")
 @admin_required
 def admin_customizer():
