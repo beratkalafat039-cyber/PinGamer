@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS2 Kasa Açma - {{ settings.title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0b1120; color: #f8fafc; font-family: 'Montserrat', sans-serif; }
+        .card-custom { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; }
+        
+        /* KASA RULO ANİMASYON ALANI */
+        .roulette-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 160px;
+            margin: 0 auto;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        /* ORTADAKİ DİKEY ŞERİT */
+        .roulette-pointer {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background-color: #eab308;
+            z-index: 20;
+            box-shadow: 0 0 10px #eab308;
+        }
+        .roulette-track {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            will-change: transform;
+        }
+        .roulette-item {
+            width: 140px;
+            height: 100%;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid #1e293b;
+            padding: 10px;
+            position: relative;
+        }
+        .roulette-item img {
+            width: 90px;
+            height: 70px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+        .case-card-img {
+            height: 120px;
+            object-fit: contain;
+            transition: transform 0.3s;
+        }
+        .case-card:hover .case-card-img {
+            transform: scale(1.08);
+        }
+    </style>
+</head>
+<body class="py-4">
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+        <div>
+            <h3 class="fw-bold text-warning mb-0"><i class="fa-solid fa-box-open"></i> CS2 Kasa Açma Merkezi</h3>
+            <small class="text-secondary">Efsanevi silahlara ve bıçaklara sahip ol!</small>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-success fs-6 p-2"><i class="fa-solid fa-wallet"></i> <span id="userBalance">{{ "%.2f"|format(balance) }}</span> ₺</span>
+            <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağaza</a>
+        </div>
+    </div>
+
+    <!-- KASA SEÇİM LİSTESİ (UÇUZDAN PAHALIYA 5 KASA) -->
+    <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-layer-group text-info"></i> Kasalar (Ucuzdan Pahalıya)</h5>
+    <div class="row g-3 mb-5">
+        {% for cid, case in cases.items() %}
+        <div class="col-md-4 col-lg-4">
+            <div class="card card-custom case-card p-3 text-center h-100 shadow-sm border-secondary">
+                <img src="{{ case.image }}" class="case-card-img mb-3" alt="{{ case.name }}">
+                <h5 class="fw-bold text-white mb-1" style="font-size: 0.95rem;">{{ case.name }}</h5>
+                <p class="text-warning fw-bold mb-3" style="font-size: 1.1rem;">{{ "%.2f"|format(case.price) }} ₺</p>
+                <button class="btn btn-warning w-100 fw-bold btn-sm mt-auto" onclick="openCaseModal('{{ cid }}', '{{ case.name }}', {{ case.price }})">
+                    <i class="fa-solid fa-key"></i> Kasayı Aç
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- KASA AÇMA ANİMASYON MODALI -->
+<div class="modal fade" id="caseModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark text-white border border-secondary">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title fw-bold text-warning" id="modalCaseTitle">Kasa Açılıyor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" id="closeModalBtn" style="display: none;"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                
+                <!-- RULO ALANI -->
+                <div class="roulette-container mb-4 shadow">
+                    <div class="roulette-pointer"></div>
+                    <div class="roulette-track" id="rouletteTrack"></div>
+                </div>
+
+                <div id="caseActionArea">
+                    <button id="spinBtn" class="btn btn-warning btn-lg fw-bold px-5 py-2 shadow" onclick="startSpin()">
+                        <i class="fa-solid fa-play"></i> ÇEVİR VE AÇ!
+                    </button>
+                </div>
+
+                <!-- KAZANILAN ÖDÜL BİLDİRİMİ -->
+                <div id="winResultArea" style="display: none;" class="mt-3">
+                    <h4 class="text-success fw-bold mb-1">🎉 TEBRİKLER, KAZANDINIZ!</h4>
+                    <p id="winItemName" class="fw-bold fs-5 text-light mb-1"></p>
+                    <p class="text-secondary small mb-3">Teslimat Kodu: <code id="winItemCode" class="text-warning"></code> (Siparişlerime eklendi)</p>
+                    <button class="btn btn-success fw-bold px-4" data-bs-dismiss="modal" onclick="location.reload()">Tamam</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let activeCaseId = null;
+let activeCasePrice = 0;
+let modalInstance = null;
+
+// Kasaya ait item havuzları (Önizleme ve simülasyon için)
+const casesItemsData = {
+    {% for cid, case in cases.items() %}
+    "{{ cid }}": [
+        {% for item in case.items %}
+        { name: "{{ item.name }}", type: "{{ item.type }}", price: {{ item.price }}, color: "{{ item.color }}", image: "{{ item.image }}" },
+        {% endfor %}
+    ],
+    {% endfor %}
+};
+
+function openCaseModal(caseId, caseName, casePrice) {
+    activeCaseId = caseId;
+    activeCasePrice = casePrice;
+    document.getElementById('modalCaseTitle').innerText = caseName + " (" + casePrice.toFixed(2) + " ₺)";
+    
+    document.getElementById('spinBtn').style.display = 'inline-block';
+    document.getElementById('winResultArea').style.display = 'none';
+    document.getElementById('closeModalBtn').style.display = 'none';
+
+    buildInitialTrack(caseId);
+
+    modalInstance = new bootstrap.Modal(document.getElementById('caseModal'));
+    modalInstance.show();
+}
+
+function buildInitialTrack(caseId) {
+    const track = document.getElementById('rouletteTrack');
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(0px)';
+    track.innerHTML = '';
+
+    const items = casesItemsData[caseId];
+    // Rulo görünümü için öğeleri çoğaltıyoruz
+    let html = '';
+    for (let i = 0; i < 60; i++) {
+        const randItem = items[Math.floor(Math.random() * items.length)];
+        html += `
+            <div class="roulette-item" style="background: linear-gradient(180deg, ${randItem.color}22 0%, #0f172a 100%); border-bottom: 4px solid ${randItem.color};">
+                <img src="${randItem.image}" alt="${randItem.name}">
+                <span class="small fw-bold text-truncate text-white" style="font-size: 0.65rem; max-width: 120px;">${randItem.name}</span>
+            </div>
+        `;
+    }
+    track.innerHTML = html;
+}
+
+function startSpin() {
+    const spinBtn = document.getElementById('spinBtn');
+    spinBtn.disabled = true;
+
+    fetch('/api/cs2-spin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ case_id: activeCaseId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.error || "Bakiye yetersiz!");
+            spinBtn.disabled = false;
+            return;
+        }
+
+        document.getElementById('userBalance').innerText = data.new_balance;
+
+        // Kazanan itemi track üzerine yerleştir (örneğin 45. sıraya)
+        const track = document.getElementById('rouletteTrack');
+        const items = casesItemsData[activeCaseId];
+        const winningIndex = 45;
+        
+        const childNodes = track.children;
+        if (childNodes[winningIndex]) {
+            childNodes[winningIndex].innerHTML = `
+                <img src="${data.item.image}" alt="${data.item.name}">
+                <span class="small fw-bold text-truncate text-white" style="font-size: 0.65rem; max-width: 120px;">${data.item.name}</span>
+            `;
+            childNodes[winningIndex].style.background = `linear-gradient(180deg, ${data.item.color}44 0%, #0f172a 100%)`;
+            childNodes[winningIndex].style.borderBottom = `4px solid ${data.item.color}`;
+        }
+
+        // Kaydırma mesafesini hesapla (Her item 140px genişlikte)
+        const itemWidth = 140;
+        const containerWidth = document.querySelector('.roulette-container').offsetWidth;
+        const targetOffset = (winningIndex * itemWidth) - (containerWidth / 2) + (itemWidth / 2) + (Math.random() * 60 - 30);
+
+        track.style.transition = 'transform 4s cubic-bezier(0.08, 0.82, 0.15, 1)';
+        track.style.transform = `translateX(-${targetOffset}px)`;
+
+        setTimeout(() => {
+            document.getElementById('spinBtn').style.display = 'none';
+            document.getElementById('winItemName.innerText = data.item.name + " (" + data.item.type + ") - " + data.item.price + " ₺";
+            document.getElementById('winItemName').innerText = data.item.name + " (" + data.item.type + ")";
+            document.getElementById('winItemCode').innerText = data.code;
+            document.getElementById('winResultArea').style.display = 'block';
+            document.getElementById('closeModalBtn').style.display = 'block';
+        }, 4100);
+    });
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
