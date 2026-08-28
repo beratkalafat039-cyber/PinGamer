@@ -191,7 +191,7 @@ def init_db():
                 ("valorant", "Valorant", "fa-solid fa-v"),
                 ("lol", "League of Legends", "fa-solid fa-gem"),
                 ("roblox", "Roblox", "fa-solid fa-cube"),
-                ("cs2", "CS2", "fa-solid fa-crosshairs")
+                ("cs2", "CS2 Kasa", "fa-solid fa-box-open")
             ]
             for slug, name, icon in varsayilan_kategoriler:
                 cursor.execute("SELECT id FROM categories WHERE slug = %s", (slug,))
@@ -326,7 +326,7 @@ def init_db():
                 ("valorant", "Valorant", "fa-solid fa-v"),
                 ("lol", "League of Legends", "fa-solid fa-gem"),
                 ("roblox", "Roblox", "fa-solid fa-cube"),
-                ("cs2", "CS2", "fa-solid fa-crosshairs")
+                ("cs2", "CS2 Kasa", "fa-solid fa-box-open")
             ]
             for slug, name, icon in varsayilan_kategoriler:
                 cursor.execute("SELECT id FROM categories WHERE slug = ?", (slug,))
@@ -481,7 +481,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- BANKA VE POS KART DOĞRULAMA ---
 TURKISH_BINS = {
     "454671": ("Ziraat Bankası", "Visa"), "542374": ("Ziraat Bankası", "Mastercard"), "979201": ("Ziraat Bankası", "Troy"),
     "454359": ("Türkiye İş Bankası", "Visa"), "454360": ("Türkiye İş Bankası", "Visa"), "589283": ("Türkiye İş Bankası", "Mastercard"),
@@ -560,7 +559,6 @@ def send_discord_log(title, description, color):
     except Exception as e:
         print(f"Discord Hatası: {e}")
 
-# --- CANLI DESTEK ---
 SUPPORT_AGENTS = {
     "erkek": ["Ahmet K.", "Murat Y.", "Emre T.", "Can B.", "Burak D.", "Kaan S."],
     "kadin": ["Elif S.", "Zeynep T.", "Ayşe M.", "Seda B.", "Merve K.", "Gizem A."]
@@ -625,7 +623,117 @@ def support_message():
 
     return jsonify({"success": True, "reply": reply})
 
-# --- GENEL SAYFA ROTALARI ---
+# --- CS2 KASA SİSTEMİ VERİLERİ VE ROTALARI ---
+CS2_CASES_DATA = {
+    "cs2_kasa_1": {
+        "id": "cs2_kasa_1",
+        "name": "Armory Kasası (Giriş Seviyesi)",
+        "price": 35.0,
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f",
+        "items": [
+            {"name": "P250 | Sand Dune", "type": "Tüketici Kalitesi", "price": 2.5, "color": "#b0c3d9", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"},
+            {"name": "MP9 | Storm", "type": "Endüstri Sınıfı", "price": 6.0, "color": "#5e98d9", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"},
+            {"name": "Nova | Candy Apple", "type": "Seçkin", "price": 14.0, "color": "#4b69ff", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposr-kLAtl7PLZTjlH_9mkgL-OmuXwDLjQglRd4cJ5nqeW8Iqz3wO3-kRoMGD6JtSQJ1M9aV3U-FftwLrth8S-uJjMyHtr7nR35X3cnBHhn1gSPOZxh-uV/360fx360f"},
+            {"name": "AWP | Safari Mesh", "type": "Gizli", "price": 45.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f"}
+        ]
+    },
+    "cs2_kasa_2": {
+        "id": "cs2_kasa_2",
+        "name": "Remsi Endüstriyel Kasa",
+        "price": 80.0,
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAJf0Ob3djFN79eJmY-OguHxPYTdn2xZ_IpOhuDG_Zi73wDjrhBpNm31JtCQJgFoYFjUrFO6l-e9hce9vprMzXU16yMg5n3fnxW30x5Ka-lrj6WACQLJc7Vb8Bw/360fx360f",
+        "items": [
+            {"name": "Glock-18 | Groundwater", "type": "Endüstri Sınıfı", "price": 18.0, "color": "#5e98d9", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAJf0Ob3djFN79eJmY-OguHxPYTdn2xZ_IpOhuDG_Zi73wDjrhBpNm31JtCQJgFoYFjUrFO6l-e9hce9vprMzXU16yMg5n3fnxW30x5Ka-lrj6WACQLJc7Vb8Bw/360fx360f"},
+            {"name": "USP-S | Forest Leaves", "type": "Seçkin", "price": 35.0, "color": "#4b69ff", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_bGcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"},
+            {"name": "M4A4 | Urban DDPAT", "type": "Gizli", "price": 120.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"}
+        ]
+    },
+    "cs2_kasa_3": {
+        "id": "cs2_kasa_3",
+        "name": "Prismatik Popüler Kasa",
+        "price": 150.0,
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f",
+        "items": [
+            {"name": "AK-47 | Safari Mesh", "type": "Seçkin", "price": 45.0, "color": "#4b69ff", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"},
+            {"name": "M4A1-S | Night Terror", "type": "Gizli", "price": 280.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"},
+            {"name": "Karambit | Vanilla (Bıçak)", "type": "Efsanevi Bıçak ⭐", "price": 1800.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"}
+        ]
+    },
+    "cs2_kasa_4": {
+        "id": "cs2_kasa_4",
+        "name": "Karanlık Operasyon Kasası",
+        "price": 350.0,
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f",
+        "items": [
+            {"name": "AWP | Atheris", "type": "Gizli", "price": 390.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f"},
+            {"name": "M9 Bayonet | Doppler (Bıçak)", "type": "Efsanevi Bıçak ⭐", "price": 4200.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"}
+        ]
+    },
+    "cs2_kasa_5": {
+        "id": "cs2_kasa_5",
+        "name": "Efsanevi VIP Bıçak ve Silah Kasası",
+        "price": 750.0,
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f",
+        "items": [
+            {"name": "AK-47 | Redline", "type": "Gizli", "price": 950.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"},
+            {"name": "Kelebek Bıçak | Fade (Bıçak)", "type": "Gizli Bıçak ⭐", "price": 15000.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"}
+        ]
+    }
+}
+
+@app.route("/cs2-cases")
+@login_required
+def cs2_cases_page():
+    user = get_current_user()
+    balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
+    username = user["username"] if user else None
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    settings = get_site_settings()
+    
+    return render_template("cs2_cases.html", balance=balance, username=username, is_admin=is_admin, cases=CS2_CASES_DATA, settings=settings)
+
+@app.route("/api/cs2-spin", methods=["POST"])
+@login_required
+def cs2_spin():
+    user = get_current_user()
+    data = request.get_json() or {}
+    case_id = data.get("case_id")
+    
+    if case_id not in CS2_CASES_DATA:
+        return jsonify({"success": False, "error": "Geçersiz kasa seçimi!"}), 400
+        
+    case_info = CS2_CASES_DATA[case_id]
+    cost = case_info["price"]
+    current_balance = float(user["balance"] or 0.0)
+    
+    if current_balance < cost:
+        return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen bakiye yükleyin."}), 400
+        
+    chosen_item = random.choice(case_info["items"])
+    code = f"CS2-{''.join(random.choices('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', k=12))}"
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    
+    cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (cost, user["id"]))
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+    cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, {p}, {p}, {p})",
+                   (user["id"], f"CS2 Kasa: {chosen_item['name']}", cost, code, now))
+                   
+    cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
+    row = cursor.fetchone()
+    new_balance = row["balance"] if isinstance(row, dict) else row[0]
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    return jsonify({
+        "success": True,
+        "item": chosen_item,
+        "code": code,
+        "new_balance": f"{new_balance:.2f}"
+    })
 
 @app.route("/")
 def home():
@@ -647,7 +755,6 @@ def home():
         
     return render_template("index.html", balance=balance, username=username, is_admin=is_admin, products=products, categories=categories, settings=settings)
 
-# --- ÇEKİLİŞLER SAYFASI ---
 @app.route("/giveaways")
 def giveaways():
     user = get_current_user()
@@ -730,7 +837,6 @@ def join_giveaway(giveaway_id):
     flash(f"🎉 '{gw['title']}' çekilişine başarıyla katıldınız!", "success")
     return redirect(url_for("giveaways"))
 
-# --- KULLANICI İLAN EKLEME (3 İLAN SINIRI & ONAY SİSTEMİ) ---
 @app.route("/user/add-listing", methods=["GET", "POST"])
 @login_required
 def user_add_listing():
@@ -1068,8 +1174,6 @@ def deposit():
         cursor.close()
         conn.close()
 
-        clean_num = re.sub(r"\D", "", card_number)
-        trx_id = f"TRX{random.randint(100000, 999999)}"
         send_discord_log(
             title="💳 Bakiye Yüklendi",
             description=f"**Kullanıcı:** `{user['username']}`\n**Banka:** `{bank_name}`\n**Yüklenen:** {amount_val:.2f} TL\n**Güncel Bakiye:** {new_balance:.2f} TL",
@@ -1146,8 +1250,6 @@ def orders():
     
     return render_template("orders.html", balance=balance, username=user["username"], is_admin=is_admin, orders=order_list, settings=get_site_settings())
 
-# --- SÜPER ADMIN & YÖNETİCİ PANELİ ---
-
 @app.route("/admin")
 @admin_required
 def admin_panel():
@@ -1201,7 +1303,6 @@ def admin_panel():
                            giveaways=admin_giveaways,
                            settings=get_site_settings())
 
-# --- İLAN ONAYLAMA & REDDETME ---
 @app.route("/admin/listing/approve/<int:product_id>", methods=["POST"])
 @admin_required
 def admin_approve_listing(product_id):
@@ -1228,7 +1329,6 @@ def admin_reject_listing(product_id):
     flash("❌ İlan talebi reddedildi.", "info")
     return redirect(url_for("admin_panel"))
 
-# --- YENİ KATEGORİ EKLEME & SİLME ---
 @app.route("/admin/category/add", methods=["POST"])
 @admin_required
 def admin_add_category():
@@ -1270,7 +1370,6 @@ def admin_delete_category(cat_id):
     flash("Kategori silindi.", "info")
     return redirect(url_for("admin_panel"))
 
-# --- GÖRÜNÜM, 8-BIT FONT & HARF ANİMASYONLARI GÜNCELLEME ---
 @app.route("/admin/settings/update", methods=["POST"])
 @admin_required
 def admin_update_settings():
@@ -1327,7 +1426,6 @@ def admin_update_settings():
     flash("🎨 Görünüm ayarları başarıyla kaydedildi!", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ÇEKİLİŞ ROTALARI (ÜCRETLİ / ÜCRETSİZ DESTEKLİ) ---
 @app.route("/admin/giveaway/add", methods=["POST"])
 @admin_required
 def admin_add_giveaway():
@@ -1445,7 +1543,6 @@ def admin_delete_giveaway(giveaway_id):
     flash("Çekiliş silindi.", "info")
     return redirect(url_for("admin_panel"))
 
-# --- MANUEL İLAN EKLEME (ADMİN - DİREKT ONAYLI) ---
 @app.route("/admin/product/add", methods=["POST"])
 @admin_required
 def admin_add_product():
@@ -1473,7 +1570,6 @@ def admin_add_product():
         flash("İlan adı ve fiyatı zorunludur!", "danger")
     return redirect(url_for("admin_panel"))
 
-# --- DİĞER ADMİN İŞLEMLERİ ---
 @app.route("/admin/user/delete/<int:user_id>", methods=["POST"])
 @admin_required
 def admin_delete_user(user_id):
@@ -1585,7 +1681,6 @@ def admin_set_balance():
     flash("Bakiye güncellendi.", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ÇEŞİTLİ RASTGELE İLAN OLUŞTURMA ---
 @app.route("/admin/product/generate-random", methods=["POST"])
 @admin_required
 def admin_generate_random_product():
