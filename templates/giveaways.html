@@ -20,7 +20,15 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom py-3">
     <div class="container">
-        <a class="navbar-brand fw-bold text-warning fs-4" href="/"><i class="{{ settings.icon }}"></i> {{ settings.title }}</a>
+        <!-- DİNAMİK LOGO & BAŞLIK -->
+        <a class="navbar-brand fw-bold text-warning fs-4 d-flex align-items-center" href="/">
+            {% if settings.logo %}
+                <img src="{{ settings.logo }}" alt="Logo" style="height: 38px; max-width: 140px; object-fit: contain;" class="me-2 rounded">
+            {% else %}
+                <i class="fa-solid fa-gamepad me-2"></i>
+            {% endif %}
+            <span>{{ settings.title }}</span>
+        </a>
         
         <div class="d-flex align-items-center gap-2">
             {% if username %}
@@ -60,10 +68,10 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div>
             <h4 class="fw-bold mb-0 text-warning"><i class="fa-solid fa-gift"></i> Topluluk Çekilişleri</h4>
-            <small class="text-secondary">Ücretsiz veya ücretli biletli çekilişlere katılarak büyük ödüller kazanın!</small>
+            <small class="text-secondary">Ücretsiz veya biletli çekilişlere katılın, e-pin ve hediye kodları kazanın!</small>
         </div>
 
-        <!-- ÇEKİLİŞ SEKMELERİ (ÜCRETSİZ / ÜCRETLİ) -->
+        <!-- ÜCRETSİZ / ÜCRETLİ SEKMELERİ -->
         <ul class="nav nav-pills" id="gwTab">
             <li class="nav-item">
                 <button class="nav-link active" onclick="switchGwTab('free', this)"><i class="fa-solid fa-ticket"></i> Ücretsiz Çekilişler</button>
@@ -74,7 +82,7 @@
         </ul>
     </div>
 
-    <!-- KARTLAR -->
+    <!-- ÇEKİLİŞ KARTLARI -->
     <div class="row g-4" id="gw-grid">
         {% for g in giveaways %}
         <div class="col-md-6 col-lg-4 gw-item" data-type="{% if g.is_paid %}paid{% else %}free{% endif %}">
@@ -169,7 +177,7 @@ function switchGwTab(type, btn) {
         }
     });
 }
-// Sayfa açıldığında ücretsizleri göster
+
 document.addEventListener("DOMContentLoaded", function() {
     const items = document.querySelectorAll('.gw-item');
     items.forEach(item => {
