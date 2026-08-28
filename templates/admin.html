@@ -35,22 +35,29 @@
       {% endif %}
     {% endwith %}
 
-    <!-- 1. SİTE LOGO & BAŞLIK YÖNETİMİ (YENİ) -->
+    <!-- 1. BİLGİSAYARDAN LOGO YÜKLEME VE BAŞLIK DEĞİŞTİRME FORMU -->
     <div class="card card-custom p-4 mb-4 shadow border-primary">
-        <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-globe"></i> Web Sitesi Logo & Başlık Ayarları</h5>
-        <form action="/admin/settings/update" method="POST" class="row g-3 align-items-end">
+        <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-image"></i> Site İsmi ve Logo Yükleme (Bilgisayardan)</h5>
+        <form action="/admin/settings/update" method="POST" enctype="multipart/form-data" class="row g-3 align-items-end">
             <div class="col-md-5">
-                <label class="form-label small text-secondary">Navbar Başlığı / Yazısı</label>
-                <input type="text" name="site_title" class="form-control" value="{{ settings.title }}" required>
+                <label class="form-label small text-secondary">Web Sitesi Başlığı (İsmi)</label>
+                <input type="text" name="site_title" class="form-control" value="{{ settings.title }}" required placeholder="Örn: EPIN & SMM PAZARI">
             </div>
             <div class="col-md-5">
-                <label class="form-label small text-secondary">Logo İkonu (FontAwesome Sınıfı Örn: fa-solid fa-gamepad)</label>
-                <input type="text" name="site_icon" class="form-control" value="{{ settings.icon }}" required>
+                <label class="form-label small text-secondary">Yeni Logo Görseli Seç (PNG, JPG, WEBP, SVG)</label>
+                <input type="file" name="logo_file" class="form-control" accept="image/*">
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100 fw-bold">Kaydet</button>
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2"><i class="fa-solid fa-floppy-disk"></i> Güncelle</button>
             </div>
         </form>
+
+        {% if settings.logo %}
+        <div class="mt-3 pt-3 border-top border-secondary d-flex align-items-center gap-3">
+            <small class="text-secondary">Mevcut Aktif Logo:</small>
+            <img src="{{ settings.logo }}" alt="Mevcut Logo" style="height: 40px; background: #0f172a; padding: 4px; border-radius: 6px; border: 1px solid #334155;">
+        </div>
+        {% endif %}
     </div>
 
     <!-- 2. ÇEKİLİŞ YÖNETİMİ (ÜCRETLİ & ÜCRETSİZ) -->
