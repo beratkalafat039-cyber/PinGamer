@@ -42,7 +42,102 @@
       {% endif %}
     {% endwith %}
 
-    <!-- 1. KULLANICI LİSTESİ -->
+    <!-- 1. ÇEKİLİŞ YÖNETİMİ & BAŞLATMA ALANI (YENİ) -->
+    <div class="card card-custom p-4 mb-4 shadow border-warning">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-warning mb-0"><i class="fa-solid fa-gift"></i> Çekiliş Yönetimi & Çekilişi Başlat</h5>
+            <button class="btn btn-outline-warning btn-sm fw-bold" data-bs-toggle="collapse" data-bs-target="#newGiveawayForm">
+                <i class="fa-solid fa-plus"></i> Yeni Çekiliş Aç
+            </button>
+        </div>
+
+        <!-- YENİ ÇEKİLİŞ FORMU (AÇILIP KAPANABİLİR) -->
+        <div class="collapse mb-4" id="newGiveawayForm">
+            <div class="p-3 bg-dark rounded border border-secondary">
+                <h6 class="fw-bold text-light mb-3">Yeni Çekiliş Bilgileri</h6>
+                <form action="/admin/giveaway/add" method="POST">
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-5">
+                            <label class="form-label small text-secondary">Çekiliş Başlığı</label>
+                            <input type="text" name="title" class="form-control form-control-sm" required placeholder="Örn: 2480 VP Büyük Yaz Çekilişi">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-secondary">Ödül Açıklaması</label>
+                            <input type="text" name="reward" class="form-control form-control-sm" required placeholder="Örn: Valorant 2480 VP">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-secondary">Görsel URL</label>
+                            <input type="url" name="image" class="form-control form-control-sm" placeholder="https://...">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-warning btn-sm fw-bold px-4">Çekilişi Yayınla</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ÇEKİLİŞ LİSTESİ VE ÇEKME BUTONLARI -->
+        <div class="table-responsive">
+            <table class="table table-dark-custom small mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Başlık</th>
+                        <th>Ödül</th>
+                        <th>Katılımcı</th>
+                        <th>Durum</th>
+                        <th>Kazanan</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in giveaways %}
+                    <tr>
+                        <td>#{{ g.id }}</td>
+                        <td class="fw-bold">{{ g.title }}</td>
+                        <td>{{ g.reward }}</td>
+                        <td><span class="badge bg-secondary">{{ g.participant_count }} Kişi</span></td>
+                        <td>
+                            {% if g.status == 'Aktif' %}
+                                <span class="badge bg-success">Aktif</span>
+                            {% else %}
+                                <span class="badge bg-dark border border-secondary">Tamamlandı</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if g.winner_username %}
+                                <strong class="text-warning">👑 {{ g.winner_username }}</strong>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-1">
+                                {% if g.status == 'Aktif' %}
+                                    <form action="/admin/giveaway/draw/{{ g.id }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-success btn-sm py-0 px-2 fw-bold" onclick="return confirm('Çekilişi sonlandırıp rastgele bir talihli belirlemek istiyor musunuz?')">
+                                            <i class="fa-solid fa-play"></i> Çekilişi Çek
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <form action="/admin/giveaway/delete/{{ g.id }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Bu çekilişi silmek istediğinize emin misiniz?')">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-secondary py-3">Henüz oluşturulmuş bir çekiliş yok.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. KULLANICI LİSTESİ -->
     <div class="card card-custom p-4 mb-4 shadow border-info">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-users"></i> Kayıtlı Kullanıcılar ({{ users|length }})</h5>
@@ -109,7 +204,7 @@
         </div>
     </div>
 
-    <!-- 2. ŞİFRE SIFIRLAMA TALEPLERİ -->
+    <!-- 3. ŞİFRE SIFIRLAMA TALEPLERİ -->
     <div class="card card-custom p-4 mb-4 shadow border-warning">
         <h5 class="fw-bold text-warning mb-3"><i class="fa-solid fa-envelope-open-text"></i> Gelen Şifre Sıfırlama Talepleri ({{ reset_requests|length }})</h5>
         <div class="table-responsive">
@@ -155,7 +250,7 @@
         </div>
     </div>
 
-    <!-- 3. ÜRÜN YÖNETİMİ & RASTGELE İLAN -->
+    <!-- 4. ÜRÜN YÖNETİMİ & RASTGELE İLAN -->
     <div class="row g-4">
         <div class="col-lg-5">
             <div class="card card-custom p-4 mb-4 shadow">
@@ -300,5 +395,6 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
