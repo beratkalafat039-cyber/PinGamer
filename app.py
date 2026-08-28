@@ -128,6 +128,7 @@ def init_db():
                     image TEXT,
                     is_paid INTEGER DEFAULT 0,
                     ticket_price REAL DEFAULT 0.0,
+                    winner_count INTEGER DEFAULT 1,
                     status TEXT DEFAULT 'Aktif',
                     winner_username TEXT,
                     delivered_code TEXT,
@@ -137,6 +138,7 @@ def init_db():
             try:
                 cursor.execute("ALTER TABLE giveaways ADD COLUMN IF NOT EXISTS is_paid INTEGER DEFAULT 0;")
                 cursor.execute("ALTER TABLE giveaways ADD COLUMN IF NOT EXISTS ticket_price REAL DEFAULT 0.0;")
+                cursor.execute("ALTER TABLE giveaways ADD COLUMN IF NOT EXISTS winner_count INTEGER DEFAULT 1;")
                 conn.commit()
             except Exception:
                 pass
@@ -278,12 +280,19 @@ def init_db():
                     image TEXT,
                     is_paid INTEGER DEFAULT 0,
                     ticket_price REAL DEFAULT 0.0,
+                    winner_count INTEGER DEFAULT 1,
                     status TEXT DEFAULT 'Aktif',
                     winner_username TEXT,
                     delivered_code TEXT,
                     created_at TEXT
                 )
             ''')
+            try:
+                cursor.execute("ALTER TABLE giveaways ADD COLUMN winner_count INTEGER DEFAULT 1")
+                conn.commit()
+            except Exception:
+                pass
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS site_settings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1438,6 +1447,7 @@ def admin_add_giveaway():
     image = request.form.get("image", "").strip()
     is_paid = 1 if request.form.get("is_paid") == "1" else 0
     ticket_price = float(request.form.get("ticket_price", 0.0)) if is_paid else 0.0
+    winner_count = int(request.form.get("winner_count", 1))
 
     if not title or not reward:
         flash("Çekiliş başlığı ve ödül adı zorunludur!", "danger")
@@ -1447,8 +1457,8 @@ def admin_add_giveaway():
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    cursor.execute(f"INSERT INTO giveaways (title, reward, image, is_paid, ticket_price, status, created_at) VALUES ({p}, {p}, {p}, {p}, {p}, 'Aktif', {p})",
-                   (title, reward, image, is_paid, ticket_price, now))
+    cursor.execute(f"INSERT INTO giveaways (title, reward, image, is_paid, ticket_price, winner_count, status, created_at) VALUES ({p}, {p}, {p}, {p}, {p}, {p}, 'Aktif', {p})",
+                   (title, reward, image, is_paid, ticket_price, winner_count, now))
     conn.commit()
     cursor.close()
     conn.close()
@@ -1514,23 +1524,33 @@ def admin_draw_giveaway(giveaway_id):
         flash("Bu çekilişe henüz hiç kimse katılmadı!", "danger")
         return redirect(url_for("admin_panel"))
 
-    winner = random.choice(participants)
-    winner_name = winner["username"] if isinstance(winner, dict) else winner[0]
-    winner_id = winner["user_id"] if isinstance(winner, dict) else winner[1]
+    target_winner_count = int(gw["winner_count"] if isinstance(gw, dict) else gw[6]) if "winner_count" in gw.keys() or len(gw) > 6 else 1
+    actual_winner_count = min(target_winner_count, len(participants))
 
-    reward_code = generate_game_code(gw["reward"])
+    winners = random.sample(participants, actual_winner_count)
+    winner_names = []
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+
+    for winner in winners:
+        w_name = winner["username"] if isinstance(winner, dict) else winner[0]
+        w_id = winner["user_id"] if isinstance(winner, dict) else winner[1]
+        winner_names.append(w_name)
+
+        reward_code = generate_game_code(gw["reward"])
+        cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, 0.0, {p}, {p})",
+                       (w_id, f"🎁 Çekiliş Ödülü: {gw['reward']}", reward_code, now))
+
+    winners_str = ", ".join(winner_names)
+    final_code_summary = f"{len(winner_names)} Kişi Kazandı"
 
     cursor.execute(f"UPDATE giveaways SET status = 'Tamamlandı', winner_username = {p}, delivered_code = {p} WHERE id = {p}",
-                   (winner_name, reward_code, giveaway_id))
+                   (winners_str, final_code_summary, giveaway_id))
     
-    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
-    cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, 0.0, {p}, {p})",
-                   (winner_id, f"🎁 Çekiliş Ödülü: {gw['reward']}", reward_code, now))
     conn.commit()
     cursor.close()
     conn.close()
 
-    flash(f"🎉 Çekiliş çekildi! Kazanan: '{winner_name}'", "success")
+    flash(f"🎉 Çekiliş sonuçlandı! Kazananlar: {winners_str}", "success")
     return redirect(url_for("admin_panel"))
 
 @app.route("/admin/giveaway/delete/<int:giveaway_id>", methods=["POST"])
