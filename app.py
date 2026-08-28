@@ -197,6 +197,8 @@ def init_db():
                 cursor.execute("SELECT id FROM categories WHERE slug = %s", (slug,))
                 if not cursor.fetchone():
                     cursor.execute("INSERT INTO categories (slug, name, icon) VALUES (%s, %s, %s)", (slug, name, icon))
+                else:
+                    cursor.execute("UPDATE categories SET name = %s, icon = %s WHERE slug = %s", (name, icon, slug))
             conn.commit()
         else:
             cursor.execute('''
@@ -332,6 +334,8 @@ def init_db():
                 cursor.execute("SELECT id FROM categories WHERE slug = ?", (slug,))
                 if not cursor.fetchone():
                     cursor.execute("INSERT INTO categories (slug, name, icon) VALUES (?, ?, ?)", (slug, name, icon))
+                else:
+                    cursor.execute("UPDATE categories SET name = ?, icon = ? WHERE slug = ?", (name, icon, slug))
             conn.commit()
 
             cursor.execute("SELECT id FROM site_settings LIMIT 1")
