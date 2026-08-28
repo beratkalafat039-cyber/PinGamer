@@ -190,9 +190,15 @@
                     <i class="fa-solid fa-border-all text-secondary"></i> Tümü
                 </a>
                 {% for cat in categories %}
-                <a href="#" class="dropdown-cat-item" onclick="filterMain('{{ cat.slug }}', this); closeCatMenu();">
-                    <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
-                </a>
+                    {% if cat.slug == 'cs2' %}
+                    <a href="/cs2-cases" class="dropdown-cat-item">
+                        <i class="{{ cat.icon }} text-warning"></i> {{ cat.name }}
+                    </a>
+                    {% else %}
+                    <a href="#" class="dropdown-cat-item" onclick="filterMain('{{ cat.slug }}', this); closeCatMenu();">
+                        <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
+                    </a>
+                    {% endif %}
                 {% endfor %}
                 <div class="dropdown-divider my-1 border-secondary"></div>
                 <a href="/cs2-cases" class="dropdown-cat-item text-warning fw-bold pulse-giveaway-link">
