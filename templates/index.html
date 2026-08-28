@@ -16,7 +16,6 @@
         .nav-pills .nav-link.active { background-color: #eab308; color: #000; }
         .sub-filter-btn { border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
         
-        /* Yazıyor... Baloncuğu Animasyonu */
         .typing-bubble {
             background-color: #334155;
             display: inline-flex;
@@ -55,12 +54,14 @@
                     </a>
                 {% endif %}
 
+                <a href="/giveaways" class="btn btn-outline-warning btn-sm fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
                 <a href="/wheel" class="btn btn-outline-warning btn-sm"><i class="fa-solid fa-dharmachakra"></i> Şans Çarkı</a>
                 <a href="/deposit" class="btn btn-success btn-sm fw-bold"><i class="fa-solid fa-wallet"></i> + Bakiye Yükle ({{ "%.2f"|format(balance) }} TL)</a>
                 <a href="/orders" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-box"></i> Siparişlerim</a>
                 <span class="text-light small ms-2"><i class="fa-solid fa-user"></i> {{ username }}</span>
                 <a href="/logout" class="btn btn-outline-danger btn-sm">Çıkış</a>
             {% else %}
+                <a href="/giveaways" class="btn btn-outline-warning btn-sm fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
                 <a href="/login" class="btn btn-outline-light btn-sm">Giriş Yap</a>
                 <a href="/register" class="btn btn-primary btn-sm">Kayıt Ol</a>
             {% endif %}
@@ -182,7 +183,6 @@
     <div id="support-chat" style="display: none;">
         <div id="chat-messages" style="height: 300px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;"></div>
 
-        <!-- YAZIYOR GÖSTERGESİ -->
         <div id="typing-indicator" class="px-3 py-1 mb-2" style="display: none;">
             <div class="typing-bubble shadow-sm">
                 <span class="text-secondary small me-2" id="typing-agent-name" style="font-size: 0.75rem;">Temsilci</span>
@@ -200,7 +200,6 @@
 </div>
 
 <script>
-// --- KATEGORİ FİLTRELEME ---
 let currentMain = 'all';
 let currentSub = 'all';
 
@@ -244,7 +243,6 @@ function applyFilters() {
     });
 }
 
-// --- CANLI DESTEK & GERÇEKÇİ GECİKMELİ YAZMA MOTORU ---
 let currentAgent = null;
 let currentTopic = null;
 let inactivityTimer = null;
@@ -265,11 +263,10 @@ function resetInactivityTimer() {
 }
 
 function calculateTypingDelay(text) {
-    // 1.0 - 2.5 saniye düşünme/okuma payı + karakter başına 30ms-45ms yazma süresi
     const readingTime = Math.floor(Math.random() * 1500) + 1000;
     const charDelay = Math.floor(Math.random() * 15) + 30;
     const typingTime = text.length * charDelay;
-    return Math.min(readingTime + typingTime, 6500); // Maksimum 6.5 saniye
+    return Math.min(readingTime + typingTime, 6500);
 }
 
 function startSupportChat() {
@@ -291,7 +288,6 @@ function startSupportChat() {
 
             appendSystemMessage(`🔔 ${data.agent_name} sohbete katıldı.`);
             
-            // Gerçekçi ilk mesaj yazma gecikmesi
             setTimeout(() => {
                 showTyping();
                 const delay = calculateTypingDelay(data.initial_message);
@@ -314,7 +310,6 @@ function sendUserMessage() {
     input.value = '';
     resetInactivityTimer();
 
-    // Kullanıcı yazdıktan 1-2 sn sonra okuma payıyla yazıyor gösterilir
     const readDelay = Math.floor(Math.random() * 1000) + 800;
     
     setTimeout(() => {
