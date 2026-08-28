@@ -7,9 +7,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- 8-BIT VE TÜM FONT HAVUZU -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@500;600;700;800&family=Orbitron:wght@700;900&family=Poppins:wght@600;800&family=Press+Start+2P&family=Righteous&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -22,7 +23,6 @@
             --accent-green: #10b981;
         }
 
-        /* TAŞMAYI KÖKTEN ENGELLEYEN GLOBAL KURAL */
         *, *::before, *::after {
             box-sizing: border-box;
         }
@@ -39,7 +39,7 @@
             padding: 0;
         }
 
-        .container, .container-fluid {
+        .container {
             width: 100%;
             max-width: 100%;
             padding-right: 12px;
@@ -88,7 +88,7 @@
             font-size: 0.85rem;
         }
 
-        /* 2. KATEGORİ ŞERİDİ (EKRANI ESNETMEYEN KAYDIRMA) */
+        /* 2. KATEGORİ ŞERİDİ */
         .sub-bar {
             background-color: #0d1322;
             border-bottom: 1px solid var(--border-color);
@@ -206,36 +206,43 @@
             font-size: 0.75rem;
         }
 
-        /* MOBİL ÖZEL AYARLAR */
+        /* HARF RENK ANİMASYONLARI */
+        @keyframes rainbowWave {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+        .anim-rainbow span {
+            display: inline-block;
+            animation: rainbowWave 2.5s linear infinite;
+        }
+
+        @keyframes neonPulse {
+            0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 8px currentColor); }
+            50% { opacity: 0.5; transform: scale(0.96); filter: drop-shadow(0 0 2px currentColor); }
+        }
+        .anim-pulse span {
+            display: inline-block;
+            animation: neonPulse 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes waveChaser {
+            0%, 100% { transform: translateY(0px); filter: brightness(1); }
+            50% { transform: translateY(-5px); filter: brightness(1.7); }
+        }
+        .anim-chaser span {
+            display: inline-block;
+            animation: waveChaser 1.2s ease-in-out infinite;
+        }
+
         @media (max-width: 768px) {
-            .card-banner-img {
-                height: 110px;
-            }
-            .product-card .card-body {
-                padding: 8px !important;
-            }
-            .product-card .card-title {
-                font-size: 0.75rem !important;
-                line-height: 1.2;
-            }
-            .product-price-text {
-                font-size: 0.85rem !important;
-            }
-            .hero-banner {
-                padding: 14px !important;
-            }
-            .hero-banner h3 {
-                font-size: 1.1rem !important;
-            }
-            .hero-banner p {
-                display: none !important;
-            }
-            #support-modal {
-                width: calc(100vw - 30px) !important;
-                right: 15px !important;
-                left: 15px !important;
-                bottom: 80px !important;
-            }
+            .card-banner-img { height: 110px; }
+            .product-card .card-body { padding: 8px !important; }
+            .product-card .card-title { font-size: 0.75rem !important; line-height: 1.2; }
+            .product-price-text { font-size: 0.85rem !important; }
+            .hero-banner { padding: 14px !important; }
+            .hero-banner h3 { font-size: 1.1rem !important; }
+            .hero-banner p { display: none !important; }
+            #support-modal { width: calc(100vw - 30px) !important; right: 15px !important; left: 15px !important; bottom: 80px !important; }
         }
 
         /* CANLI DESTEK */
@@ -252,17 +259,18 @@
 <header class="top-navbar">
     <div class="container d-flex justify-content-between align-items-center gap-2">
         
-        <!-- LOGO & BAŞLIK -->
-        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none m-0 p-0" href="/" style="max-width: 50%;">
+        <!-- LOGO & ANİMASYONLU BAŞLIK -->
+        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none m-0 p-0" href="/" style="max-width: 55%;">
             {% if settings.logo %}
-                <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px; max-height: 32px; object-fit: contain;" class="rounded">
+                <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px; max-height: 34px; object-fit: contain;" class="rounded">
             {% else %}
                 <i class="fa-solid fa-bolt text-info fs-5"></i>
             {% endif %}
             
-            <span class="text-truncate" style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800;">
+            <span class="text-truncate {% if settings.anim_type != 'none' %}anim-{{ settings.anim_type }}{% endif %}" 
+                  style="font-family: '{{ settings.font_family }}', sans-serif; font-size: {{ settings.font_size }}px; font-weight: 800; letter-spacing: 0.5px;">
                 {% for item in settings.formatted_letters %}
-                    <span style="color: {{ item.color }};">{{ item.char }}</span>
+                    <span style="color: {{ item.color }}; {% if settings.anim_type == 'chaser' %}animation-delay: {{ item.index * 0.12 }}s;{% endif %}">{{ item.char }}</span>
                 {% endfor %}
             </span>
         </a>
@@ -295,7 +303,7 @@
         </div>
     </div>
 
-    <!-- MOBİL İÇİN ARAMA ÇUBUĞU -->
+    <!-- MOBİL ARAMA ÇUBUĞU -->
     <div class="container mt-2 d-block d-lg-none">
         <div class="search-container">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -304,7 +312,7 @@
     </div>
 </header>
 
-<!-- 2. KATEGORİ ŞERİDİ (PARMAKLA KAYDIRILABİLİR) -->
+<!-- 2. KATEGORİ ŞERİDİ -->
 <nav class="sub-bar">
     <div class="container">
         <div class="scroll-categories">
@@ -341,9 +349,9 @@
     <!-- 3. HERO BANNER -->
     <div class="hero-banner mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
-            <h3 class="fw-bold text-white mb-1" id="heroTitle" style="font-size: 1.25rem;">PUBG Mobile & Oyun İlanları Pazarı</h3>
+            <h3 class="fw-bold text-white mb-1" id="heroTitle" style="font-size: 1.25rem;">Oyun & Hesap İlanları Pazarı</h3>
             <p class="text-light opacity-90 small mb-0 d-none d-sm-block">
-                Uygun bütçeyle envanterli hesaplara ve anında teslim e-pinlere hemen ulaşın.
+                Uygun bütçeyle hesaplara ve e-pinlere hemen ulaşın.
             </p>
         </div>
         <a href="/user/add-listing" class="btn btn-light btn-sm fw-bold text-primary px-3 py-1 shadow">
@@ -384,7 +392,7 @@
             </div>
         </div>
 
-        <!-- SAĞ İLAN GRID'İ (MOBİLDE TAM 2'Lİ DÜZEN) -->
+        <!-- SAĞ İLAN GRID'İ -->
         <div class="col-lg-9">
             <div class="row g-2" id="products-grid">
                 {% for p in products %}
@@ -427,7 +435,7 @@
     </div>
 </div>
 
-<!-- CANLI DESTEK BUTONU -->
+<!-- CANLI DESTEK -->
 <div id="live-support-btn" style="position: fixed; bottom: 15px; right: 15px; z-index: 1000;">
     <button class="btn btn-primary rounded-circle p-2 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 48px; height: 48px; background-color: #2563eb; border: none;">
         <i class="fa-solid fa-headset fa-lg text-white"></i>
@@ -448,12 +456,12 @@
         <p class="small text-secondary mb-2" style="font-size: 0.7rem;">Uzmanın bağlanabilmesi için konuyu seçin.</p>
         
         <div class="mb-2">
-            <label class="form-label small text-secondary mb-1" style="font-size: 0.7rem;">Adınız</label>
+            <label class="form-label small text-secondary mb-1">Adınız</label>
             <input type="text" id="survey-name" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Adınız" value="{{ username or '' }}">
         </div>
 
         <div class="mb-3">
-            <label class="form-label small text-secondary mb-1" style="font-size: 0.7rem;">Konu</label>
+            <label class="form-label small text-secondary mb-1">Konu</label>
             <select id="survey-topic" class="form-select form-select-sm bg-dark text-white border-secondary">
                 <option value="odeme">💳 Bakiye & Ödeme</option>
                 <option value="epin">🎮 E-Pin & Hesap Teslimatı</option>
