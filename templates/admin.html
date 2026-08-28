@@ -6,6 +6,12 @@
     <title>Yönetici Paneli - {{ settings.title }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- GOOGLE FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;800&family=Orbitron:wght@700;900&family=Poppins:wght@600;800&family=Righteous&family=Inter:wght@700&display=swap" rel="stylesheet">
+
     <style>
         body { background-color: #0b1120; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .card-custom { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; }
@@ -13,7 +19,15 @@
         .table-dark-custom th { background-color: #0f172a; color: #94a3b8; border-bottom: 2px solid #334155; }
         .table-dark-custom td { border-bottom: 1px solid #334155; vertical-align: middle; }
         .form-control, .form-select { background-color: #0f172a; border: 1px solid #334155; color: #fff; }
-        .form-control:focus { background-color: #0f172a; border-color: #e11d48; color: #fff; }
+        .form-control:focus, .form-select:focus { background-color: #0f172a; border-color: #eab308; color: #fff; }
+        
+        .nav-tabs .nav-link { color: #94a3b8; font-weight: bold; border: none; border-bottom: 3px solid transparent; }
+        .nav-tabs .nav-link.active { color: #eab308; background: transparent; border-bottom: 3px solid #eab308; }
+        
+        .preview-box { background-color: #0f172a; border: 2px dashed #eab308; border-radius: 12px; min-height: 100px; display: flex; align-items: center; justify-content: center; padding: 15px; }
+        .letter-color-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 4px; display: inline-flex; flex-direction: column; align-items: center; width: 50px; margin: 3px; }
+        .letter-label { font-weight: 800; font-size: 1rem; color: #fff; margin-bottom: 2px; }
+        .letter-picker { width: 32px; height: 26px; padding: 0; border: none; background: transparent; cursor: pointer; }
     </style>
 </head>
 <body class="py-4">
@@ -21,15 +35,10 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
         <div>
-            <h3 class="fw-bold text-danger mb-0"><i class="fa-solid fa-shield-halved"></i> Yönetici Paneli</h3>
+            <h3 class="fw-bold text-danger mb-0"><i class="fa-solid fa-shield-halved"></i> Yönetici Kontrol Paneli</h3>
             <small class="text-secondary">Oturum: <strong>{{ username }}</strong></small>
         </div>
-        <div class="d-flex gap-2">
-            <a href="/admin/customizer" class="btn btn-warning btn-sm fw-bold">
-                <i class="fa-solid fa-palette"></i> 🎨 Sayfa Düzenleri & Logo
-            </a>
-            <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağazaya Dön</a>
-        </div>
+        <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağazaya Dön</a>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -40,357 +49,490 @@
       {% endif %}
     {% endwith %}
 
-    <!-- 1. ÇEKİLİŞ YÖNETİMİ & KATILIMCI KONTROLÜ -->
-    <div class="card card-custom p-4 mb-4 shadow border-warning">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold text-warning mb-0"><i class="fa-solid fa-gift"></i> Çekiliş Yönetimi (Ücretli / Ücretsiz)</h5>
-            <button class="btn btn-outline-warning btn-sm fw-bold" data-bs-toggle="collapse" data-bs-target="#newGwForm">
-                <i class="fa-solid fa-plus"></i> Yeni Çekiliş Oluştur
+    <!-- ADMİN İÇİ SAYFA GEÇİŞ SEKMELERİ (TABS) -->
+    <ul class="nav nav-tabs mb-4 border-secondary" id="adminTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fs-6" id="general-tab" data-bs-toggle="tab" data-bs-target="#tab-general" type="button" role="tab">
+                <i class="fa-solid fa-gauge"></i> Genel Yönetim & İlanlar
             </button>
-        </div>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-6 text-warning" id="giveaways-tab" data-bs-toggle="tab" data-bs-target="#tab-giveaways" type="button" role="tab">
+                <i class="fa-solid fa-gift"></i> 🎁 Çekiliş Yönetimi
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fs-6 text-info" id="customizer-tab" data-bs-toggle="tab" data-bs-target="#tab-customizer" type="button" role="tab">
+                <i class="fa-solid fa-palette"></i> 🎨 Sayfa Düzenleri & Görünüm
+            </button>
+        </li>
+    </ul>
 
-        <div class="collapse mb-4" id="newGwForm">
-            <div class="p-3 bg-dark rounded border border-secondary">
-                <h6 class="fw-bold text-light mb-3">Çekiliş Detayları</h6>
-                <form action="/admin/giveaway/add" method="POST">
-                    <div class="row g-2 mb-2">
-                        <div class="col-md-4">
-                            <label class="form-label small text-secondary">Başlık</label>
-                            <input type="text" name="title" class="form-control form-control-sm" required placeholder="Örn: VIP Altın Çekiliş">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small text-secondary">Ödül</label>
-                            <input type="text" name="reward" class="form-control form-control-sm" required placeholder="Örn: 50$ Steam USD">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small text-secondary">Görsel URL</label>
-                            <input type="url" name="image" class="form-control form-control-sm" placeholder="https://...">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small text-secondary">Tür</label>
-                            <select name="is_paid" id="gwTypeSelect" class="form-select form-select-sm" onchange="togglePriceInput(this)">
-                                <option value="0">Ücretsiz</option>
-                                <option value="1">Ücretli (Biletli)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row g-2 mb-3" id="priceInputRow" style="display: none;">
-                        <div class="col-md-3">
-                            <label class="form-label small text-secondary">Bilet Ücreti (TL)</label>
-                            <input type="number" step="0.01" name="ticket_price" class="form-control form-control-sm" placeholder="10.00">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-warning btn-sm fw-bold px-4">Çekilişi Yayınla</button>
-                </form>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-dark-custom small mb-0">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Başlık</th>
-                        <th>Ödül</th>
-                        <th>Tür / Ücret</th>
-                        <th>Katılımcılar</th>
-                        <th>Durum</th>
-                        <th>Kazanan</th>
-                        <th class="text-end">İşlemler</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for g in giveaways %}
-                    <tr>
-                        <td>#{{ g.id }}</td>
-                        <td class="fw-bold">{{ g.title }}</td>
-                        <td>{{ g.reward }}</td>
-                        <td>
-                            {% if g.is_paid %}
-                                <span class="badge bg-danger">Ücretli ({{ "%.2f"|format(g.ticket_price) }} TL)</span>
-                            {% else %}
-                                <span class="badge bg-success">Ücretsiz</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <!-- KATILIMCILARI GÖRÜNTÜLEME BUTONU -->
-                            <button class="btn btn-outline-info btn-sm py-0 px-2 fw-bold" data-bs-toggle="modal" data-bs-target="#participantsModal{{ g.id }}">
-                                <i class="fa-solid fa-users"></i> {{ g.participant_count }} Katılımcı
-                            </button>
-                        </td>
-                        <td>
-                            {% if g.status == 'Aktif' %}
-                                <span class="badge bg-success">Aktif</span>
-                            {% else %}
-                                <span class="badge bg-dark border border-secondary">Tamamlandı</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if g.winner_username %}
-                                <strong class="text-warning">👑 {{ g.winner_username }}</strong>
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end">
-                            <div class="d-flex justify-content-end gap-1">
-                                <!-- RASTGELE İNSAN EKLE -->
-                                {% if g.status == 'Aktif' %}
-                                    <form action="/admin/giveaway/add-random-participant/{{ g.id }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2" title="Rastgele Katılımcı Ekle">
-                                            <i class="fa-solid fa-user-plus"></i> +Kişi
-                                        </button>
-                                    </form>
-                                    <form action="/admin/giveaway/draw/{{ g.id }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-success btn-sm py-0 px-2 fw-bold" onclick="return confirm('Çekilişi sonuçlandırmak istiyor musunuz?')">
-                                            <i class="fa-solid fa-play"></i> Çek
-                                        </button>
-                                    </form>
-                                {% endif %}
-                                <form action="/admin/giveaway/delete/{{ g.id }}" method="POST" style="display:inline;">
-                                    <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Silmek istediğinize emin misiniz?')"><i class="fa-solid fa-trash"></i></button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <!-- KATILIMCILAR LİSTESİ MODAL PENCERESİ -->
-                    <div class="modal fade" id="participantsModal{{ g.id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content bg-dark border-secondary text-light">
-                                <div class="modal-header border-secondary">
-                                    <h6 class="modal-title fw-bold text-warning"><i class="fa-solid fa-list-check"></i> '{{ g.title }}' Katılımcıları ({{ g.participant_count }})</h6>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body p-0" style="max-height: 350px; overflow-y: auto;">
-                                    <table class="table table-dark small mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th>Kullanıcı Adı</th>
-                                                <th>Katılım Tarihi</th>
-                                                <th class="text-end">İşlem</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for p in g.participants %}
-                                            <tr>
-                                                <td class="fw-bold text-info"><i class="fa-solid fa-user"></i> {{ p.username }}</td>
-                                                <td>{{ p.joined_at }}</td>
-                                                <td class="text-end">
-                                                    <form action="/admin/giveaway/remove-participant/{{ p.id }}" method="POST" style="display:inline;">
-                                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Çekilişten Çıkar">
-                                                            <i class="fa-solid fa-user-xmark"></i> Çıkar
-                                                        </button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                            {% else %}
-                                            <tr>
-                                                <td colspan="3" class="text-center text-muted py-3">Bu çekilişe henüz kimse katılmamış.</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% else %}
-                    <tr>
-                        <td colspan="8" class="text-center text-secondary py-3">Çekiliş bulunmuyor.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- 2. KULLANICI LİSTESİ -->
-    <div class="card card-custom p-4 mb-4 shadow border-info">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-users"></i> Kullanıcılar ({{ users|length }})</h5>
-            <form action="/admin/user/generate-random" method="POST">
-                <button type="submit" class="btn btn-outline-info btn-sm fw-bold"><i class="fa-solid fa-shuffle"></i> 🎲 Rastgele Hesap</button>
-            </form>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-dark-custom small mb-0">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Kullanıcı Adı</th>
-                        <th>Bakiye</th>
-                        <th>Rol</th>
-                        <th class="text-end">İşlemler</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for u in users %}
-                    <tr>
-                        <td>#{{ u.id }}</td>
-                        <td class="fw-bold">{{ u.username }}</td>
-                        <td>{{ "%.2f"|format(u.balance) }} TL</td>
-                        <td>
-                            {% if u.username == super_admin_name %}
-                                <span class="badge bg-danger"><i class="fa-solid fa-crown"></i> Süper Admin</span>
-                            {% elif u.is_admin %}
-                                <span class="badge bg-warning text-dark">Admin</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Kullanıcı</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end">
-                            <div class="d-flex justify-content-end gap-1">
-                                {% if is_super and u.username != super_admin_name %}
-                                    <form action="/admin/user/toggle-admin/{{ u.id }}" method="POST" style="display:inline;">
-                                        {% if u.is_admin %}
-                                            <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2">Adminliği Al</button>
-                                        {% else %}
-                                            <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2">Admin Yap</button>
-                                        {% endif %}
-                                    </form>
-                                {% endif %}
-                                {% if u.username != super_admin_name %}
-                                    <form action="/admin/user/delete/{{ u.id }}" method="POST" style="display:inline;">
-                                        <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Silmek istediğinize emin misiniz?')"><i class="fa-solid fa-trash-can"></i></button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- 3. ŞİFRE TALEPLERİ -->
-    <div class="card card-custom p-4 mb-4 shadow border-warning">
-        <h5 class="fw-bold text-warning mb-3"><i class="fa-solid fa-envelope-open-text"></i> Şifre Sıfırlama Talepleri ({{ reset_requests|length }})</h5>
-        <div class="table-responsive">
-            <table class="table table-dark-custom small mb-0">
-                <thead>
-                    <tr>
-                        <th>Kullanıcı Adı</th>
-                        <th>E-Posta</th>
-                        <th>Tarih</th>
-                        <th>Durum</th>
-                        <th>Yeni Şifre</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in reset_requests %}
-                    <tr>
-                        <td class="fw-bold text-info">{{ r.username }}</td>
-                        <td><code>{{ r.email }}</code></td>
-                        <td>{{ r.created_at }}</td>
-                        <td><span class="badge bg-warning text-dark">{{ r.status }}</span></td>
-                        <td>
-                            <form action="/admin/user/reset-password" method="POST" class="d-flex gap-1">
-                                <input type="hidden" name="username" value="{{ r.username }}">
-                                <input type="hidden" name="request_id" value="{{ r.id }}">
-                                <input type="text" name="new_password" class="form-control form-control-sm" placeholder="Yeni Şifre" required>
-                                <button type="submit" class="btn btn-warning btn-sm px-2 fw-bold">Güncelle</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="5" class="text-center text-secondary py-3">Talep bulunmuyor.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- 4. ÜRÜN YÖNETİMİ -->
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="card card-custom p-4 mb-4 shadow">
+    <div class="tab-content" id="adminTabContent">
+        
+        <!-- ==============================================
+             1. SAYFA / SEKME: GENEL YÖNETİM & İLANLAR
+        =============================================== -->
+        <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
+            <div class="card card-custom p-4 mb-4 shadow border-info">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-plus"></i> Yeni İlan Ekle</h5>
-                    <form action="/admin/product/generate-random" method="POST">
-                        <button type="submit" class="btn btn-warning btn-sm fw-bold"><i class="fa-solid fa-wand-magic-sparkles"></i> 🎲 Rastgele</button>
+                    <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-users"></i> Kullanıcılar & Bakiye Yönetimi ({{ users|length }})</h5>
+                    <form action="/admin/user/generate-random" method="POST">
+                        <button type="submit" class="btn btn-outline-info btn-sm fw-bold"><i class="fa-solid fa-shuffle"></i> 🎲 Rastgele Hesap</button>
                     </form>
                 </div>
-                <form action="/admin/product/add" method="POST">
-                    <div class="mb-2">
-                        <label class="form-label small text-secondary">Başlık</label>
-                        <input type="text" name="title" class="form-control" required placeholder="Örn: Valorant VP">
-                    </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <label class="form-label small text-secondary">Kategori</label>
-                            <select name="main_category" class="form-select" required>
-                                <option value="oyun">Oyun E-Pin</option>
-                                <option value="sosyal">Sosyal Medya</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small text-secondary">Platform</label>
-                            <select name="sub_category" class="form-select" required>
-                                <option value="instagram">Instagram</option>
-                                <option value="tiktok">TikTok</option>
-                                <option value="youtube">YouTube</option>
-                                <option value="twitter">Twitter</option>
-                                <option value="valorant">Valorant</option>
-                                <option value="pubg">PUBG</option>
-                                <option value="steam">Steam</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <label class="form-label small text-secondary">Fiyat (TL)</label>
-                            <input type="number" step="0.01" name="price" class="form-control" required placeholder="75.00">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small text-secondary">Stok</label>
-                            <input type="number" name="stock" class="form-control" value="500" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small text-secondary">Görsel URL</label>
-                        <input type="url" name="image" class="form-control" required placeholder="https://...">
-                    </div>
-                    <button type="submit" class="btn btn-info text-white w-100 fw-bold">Yayınla</button>
-                </form>
-            </div>
-        </div>
-        <div class="col-lg-7">
-            <div class="card card-custom p-4 shadow mb-4">
-                <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-tags"></i> Yayındaki İlanlar ({{ products|length }})</h5>
-                <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                <div class="table-responsive">
                     <table class="table table-dark-custom small mb-0">
                         <thead>
                             <tr>
-                                <th>İlan</th>
-                                <th style="width: 100px;">Fiyat</th>
-                                <th style="width: 80px;">Stok</th>
-                                <th class="text-end">İşlem</th>
+                                <th>ID</th>
+                                <th>Kullanıcı Adı</th>
+                                <th>Bakiye</th>
+                                <th>Rol</th>
+                                <th class="text-end">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for p in products %}
+                            {% for u in users %}
                             <tr>
-                                <form action="/admin/product/update/{{ p.id }}" method="POST">
-                                    <td class="fw-bold">{{ p.title }}</td>
-                                    <td><input type="number" step="0.01" name="price" class="form-control form-control-sm text-center" value="{{ p.price }}"></td>
-                                    <td><input type="number" name="stock" class="form-control form-control-sm text-center" value="{{ p.stock }}"></td>
-                                    <td class="text-end">
-                                        <button type="submit" class="btn btn-primary btn-sm py-0 px-2"><i class="fa-solid fa-floppy-disk"></i></button>
-                                </form>
-                                        <form action="/admin/product/delete/{{ p.id }}" method="POST" style="display:inline;">
-                                            <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Silmek istediğinize emin misiniz?')"><i class="fa-solid fa-trash"></i></button>
-                                        </form>
-                                    </td>
+                                <td>#{{ u.id }}</td>
+                                <td class="fw-bold">{{ u.username }}</td>
+                                <td>{{ "%.2f"|format(u.balance) }} TL</td>
+                                <td>
+                                    {% if u.username == super_admin_name %}
+                                        <span class="badge bg-danger"><i class="fa-solid fa-crown"></i> Süper Admin</span>
+                                    {% elif u.is_admin %}
+                                        <span class="badge bg-warning text-dark">Admin</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Kullanıcı</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        {% if is_super and u.username != super_admin_name %}
+                                            <form action="/admin/user/toggle-admin/{{ u.id }}" method="POST" style="display:inline;">
+                                                {% if u.is_admin %}
+                                                    <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2">Adminliği Al</button>
+                                                {% else %}
+                                                    <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2">Admin Yap</button>
+                                                {% endif %}
+                                            </form>
+                                        {% endif %}
+                                        {% if u.username != super_admin_name %}
+                                            <form action="/admin/user/delete/{{ u.id }}" method="POST" style="display:inline;">
+                                                <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Silmek istediğinize emin misiniz?')"><i class="fa-solid fa-trash-can"></i></button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <div class="card card-custom p-4 mb-4 shadow border-warning">
+                <h5 class="fw-bold text-warning mb-3"><i class="fa-solid fa-envelope-open-text"></i> Şifre Sıfırlama Talepleri ({{ reset_requests|length }})</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark-custom small mb-0">
+                        <thead>
+                            <tr>
+                                <th>Kullanıcı Adı</th>
+                                <th>E-Posta</th>
+                                <th>Tarih</th>
+                                <th>Durum</th>
+                                <th>Yeni Şifre</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in reset_requests %}
+                            <tr>
+                                <td class="fw-bold text-info">{{ r.username }}</td>
+                                <td><code>{{ r.email }}</code></td>
+                                <td>{{ r.created_at }}</td>
+                                <td><span class="badge bg-warning text-dark">{{ r.status }}</span></td>
+                                <td>
+                                    <form action="/admin/user/reset-password" method="POST" class="d-flex gap-1">
+                                        <input type="hidden" name="username" value="{{ r.username }}">
+                                        <input type="hidden" name="request_id" value="{{ r.id }}">
+                                        <input type="text" name="new_password" class="form-control form-control-sm" placeholder="Yeni Şifre" required>
+                                        <button type="submit" class="btn btn-warning btn-sm px-2 fw-bold">Güncelle</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center text-secondary py-3">Talep bulunmuyor.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="card card-custom p-4 mb-4 shadow">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-info mb-0"><i class="fa-solid fa-plus"></i> Yeni İlan Ekle</h5>
+                            <form action="/admin/product/generate-random" method="POST">
+                                <button type="submit" class="btn btn-warning btn-sm fw-bold"><i class="fa-solid fa-wand-magic-sparkles"></i> 🎲 Rastgele</button>
+                            </form>
+                        </div>
+                        <form action="/admin/product/add" method="POST">
+                            <div class="mb-2">
+                                <label class="form-label small text-secondary">Başlık</label>
+                                <input type="text" name="title" class="form-control" required placeholder="Örn: Valorant VP">
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small text-secondary">Kategori</label>
+                                    <select name="main_category" class="form-select" required>
+                                        <option value="oyun">Oyun E-Pin</option>
+                                        <option value="sosyal">Sosyal Medya</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small text-secondary">Platform</label>
+                                    <select name="sub_category" class="form-select" required>
+                                        <option value="instagram">Instagram</option>
+                                        <option value="tiktok">TikTok</option>
+                                        <option value="youtube">YouTube</option>
+                                        <option value="twitter">Twitter</option>
+                                        <option value="valorant">Valorant</option>
+                                        <option value="pubg">PUBG</option>
+                                        <option value="steam">Steam</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small text-secondary">Fiyat (TL)</label>
+                                    <input type="number" step="0.01" name="price" class="form-control" required placeholder="75.00">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small text-secondary">Stok</label>
+                                    <input type="number" name="stock" class="form-control" value="500" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-secondary">Görsel URL</label>
+                                <input type="url" name="image" class="form-control" required placeholder="https://...">
+                            </div>
+                            <button type="submit" class="btn btn-info text-white w-100 fw-bold">Yayınla</button>
+                        </form>
+                    </div>
+
+                    <div class="card card-custom p-4 shadow">
+                        <h5 class="fw-bold text-success mb-3"><i class="fa-solid fa-wallet"></i> Manuel Bakiye Tanımla</h5>
+                        <form action="/admin/user/set-balance" method="POST">
+                            <div class="mb-2">
+                                <label class="form-label small text-secondary">Kullanıcı Seç</label>
+                                <select name="user_id" class="form-select" required>
+                                    {% for u in users %}
+                                        <option value="{{ u.id }}">{{ u.username }} (Mevcut: {{ "%.2f"|format(u.balance) }} TL)</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-secondary">Yeni Bakiye (TL)</label>
+                                <input type="number" step="0.01" name="balance" class="form-control" required placeholder="500.00">
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 fw-bold">Bakiyeyi Güncelle</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="card card-custom p-4 shadow mb-4">
+                        <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-tags"></i> Yayındaki İlanlar ({{ products|length }})</h5>
+                        <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                            <table class="table table-dark-custom small mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>İlan</th>
+                                        <th style="width: 100px;">Fiyat</th>
+                                        <th style="width: 80px;">Stok</th>
+                                        <th class="text-end">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in products %}
+                                    <tr>
+                                        <form action="/admin/product/update/{{ p.id }}" method="POST">
+                                            <td class="fw-bold">{{ p.title }}</td>
+                                            <td><input type="number" step="0.01" name="price" class="form-control form-control-sm text-center" value="{{ p.price }}"></td>
+                                            <td><input type="number" name="stock" class="form-control form-control-sm text-center" value="{{ p.stock }}"></td>
+                                            <td class="text-end">
+                                                <button type="submit" class="btn btn-primary btn-sm py-0 px-2"><i class="fa-solid fa-floppy-disk"></i></button>
+                                        </form>
+                                                <form action="/admin/product/delete/{{ p.id }}" method="POST" style="display:inline;">
+                                                    <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Silmek istediğinize emin misiniz?')"><i class="fa-solid fa-trash"></i></button>
+                                                </form>
+                                            </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- ==============================================
+             2. SAYFA / SEKME: ÇEKİLİŞ YÖNETİMİ
+        =============================================== -->
+        <div class="tab-pane fade" id="tab-giveaways" role="tabpanel">
+            <div class="card card-custom p-4 mb-4 shadow border-warning">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-warning mb-0"><i class="fa-solid fa-gift"></i> Çekiliş Oluştur & Yönet</h5>
+                    <button class="btn btn-outline-warning btn-sm fw-bold" data-bs-toggle="collapse" data-bs-target="#newGwForm">
+                        <i class="fa-solid fa-plus"></i> Yeni Çekiliş Aç
+                    </button>
+                </div>
+
+                <div class="collapse mb-4" id="newGwForm">
+                    <div class="p-3 bg-dark rounded border border-secondary">
+                        <h6 class="fw-bold text-light mb-3">Yeni Çekiliş Bilgileri</h6>
+                        <form action="/admin/giveaway/add" method="POST">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small text-secondary">Başlık</label>
+                                    <input type="text" name="title" class="form-control form-control-sm" required placeholder="Örn: VIP Altın Çekiliş">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small text-secondary">Ödül</label>
+                                    <input type="text" name="reward" class="form-control form-control-sm" required placeholder="Örn: 50$ Steam USD">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small text-secondary">Görsel URL</label>
+                                    <input type="url" name="image" class="form-control form-control-sm" placeholder="https://...">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small text-secondary">Tür</label>
+                                    <select name="is_paid" id="gwTypeSelect" class="form-select form-select-sm" onchange="togglePriceInput(this)">
+                                        <option value="0">Ücretsiz</option>
+                                        <option value="1">Ücretli (Biletli)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3" id="priceInputRow" style="display: none;">
+                                <div class="col-md-3">
+                                    <label class="form-label small text-secondary">Bilet Ücreti (TL)</label>
+                                    <input type="number" step="0.01" name="ticket_price" class="form-control form-control-sm" placeholder="10.00">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-sm fw-bold px-4">Çekilişi Yayınla</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-dark-custom small mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Başlık</th>
+                                <th>Ödül</th>
+                                <th>Tür / Ücret</th>
+                                <th>Katılımcılar</th>
+                                <th>Durum</th>
+                                <th>Kazanan</th>
+                                <th class="text-end">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for g in giveaways %}
+                            <tr>
+                                <td>#{{ g.id }}</td>
+                                <td class="fw-bold">{{ g.title }}</td>
+                                <td>{{ g.reward }}</td>
+                                <td>
+                                    {% if g.is_paid %}
+                                        <span class="badge bg-danger">Ücretli ({{ "%.2f"|format(g.ticket_price) }} TL)</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Ücretsiz</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-outline-info btn-sm py-0 px-2 fw-bold" data-bs-toggle="modal" data-bs-target="#participantsModal{{ g.id }}">
+                                        <i class="fa-solid fa-users"></i> {{ g.participant_count }} Kişi
+                                    </button>
+                                </td>
+                                <td>
+                                    {% if g.status == 'Aktif' %}
+                                        <span class="badge bg-success">Aktif</span>
+                                    {% else %}
+                                        <span class="badge bg-dark border border-secondary">Tamamlandı</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if g.winner_username %}
+                                        <strong class="text-warning">👑 {{ g.winner_username }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        {% if g.status == 'Aktif' %}
+                                            <form action="/admin/giveaway/add-random-participant/{{ g.id }}" method="POST" style="display:inline;">
+                                                <button type="submit" class="btn btn-outline-warning btn-sm py-0 px-2" title="Rastgele Katılımcı Ekle">
+                                                    <i class="fa-solid fa-user-plus"></i> +Kişi
+                                                </button>
+                                            </form>
+                                            <form action="/admin/giveaway/draw/{{ g.id }}" method="POST" style="display:inline;">
+                                                <button type="submit" class="btn btn-success btn-sm py-0 px-2 fw-bold" onclick="return confirm('Çekilişi sonuçlandırmak istiyor musunuz?')">
+                                                    <i class="fa-solid fa-play"></i> Çek
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <form action="/admin/giveaway/delete/{{ g.id }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm py-0 px-2" onclick="return confirm('Silmek istediğinize emin misiniz?')"><i class="fa-solid fa-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- KATILIMCILARI GÖRME & SİLME MODALI -->
+                            <div class="modal fade" id="participantsModal{{ g.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content bg-dark border-secondary text-light">
+                                        <div class="modal-header border-secondary">
+                                            <h6 class="modal-title fw-bold text-warning"><i class="fa-solid fa-list-check"></i> '{{ g.title }}' Katılımcıları ({{ g.participant_count }})</h6>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-0" style="max-height: 350px; overflow-y: auto;">
+                                            <table class="table table-dark small mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Kullanıcı Adı</th>
+                                                        <th>Katılım Tarihi</th>
+                                                        <th class="text-end">İşlem</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for p in g.participants %}
+                                                    <tr>
+                                                        <td class="fw-bold text-info"><i class="fa-solid fa-user"></i> {{ p.username }}</td>
+                                                        <td>{{ p.joined_at }}</td>
+                                                        <td class="text-end">
+                                                            <form action="/admin/giveaway/remove-participant/{{ p.id }}" method="POST" style="display:inline;">
+                                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Çekilişten Çıkar">
+                                                                    <i class="fa-solid fa-user-xmark"></i> Çıkar
+                                                                </button>
+                                                            </form>
+                                                        </td>
+                                                    </tr>
+                                                    {% else %}
+                                                    <tr>
+                                                        <td colspan="3" class="text-center text-muted py-3">Bu çekilişe henüz kimse katılmamış.</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <tr><td colspan="8" class="text-center text-secondary py-3">Henüz çekiliş bulunmuyor.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==============================================
+             3. SAYFA / SEKME: SAYFA DÜZENLERİ & LOGO
+        =============================================== -->
+        <div class="tab-pane fade" id="tab-customizer" role="tabpanel">
+            <div class="card card-custom p-4 mb-4 shadow border-info">
+                <h6 class="fw-bold text-light mb-3"><i class="fa-solid fa-eye"></i> Canlı Navbar Önizleme</h6>
+                <div class="preview-box">
+                    <div id="previewBrand" class="d-flex align-items-center gap-2">
+                        {% if settings.logo %}
+                            <img id="previewLogo" src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px; object-fit: contain;">
+                        {% else %}
+                            <i id="previewIcon" class="fa-solid fa-gamepad fs-3 text-warning"></i>
+                        {% endif %}
+                        <span id="previewTitle" style="font-family: '{{ settings.font_family }}'; font-size: {{ settings.font_size }}px; font-weight: 800;"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-custom p-4 shadow">
+                <form action="/admin/settings/update" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="letter_colors" id="letterColorsJson" value="{{ settings.letter_colors }}">
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary fw-bold">Site Başlığı</label>
+                            <input type="text" id="inputTitle" name="site_title" class="form-control" value="{{ settings.title }}" required oninput="rebuildLetterPickers(); updateLivePreview();">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label small text-secondary fw-bold">Yazı Fontu</label>
+                            <select id="selectFont" name="font_family" class="form-select" onchange="updateLivePreview()">
+                                <option value="Orbitron" {% if settings.font_family == 'Orbitron' %}selected{% endif %}>Orbitron (Gaming / Fütüristik)</option>
+                                <option value="Montserrat" {% if settings.font_family == 'Montserrat' %}selected{% endif %}>Montserrat (Modern & Kalın)</option>
+                                <option value="Poppins" {% if settings.font_family == 'Poppins' %}selected{% endif %}>Poppins (Şık & Yuvarlak)</option>
+                                <option value="Bebas Neue" {% if settings.font_family == 'Bebas Neue' %}selected{% endif %}>Bebas Neue (Büyük & Vurgulu)</option>
+                                <option value="Righteous" {% if settings.font_family == 'Righteous' %}selected{% endif %}>Righteous (Arcade / Retro)</option>
+                                <option value="Inter" {% if settings.font_family == 'Inter' %}selected{% endif %}>Inter (Sade & Kurumsal)</option>
+                                <option value="Segoe UI" {% if settings.font_family == 'Segoe UI' %}selected{% endif %}>Segoe UI (Klasik)</option>
+                            </select>
+                        </div>
+
+                        <!-- HARF HARF RENK SEÇİCİ -->
+                        <div class="col-12 p-3 bg-dark rounded border border-secondary mt-3">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                <label class="form-label mb-0 fw-bold text-warning"><i class="fa-solid fa-paintbrush"></i> Harf Harf Renk Seçici</label>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    <button type="button" class="btn btn-outline-info btn-sm py-0 px-2" onclick="applyPreset('rainbow')">🌈 RGB / Gökkuşağı</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="applyPreset('fire')">🔥 Neon Ateş</button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" onclick="applyPreset('cyber')">💎 Cyberpunk</button>
+                                    <button type="button" class="btn btn-outline-warning btn-sm py-0 px-2" onclick="applyPreset('gold')">👑 Altın</button>
+                                </div>
+                            </div>
+                            <div id="letterPickersContainer" class="d-flex flex-wrap align-items-center"></div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small text-secondary fw-bold">Logo Konumu</label>
+                            <select id="selectPosition" name="logo_position" class="form-select" onchange="updateLivePreview()">
+                                <option value="left" {% if settings.logo_position == 'left' %}selected{% endif %}>Solunda</option>
+                                <option value="right" {% if settings.logo_position == 'right' %}selected{% endif %}>Sağında</option>
+                                <option value="top" {% if settings.logo_position == 'top' %}selected{% endif %}>Üstünde (Ortalı)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small text-secondary fw-bold">Logo Boyutu (Yükseklik): <span id="logoHeightVal" class="text-warning">{{ settings.logo_height }}px</span></label>
+                            <input type="range" id="inputLogoHeight" name="logo_height" class="form-range" min="24" max="80" value="{{ settings.logo_height }}" oninput="updateLivePreview()">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small text-secondary fw-bold">Font Boyutu: <span id="fontSizeVal" class="text-warning">{{ settings.font_size }}px</span></label>
+                            <input type="range" id="inputFontSize" name="font_size" class="form-range" min="16" max="36" value="{{ settings.font_size }}" oninput="updateLivePreview()">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label small text-secondary fw-bold">Logo Görseli Yükle (Bilgisayardan)</label>
+                            <input type="file" name="logo_file" id="inputLogoFile" class="form-control" accept="image/*" onchange="previewLocalImage(event)">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="text_color" id="inputColor" value="{{ settings.text_color }}">
+
+                    <button type="submit" class="btn btn-warning btn-lg fw-bold w-100 py-3 shadow">
+                        <i class="fa-solid fa-floppy-disk"></i> Görünüm Ayarlarını Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -403,7 +545,126 @@ function togglePriceInput(select) {
         row.style.display = 'none';
     }
 }
+
+// HARF HARF RENK MOTORU
+let currentLetterColors = [];
+try {
+    currentLetterColors = JSON.parse(document.getElementById('letterColorsJson').value);
+} catch (e) {
+    currentLetterColors = [];
+}
+
+function rebuildLetterPickers() {
+    const title = document.getElementById('inputTitle').value;
+    const container = document.getElementById('letterPickersContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const newColors = [];
+    for (let i = 0; i < title.length; i++) {
+        const char = title[i];
+        const displayChar = char === ' ' ? '␣' : char;
+        const color = currentLetterColors[i] || '#eab308';
+        newColors.push(color);
+
+        container.innerHTML += `
+            <div class="letter-color-card">
+                <span class="letter-label">${displayChar}</span>
+                <input type="color" class="letter-picker" value="${color}" onchange="onLetterColorChange(${i}, this.value)">
+            </div>
+        `;
+    }
+    currentLetterColors = newColors;
+    document.getElementById('letterColorsJson').value = JSON.stringify(currentLetterColors);
+}
+
+function onLetterColorChange(index, newColor) {
+    currentLetterColors[index] = newColor;
+    document.getElementById('letterColorsJson').value = JSON.stringify(currentLetterColors);
+    updateLivePreview();
+}
+
+function applyPreset(type) {
+    const title = document.getElementById('inputTitle').value;
+    const rainbow = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#a855f7', '#ec4899'];
+    const fire = ['#eab308', '#f59e0b', '#f97316', '#ef4444', '#dc2626'];
+    const cyber = ['#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'];
+
+    for (let i = 0; i < title.length; i++) {
+        if (type === 'rainbow') currentLetterColors[i] = rainbow[i % rainbow.length];
+        else if (type === 'fire') currentLetterColors[i] = fire[i % fire.length];
+        else if (type === 'cyber') currentLetterColors[i] = cyber[i % cyber.length];
+        else if (type === 'gold') currentLetterColors[i] = '#eab308';
+    }
+    rebuildLetterPickers();
+    updateLivePreview();
+}
+
+function updateLivePreview() {
+    const title = document.getElementById('inputTitle').value;
+    const font = document.getElementById('selectFont').value;
+    const pos = document.getElementById('selectPosition').value;
+    const logoH = document.getElementById('inputLogoHeight').value;
+    const fontS = document.getElementById('inputFontSize').value;
+
+    document.getElementById('logoHeightVal').innerText = logoH + 'px';
+    document.getElementById('fontSizeVal').innerText = fontS + 'px';
+
+    const brand = document.getElementById('previewBrand');
+    const titleEl = document.getElementById('previewTitle');
+    const logoEl = document.getElementById('previewLogo');
+
+    titleEl.style.fontFamily = font;
+    titleEl.style.fontSize = fontS + 'px';
+
+    titleEl.innerHTML = '';
+    for (let i = 0; i < title.length; i++) {
+        const span = document.createElement('span');
+        span.innerText = title[i];
+        span.style.color = currentLetterColors[i] || '#eab308';
+        titleEl.appendChild(span);
+    }
+
+    if (logoEl) logoEl.style.height = logoH + 'px';
+
+    if (pos === 'top') {
+        brand.className = 'd-flex flex-column align-items-center gap-2 text-center';
+        if (logoEl) brand.insertBefore(logoEl, titleEl);
+    } else if (pos === 'right') {
+        brand.className = 'd-flex flex-row align-items-center gap-2';
+        if (logoEl) brand.appendChild(logoEl);
+    } else {
+        brand.className = 'd-flex flex-row align-items-center gap-2';
+        if (logoEl) brand.insertBefore(logoEl, titleEl);
+    }
+}
+
+function previewLocalImage(event) {
+    const reader = new FileReader();
+    reader.onload = function() {
+        let logoEl = document.getElementById('previewLogo');
+        const iconEl = document.getElementById('previewIcon');
+        if (iconEl) iconEl.remove();
+
+        if (!logoEl) {
+            logoEl = document.createElement('img');
+            logoEl.id = 'previewLogo';
+            document.getElementById('previewBrand').prepend(logoEl);
+        }
+        logoEl.src = reader.result;
+        updateLivePreview();
+    };
+    if (event.target.files[0]) {
+        reader.readAsDataURL(event.target.files[0]);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    rebuildLetterPickers();
+    updateLivePreview();
+});
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
