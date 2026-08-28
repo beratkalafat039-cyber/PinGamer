@@ -98,6 +98,29 @@ def init_db():
                     created_at TEXT
                 );
             ''')
+            
+            # Çekiliş Tabloları (Postgres)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS giveaways (
+                    id SERIAL PRIMARY KEY,
+                    title TEXT,
+                    reward TEXT,
+                    image TEXT,
+                    status TEXT DEFAULT 'Aktif',
+                    winner_username TEXT,
+                    delivered_code TEXT,
+                    created_at TEXT
+                );
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS giveaway_participants (
+                    id SERIAL PRIMARY KEY,
+                    giveaway_id INTEGER,
+                    user_id INTEGER,
+                    username TEXT,
+                    joined_at TEXT
+                );
+            ''')
             conn.commit()
 
             varsayilan_urunler = [
@@ -171,6 +194,29 @@ def init_db():
                     created_at TEXT
                 )
             ''')
+            
+            # Çekiliş Tabloları (SQLite)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS giveaways (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT,
+                    reward TEXT,
+                    image TEXT,
+                    status TEXT DEFAULT 'Aktif',
+                    winner_username TEXT,
+                    delivered_code TEXT,
+                    created_at TEXT
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS giveaway_participants (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    giveaway_id INTEGER,
+                    user_id INTEGER,
+                    username TEXT,
+                    joined_at TEXT
+                )
+            ''')
             conn.commit()
 
             varsayilan_urunler = [
@@ -197,7 +243,7 @@ def init_db():
 
 init_db()
 
-# --- STANDART KOD VE AKTİVASYON ANAHTARI ÜRETİMİ ---
+# --- STANDART KOD ÜRETİM MOTORU ---
 def generate_game_code(product_title):
     title_lower = product_title.lower()
     chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -378,7 +424,6 @@ def support_start():
     topic = data.get("topic", "genel")
     last_gender = session.get("last_agent_gender", None)
 
-    # 4/1 Cinsiyet Kuralı
     if last_gender:
         if random.random() < 0.25:
             current_gender = last_gender
@@ -425,6 +470,8 @@ def support_message():
         reply = "Tüm kodlar sistemimizde anlık ve lisanslı olarak üretilmektedir. 'Siparişlerim' sekmesinden teslim edilen kodu kopyalayıp ilgili platformda aktifleştirebilirsiniz."
     elif any(k in user_msg for k in ["takipçi", "beğeni", "izlenme", "tiktok", "instagram", "düşüş"]):
         reply = "Sosyal medya siparişleri sıraya alınarak 5-15 dakika içinde organik olarak gönderilmeye başlar. Profilinizin gizli (özel) olmadığından emin olunuz."
+    elif any(k in user_msg for k in ["çekiliş", "kazanan", "giveaway", "ödül"]):
+        reply = "Aktif çekilişlerimize 'Çekilişler' sayfasından ücretsiz katılabilirsiniz! Kazananlar sistem tarafından adil ve şeffaf şekilde seçilir."
     elif any(k in user_msg for k in ["admin", "yetki", "berat", "lvbelc5baba", "şifre"]):
         reply = "Yönetici ve hesap güvenliği işlemleriniz kayıt altına alınmıştır. Şifre sıfırlama taleplerini 'Şifremi Unuttum' ekranından iletebilirsiniz."
     elif any(k in user_msg for k in ["merhaba", "selam", "sa", "günaydın", "iyi günler"]):
@@ -454,6 +501,77 @@ def home():
     conn.close()
         
     return render_template("index.html", balance=balance, username=username, is_admin=is_admin, products=products)
+
+# --- ÇEKİLİŞ SAYFASI & KATILMA ROTALARI ---
+@app.route("/giveaways")
+def giveaways():
+    user = get_current_user()
+    balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
+    username = user["username"] if user else None
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM giveaways ORDER BY id DESC")
+    all_giveaways = cursor.fetchall()
+
+    # Kullanıcının katıldığı çekiliş id'leri
+    joined_ids = []
+    if user:
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+        cursor.execute(f"SELECT giveaway_id FROM giveaway_participants WHERE user_id = {p}", (user["id"],))
+        joined_rows = cursor.fetchall()
+        joined_ids = [r["giveaway_id"] if isinstance(r, dict) else r[0] for r in joined_rows]
+
+    # Her çekilişin katılımcı sayısını al
+    giveaway_list = []
+    for g in all_giveaways:
+        g_dict = dict(g)
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+        cursor.execute(f"SELECT COUNT(*) FROM giveaway_participants WHERE giveaway_id = {p}", (g_dict["id"],))
+        count_row = cursor.fetchone()
+        g_dict["participant_count"] = count_row[0] if not isinstance(count_row, dict) else list(count_row.values())[0]
+        g_dict["is_joined"] = g_dict["id"] in joined_ids
+        giveaway_list.append(g_dict)
+
+    cursor.close()
+    conn.close()
+
+    return render_template("giveaways.html", balance=balance, username=username, is_admin=is_admin, giveaways=giveaway_list)
+
+@app.route("/giveaways/join/<int:giveaway_id>", methods=["POST"])
+@login_required
+def join_giveaway(giveaway_id):
+    user = get_current_user()
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+
+    cursor.execute(f"SELECT status, title FROM giveaways WHERE id = {p}", (giveaway_id,))
+    gw = cursor.fetchone()
+    if not gw or gw["status"] != "Aktif":
+        cursor.close()
+        conn.close()
+        flash("Bu çekiliş sona ermiş veya aktif değil!", "danger")
+        return redirect(url_for("giveaways"))
+
+    cursor.execute(f"SELECT id FROM giveaway_participants WHERE giveaway_id = {p} AND user_id = {p}", (giveaway_id, user["id"]))
+    already_joined = cursor.fetchone()
+    if already_joined:
+        cursor.close()
+        conn.close()
+        flash("Bu çekilişe zaten katıldınız!", "warning")
+        return redirect(url_for("giveaways"))
+
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+    cursor.execute(f"INSERT INTO giveaway_participants (giveaway_id, user_id, username, joined_at) VALUES ({p}, {p}, {p}, {p})",
+                   (giveaway_id, user["id"], user["username"], now))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash(f"🎉 '{gw['title']}' çekilişine başarıyla katıldınız! Bol şanslar.", "success")
+    return redirect(url_for("giveaways"))
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -856,6 +974,18 @@ def admin_panel():
 
     cursor.execute("SELECT * FROM reset_requests ORDER BY id DESC")
     reset_reqs = cursor.fetchall()
+
+    # Çekilişleri katılımcı sayılarıyla çek
+    cursor.execute("SELECT * FROM giveaways ORDER BY id DESC")
+    raw_giveaways = cursor.fetchall()
+    admin_giveaways = []
+    for g in raw_giveaways:
+        g_dict = dict(g)
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+        cursor.execute(f"SELECT COUNT(*) FROM giveaway_participants WHERE giveaway_id = {p}", (g_dict["id"],))
+        c_row = cursor.fetchone()
+        g_dict["participant_count"] = c_row[0] if not isinstance(c_row, dict) else list(c_row.values())[0]
+        admin_giveaways.append(g_dict)
     
     cursor.close()
     conn.close()
@@ -868,7 +998,112 @@ def admin_panel():
                            users=all_users, 
                            products=products, 
                            orders=all_orders,
-                           reset_requests=reset_reqs)
+                           reset_requests=reset_reqs,
+                           giveaways=admin_giveaways)
+
+# --- ADMIN: ÇEKİLİŞ EKLEME ---
+@app.route("/admin/giveaway/add", methods=["POST"])
+@admin_required
+def admin_add_giveaway():
+    title = request.form.get("title", "").strip()
+    reward = request.form.get("reward", "").strip()
+    image = request.form.get("image", "").strip()
+
+    if not title or not reward:
+        flash("Çekiliş başlığı ve ödül adı zorunludur!", "danger")
+        return redirect(url_for("admin_panel"))
+
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"INSERT INTO giveaways (title, reward, image, status, created_at) VALUES ({p}, {p}, {p}, 'Aktif', {p})",
+                   (title, reward, image, now))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    send_discord_log(
+        title="🎁 Yeni Çekiliş Başlatıldı!",
+        description=f"**Başlık:** {title}\n**Ödül:** {reward}\nKatılmak için siteyi ziyaret edin!",
+        color=3066993
+    )
+
+    flash("Yeni çekiliş başarıyla yayınlandı.", "success")
+    return redirect(url_for("admin_panel"))
+
+# --- ADMIN: ÇEKİLİŞİ ÇEK / KAZANANI BELİRLE ---
+@app.route("/admin/giveaway/draw/<int:giveaway_id>", methods=["POST"])
+@admin_required
+def admin_draw_giveaway(giveaway_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+
+    cursor.execute(f"SELECT * FROM giveaways WHERE id = {p}", (giveaway_id,))
+    gw = cursor.fetchone()
+
+    if not gw or gw["status"] != "Aktif":
+        cursor.close()
+        conn.close()
+        flash("Bu çekiliş zaten tamamlanmış veya geçersiz!", "warning")
+        return redirect(url_for("admin_panel"))
+
+    cursor.execute(f"SELECT username, user_id FROM giveaway_participants WHERE giveaway_id = {p}", (giveaway_id,))
+    participants = cursor.fetchall()
+
+    if not participants:
+        cursor.close()
+        conn.close()
+        flash("Bu çekilişe henüz hiç kimse katılmadı!", "danger")
+        return redirect(url_for("admin_panel"))
+
+    winner = random.choice(participants)
+    winner_name = winner["username"] if isinstance(winner, dict) else winner[0]
+    winner_id = winner["user_id"] if isinstance(winner, dict) else winner[1]
+
+    reward_code = generate_game_code(gw["reward"])
+
+    # Çekilişi tamamla ve kazananı yaz
+    cursor.execute(f"UPDATE giveaways SET status = 'Tamamlandı', winner_username = {p}, delivered_code = {p} WHERE id = {p}",
+                   (winner_name, reward_code, giveaway_id))
+    
+    # Kazanan kullanıcının siparişlerine ödülü ekle
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+    cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, 0.0, {p}, {p})",
+                   (winner_id, f"🎁 Çekiliş Ödülü: {gw['reward']}", reward_code, now))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    send_discord_log(
+        title="🏆 Çekiliş Sonuçlandı!",
+        description=(
+            f"**Çekiliş:** `{gw['title']}`\n"
+            f"**Ödül:** `{gw['reward']}`\n"
+            f"**Kazanan:** 👑 `{winner_name}`\n"
+            f"**Teslim Edilen Kod:** `{reward_code}`"
+        ),
+        color=15844367
+    )
+
+    flash(f"🎉 Çekiliş çekildi! Kazanan: '{winner_name}' | Üretilen Kod: '{reward_code}'", "success")
+    return redirect(url_for("admin_panel"))
+
+# --- ADMIN: ÇEKİLİŞ SİLME ---
+@app.route("/admin/giveaway/delete/<int:giveaway_id>", methods=["POST"])
+@admin_required
+def admin_delete_giveaway(giveaway_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"DELETE FROM giveaway_participants WHERE giveaway_id = {p}", (giveaway_id,))
+    cursor.execute(f"DELETE FROM giveaways WHERE id = {p}", (giveaway_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash("Çekiliş ve katılımcı kayıtları sistemden silindi.", "info")
+    return redirect(url_for("admin_panel"))
 
 # --- RASTGELE HESAP OLUŞTURMA ---
 @app.route("/admin/user/generate-random", methods=["POST"])
@@ -897,7 +1132,7 @@ def admin_generate_random_user():
 
     return redirect(url_for("admin_panel"))
 
-# --- RASTGELE İLAN / ÜRÜN OLUŞTURMA (OYUN & SOSYAL MEDYA) ---
+# --- RASTGELE İLAN / ÜRÜN OLUŞTURMA ---
 @app.route("/admin/product/generate-random", methods=["POST"])
 @admin_required
 def admin_generate_random_product():
@@ -1011,7 +1246,7 @@ def admin_toggle_role(user_id):
     conn.close()
     return redirect(url_for("admin_panel"))
 
-# --- MANUEL ÜRÜN EKLEME (KATEGORİ DESTEKLİ) ---
+# --- MANUEL ÜRÜN EKLEME ---
 @app.route("/admin/product/add", methods=["POST"])
 @admin_required
 def admin_add_product():
