@@ -105,7 +105,6 @@ def init_db():
                     created_at TEXT
                 );
             ''')
-            
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS giveaways (
                     id SERIAL PRIMARY KEY,
@@ -325,7 +324,7 @@ def init_db():
 
 init_db()
 
-# --- SİTE AYARLARINI GETİRME ---
+# --- SİTE AYARLARI VE HARF HARF RENK FORMATLAYICI ---
 def get_site_settings():
     default_settings = {
         "title": "EPIN & SMM PAZARI",
@@ -1137,15 +1136,17 @@ def admin_panel():
     cursor.execute("SELECT * FROM reset_requests ORDER BY id DESC")
     reset_reqs = cursor.fetchall()
 
+    # Çekilişleri ve her birinin katılımcı listesini çek
     cursor.execute("SELECT * FROM giveaways ORDER BY id DESC")
     raw_giveaways = cursor.fetchall()
     admin_giveaways = []
     for g in raw_giveaways:
         g_dict = dict(g)
         p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-        cursor.execute(f"SELECT COUNT(*) FROM giveaway_participants WHERE giveaway_id = {p}", (g_dict["id"],))
-        c_row = cursor.fetchone()
-        g_dict["participant_count"] = c_row[0] if not isinstance(c_row, dict) else list(c_row.values())[0]
+        cursor.execute(f"SELECT id, username, joined_at FROM giveaway_participants WHERE giveaway_id = {p} ORDER BY id DESC", (g_dict["id"],))
+        participants = cursor.fetchall()
+        g_dict["participants"] = [dict(part) if isinstance(part, dict) else {"id": part[0], "username": part[1], "joined_at": part[2]} for part in participants]
+        g_dict["participant_count"] = len(g_dict["participants"])
         admin_giveaways.append(g_dict)
     
     cursor.close()
@@ -1259,6 +1260,42 @@ def admin_add_giveaway():
     )
 
     flash("Yeni çekiliş başarıyla yayınlandı.", "success")
+    return redirect(url_for("admin_panel"))
+
+# --- ADMIN: ÇEKİLİŞE RASTGELE KATILIMCI EKLEME (YENİ) ---
+@app.route("/admin/giveaway/add-random-participant/<int:giveaway_id>", methods=["POST"])
+@admin_required
+def admin_add_random_participant(giveaway_id):
+    fake_names = ["emir_pro", "berkay99", "caner_val", "zeynep_x", "furkan_pubg", "ali_kaya", "selin_t", "burak_34", "melisa_g", "kerem_77"]
+    random_user = random.choice(fake_names) + f"_{random.randint(10, 99)}"
+    fake_user_id = random.randint(9000, 99999)
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"INSERT INTO giveaway_participants (giveaway_id, user_id, username, joined_at) VALUES ({p}, {p}, {p}, {p})",
+                   (giveaway_id, fake_user_id, random_user, now))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash(f"🎲 '{random_user}' kullanıcısı çekilişe başarıyla eklendi!", "success")
+    return redirect(url_for("admin_panel"))
+
+# --- ADMIN: ÇEKİLİŞTEN KATILIMCI SİLME (YENİ) ---
+@app.route("/admin/giveaway/remove-participant/<int:participant_id>", methods=["POST"])
+@admin_required
+def admin_remove_participant(participant_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"DELETE FROM giveaway_participants WHERE id = {p}", (participant_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash("Katılımcı çekilişten başarıyla çıkarıldı.", "info")
     return redirect(url_for("admin_panel"))
 
 # --- ADMIN: ÇEKİLİŞİ ÇEK / KAZANANI BELİRLE ---
