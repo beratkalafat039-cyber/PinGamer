@@ -129,7 +129,6 @@
 <header class="top-navbar">
     <div class="container d-flex justify-content-between align-items-center gap-2">
         
-        <!-- LOGO & BAŞLIK -->
         <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none m-0 p-0" href="/" style="max-width: 55%;">
             {% if settings.logo %}
                 <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px !important; width: auto !important; object-fit: contain;" class="rounded">
@@ -179,11 +178,9 @@
     </div>
 </header>
 
-<!-- ALT BAR: TÜM KATEGORİLER (SOL) VE ÖZEL LİSTE (SAĞ) -->
 <nav class="sub-bar" style="overflow: visible !important;">
     <div class="container d-flex align-items-center gap-2" style="overflow: visible !important;">
         
-        <!-- SOL: TÜM KATEGORİLER DROPDOWN -->
         <div class="dropdown-hover-container position-relative">
             <button class="btn-kategoriler-menu dropdown-toggle" type="button" id="catMenuBtn">
                 <i class="fa-solid fa-bars"></i> Tüm Kategoriler
@@ -198,8 +195,11 @@
                 </a>
                 {% endfor %}
                 <div class="dropdown-divider my-1 border-secondary"></div>
-                <a href="/giveaways" class="dropdown-cat-item text-warning fw-bold pulse-giveaway-link">
-                    <i class="fa-solid fa-gift text-warning fa-bounce"></i> 🎁 Topluluk Çekilişleri
+                <a href="/cs2-cases" class="dropdown-cat-item text-warning fw-bold pulse-giveaway-link">
+                    <i class="fa-solid fa-box-open text-warning fa-bounce"></i> 📦 CS2 Kasa Açma
+                </a>
+                <a href="/giveaways" class="dropdown-cat-item text-warning fw-bold">
+                    <i class="fa-solid fa-gift text-warning"></i> 🎁 Topluluk Çekilişleri
                 </a>
                 <a href="/wheel" class="dropdown-cat-item text-info fw-bold">
                     <i class="fa-solid fa-dharmachakra text-info"></i> Şans Çarkı / Kasa
@@ -207,18 +207,20 @@
             </div>
         </div>
 
-        <!-- SAĞ: SADECE VALORANT, PUBG, LOL, CS2 VE ÇEKİLİŞLER -->
         <div class="scroll-categories">
             <button class="cat-badge-btn active" onclick="filterMain('all', this)">
                 <i class="fa-solid fa-border-all"></i> Tümü
             </button>
             {% for cat in categories %}
-                {% if cat.slug in ['valorant', 'pubg', 'lol', 'cs2'] %}
+                {% if cat.slug in ['valorant', 'pubg', 'lol'] %}
                 <button class="cat-badge-btn" onclick="filterMain('{{ cat.slug }}', this)">
                     <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
                 </button>
                 {% endif %}
             {% endfor %}
+            <a href="/cs2-cases" class="cat-badge-btn text-warning fw-bold border border-warning px-2 py-1" style="background: rgba(234, 179, 8, 0.1);">
+                <i class="fa-solid fa-box-open"></i> CS2 Kasa
+            </a>
             <a href="/giveaways" class="cat-badge-btn text-warning fw-bold border border-warning px-2 py-1" style="background: rgba(234, 179, 8, 0.1);">
                 <i class="fa-solid fa-gift"></i> Çekilişler
             </a>
