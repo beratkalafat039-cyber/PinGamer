@@ -324,7 +324,7 @@ def init_db():
 
 init_db()
 
-# --- SİTE AYARLARI VE HARF HARF RENK FORMATLAYICI ---
+# --- SİTE AYARLARINI GETİRME ---
 def get_site_settings():
     default_settings = {
         "title": "EPIN & SMM PAZARI",
@@ -1136,7 +1136,7 @@ def admin_panel():
     cursor.execute("SELECT * FROM reset_requests ORDER BY id DESC")
     reset_reqs = cursor.fetchall()
 
-    # Çekilişleri ve her birinin katılımcı listesini çek
+    # Çekilişleri ve katılımcı listelerini çek
     cursor.execute("SELECT * FROM giveaways ORDER BY id DESC")
     raw_giveaways = cursor.fetchall()
     admin_giveaways = []
@@ -1164,15 +1164,7 @@ def admin_panel():
                            giveaways=admin_giveaways,
                            settings=get_site_settings())
 
-# --- SAYFA DÜZENLERİ & HARF RENKLERİ SAYFASI ---
-@app.route("/admin/customizer")
-@admin_required
-def admin_customizer():
-    user = get_current_user()
-    is_super = (user["username"] == SUPER_ADMIN_USERNAME)
-    settings = get_site_settings()
-    return render_template("admin_customizer.html", username=user["username"], is_super=is_super, settings=settings)
-
+# --- SAYFA DÜZENLERİ & HARF RENKLERİ GÜNCELLEME ---
 @app.route("/admin/settings/update", methods=["POST"])
 @admin_required
 def admin_update_settings():
@@ -1186,7 +1178,7 @@ def admin_update_settings():
 
     if not new_title:
         flash("Site başlığı boş bırakılamaz!", "danger")
-        return redirect(url_for("admin_customizer"))
+        return redirect(url_for("admin_panel"))
 
     logo_file = request.files.get("logo_file")
     logo_path = None
@@ -1225,8 +1217,8 @@ def admin_update_settings():
     cursor.close()
     conn.close()
 
-    flash("🎨 Harf renkleri, sayfa düzenleri ve logo başarıyla kaydedildi!", "success")
-    return redirect(url_for("admin_customizer"))
+    flash("🎨 Sayfa düzenleri ve logo ayarları başarıyla kaydedildi!", "success")
+    return redirect(url_for("admin_panel"))
 
 # --- ADMIN: ÇEKİLİŞ EKLEME ---
 @app.route("/admin/giveaway/add", methods=["POST"])
@@ -1262,7 +1254,7 @@ def admin_add_giveaway():
     flash("Yeni çekiliş başarıyla yayınlandı.", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ADMIN: ÇEKİLİŞE RASTGELE KATILIMCI EKLEME (YENİ) ---
+# --- ADMIN: ÇEKİLİŞE RASTGELE KATILIMCI EKLEME ---
 @app.route("/admin/giveaway/add-random-participant/<int:giveaway_id>", methods=["POST"])
 @admin_required
 def admin_add_random_participant(giveaway_id):
@@ -1283,7 +1275,7 @@ def admin_add_random_participant(giveaway_id):
     flash(f"🎲 '{random_user}' kullanıcısı çekilişe başarıyla eklendi!", "success")
     return redirect(url_for("admin_panel"))
 
-# --- ADMIN: ÇEKİLİŞTEN KATILIMCI SİLME (YENİ) ---
+# --- ADMIN: ÇEKİLİŞTEN KATILIMCI SİLME ---
 @app.route("/admin/giveaway/remove-participant/<int:participant_id>", methods=["POST"])
 @admin_required
 def admin_remove_participant(participant_id):
