@@ -73,9 +73,15 @@ def init_db():
                     id SERIAL PRIMARY KEY,
                     slug TEXT UNIQUE,
                     name TEXT,
-                    icon TEXT
+                    icon TEXT,
+                    color TEXT DEFAULT '#38bdf8'
                 );
             ''')
+            try:
+                cursor.execute("ALTER TABLE categories ADD COLUMN IF NOT EXISTS color TEXT DEFAULT '#38bdf8';")
+                conn.commit()
+            except Exception:
+                pass
 
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
@@ -128,7 +134,6 @@ def init_db():
                     image TEXT,
                     is_paid INTEGER DEFAULT 0,
                     ticket_price REAL DEFAULT 0.0,
-                    winner_count INTEGER DEFAULT 1,
                     status TEXT DEFAULT 'Aktif',
                     winner_username TEXT,
                     delivered_code TEXT,
@@ -138,7 +143,6 @@ def init_db():
             try:
                 cursor.execute("ALTER TABLE giveaways ADD COLUMN IF NOT EXISTS is_paid INTEGER DEFAULT 0;")
                 cursor.execute("ALTER TABLE giveaways ADD COLUMN IF NOT EXISTS ticket_price REAL DEFAULT 0.0;")
-                cursor.execute("ALTER TABLE giveaways ADD COLUMN IF NOT EXISTS winner_count INTEGER DEFAULT 1;")
                 conn.commit()
             except Exception:
                 pass
@@ -187,21 +191,22 @@ def init_db():
             conn.commit()
 
             varsayilan_kategoriler = [
-                ("oyun", "Oyun E-Pin", "fa-solid fa-gamepad"),
-                ("sosyal", "Sosyal Medya", "fa-solid fa-heart"),
-                ("pubg", "PUBG Mobile", "fa-solid fa-shield"),
-                ("valorant", "Valorant", "fa-solid fa-v"),
-                ("lol", "League of Legends", "fa-solid fa-gem"),
-                ("roblox", "Roblox", "fa-solid fa-cube"),
-                ("cs2", "CS2 Kasa", "fa-solid fa-box-open")
+                ("pubg", "PUBG Mobile", "fa-solid fa-shield", "#f59e0b"),
+                ("valorant", "Valorant", "fa-solid fa-v", "#ef4444"),
+                ("cs2", "Counter Strike 2", "fa-solid fa-crosshairs", "#fcd34d"),
+                ("steam", "Steam", "fa-brands fa-steam", "#94a3b8"),
+                ("sosyal", "Sosyal Medya", "fa-solid fa-hashtag", "#8b5cf6"),
+                ("lol", "League of Legends", "fa-brands fa-d-and-d", "#eab308"),
+                ("roblox", "Roblox", "fa-solid fa-cube", "#d946ef"),
+                ("hile", "Yazılım & Hileler", "fa-solid fa-skull-crossbones", "#14b8a6"),
+                ("hesap", "Oyun Hesapları", "fa-solid fa-id-card", "#f43f5e")
             ]
-            for slug, name, icon in varsayilan_kategoriler:
+            for slug, name, icon, color in varsayilan_kategoriler:
                 cursor.execute("SELECT id FROM categories WHERE slug = %s", (slug,))
                 if not cursor.fetchone():
-                    cursor.execute("INSERT INTO categories (slug, name, icon) VALUES (%s, %s, %s)", (slug, name, icon))
-                else:
-                    cursor.execute("UPDATE categories SET name = %s, icon = %s WHERE slug = %s", (name, icon, slug))
+                    cursor.execute("INSERT INTO categories (slug, name, icon, color) VALUES (%s, %s, %s, %s)", (slug, name, icon, color))
             conn.commit()
+
         else:
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
@@ -225,9 +230,15 @@ def init_db():
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     slug TEXT UNIQUE,
                     name TEXT,
-                    icon TEXT
+                    icon TEXT,
+                    color TEXT DEFAULT '#38bdf8'
                 )
             ''')
+            try:
+                cursor.execute("ALTER TABLE categories ADD COLUMN color TEXT DEFAULT '#38bdf8'")
+                conn.commit()
+            except Exception:
+                pass
 
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS products (
@@ -280,7 +291,6 @@ def init_db():
                     image TEXT,
                     is_paid INTEGER DEFAULT 0,
                     ticket_price REAL DEFAULT 0.0,
-                    winner_count INTEGER DEFAULT 1,
                     status TEXT DEFAULT 'Aktif',
                     winner_username TEXT,
                     delivered_code TEXT,
@@ -288,7 +298,8 @@ def init_db():
                 )
             ''')
             try:
-                cursor.execute("ALTER TABLE giveaways ADD COLUMN winner_count INTEGER DEFAULT 1")
+                cursor.execute("ALTER TABLE giveaways ADD COLUMN is_paid INTEGER DEFAULT 0")
+                cursor.execute("ALTER TABLE giveaways ADD COLUMN ticket_price REAL DEFAULT 0.0")
                 conn.commit()
             except Exception:
                 pass
@@ -331,20 +342,20 @@ def init_db():
             conn.commit()
 
             varsayilan_kategoriler = [
-                ("oyun", "Oyun E-Pin", "fa-solid fa-gamepad"),
-                ("sosyal", "Sosyal Medya", "fa-solid fa-heart"),
-                ("pubg", "PUBG Mobile", "fa-solid fa-shield"),
-                ("valorant", "Valorant", "fa-solid fa-v"),
-                ("lol", "League of Legends", "fa-solid fa-gem"),
-                ("roblox", "Roblox", "fa-solid fa-cube"),
-                ("cs2", "CS2 Kasa", "fa-solid fa-box-open")
+                ("pubg", "PUBG Mobile", "fa-solid fa-shield", "#f59e0b"),
+                ("valorant", "Valorant", "fa-solid fa-v", "#ef4444"),
+                ("cs2", "Counter Strike 2", "fa-solid fa-crosshairs", "#fcd34d"),
+                ("steam", "Steam", "fa-brands fa-steam", "#94a3b8"),
+                ("sosyal", "Sosyal Medya", "fa-solid fa-hashtag", "#8b5cf6"),
+                ("lol", "League of Legends", "fa-brands fa-d-and-d", "#eab308"),
+                ("roblox", "Roblox", "fa-solid fa-cube", "#d946ef"),
+                ("hile", "Yazılım & Hileler", "fa-solid fa-skull-crossbones", "#14b8a6"),
+                ("hesap", "Oyun Hesapları", "fa-solid fa-id-card", "#f43f5e")
             ]
-            for slug, name, icon in varsayilan_kategoriler:
+            for slug, name, icon, color in varsayilan_kategoriler:
                 cursor.execute("SELECT id FROM categories WHERE slug = ?", (slug,))
                 if not cursor.fetchone():
-                    cursor.execute("INSERT INTO categories (slug, name, icon) VALUES (?, ?, ?)", (slug, name, icon))
-                else:
-                    cursor.execute("UPDATE categories SET name = ?, icon = ? WHERE slug = ?", (name, icon, slug))
+                    cursor.execute("INSERT INTO categories (slug, name, icon, color) VALUES (?, ?, ?, ?)", (slug, name, icon, color))
             conn.commit()
 
             cursor.execute("SELECT id FROM site_settings LIMIT 1")
@@ -434,27 +445,18 @@ def get_site_settings():
 def generate_game_code(product_title):
     title_lower = product_title.lower()
     chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-    
-    if "valorant" in title_lower or "vp" in title_lower:
-        p1 = "".join(random.choices(chars, k=4))
-        p2 = "".join(random.choices(chars, k=4))
-        p3 = "".join(random.choices(chars, k=4))
-        return f"RA-{p1}-{p2}-{p3}"
+    if "cs2" in title_lower or "skin" in title_lower or "bıçak" in title_lower or "eldiven" in title_lower or "kasa" in title_lower:
+        return f"CS2-SKIN-{''.join(random.choices(chars, k=4))}-{''.join(random.choices(chars, k=4))}"
+    elif "valorant" in title_lower or "vp" in title_lower:
+        return f"RA-{''.join(random.choices(chars, k=4))}-{''.join(random.choices(chars, k=4))}-{''.join(random.choices(chars, k=4))}"
     elif "pubg" in title_lower or "uc" in title_lower:
         return "".join(random.choices(chars, k=14))
     elif "steam" in title_lower or "usd" in title_lower:
-        p1 = "".join(random.choices(chars, k=5))
-        p2 = "".join(random.choices(chars, k=5))
-        p3 = "".join(random.choices(chars, k=5))
-        return f"{p1}-{p2}-{p3}"
-    elif any(k in title_lower for k in ["takipçi", "beğeni", "izlenme", "instagram", "tiktok", "youtube", "twitter"]):
-        p1 = "".join(random.choices(chars, k=4))
-        p2 = "".join(random.choices(chars, k=4))
-        return f"SMM-KEY-{p1}-{p2}"
+        return f"{''.join(random.choices(chars, k=5))}-{''.join(random.choices(chars, k=5))}-{''.join(random.choices(chars, k=5))}"
+    elif any(k in title_lower for k in ["takipçi", "beğeni", "izlenme"]):
+        return f"SMM-KEY-{''.join(random.choices(chars, k=4))}-{''.join(random.choices(chars, k=4))}"
     else:
-        p1 = "".join(random.choices(chars, k=4))
-        p2 = "".join(random.choices(chars, k=4))
-        return f"HESAP-{p1}-{p2}"
+        return f"HESAP-{''.join(random.choices(chars, k=4))}-{''.join(random.choices(chars, k=4))}"
 
 def get_current_user():
     user_id = session.get("user_id")
@@ -477,6 +479,8 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user_id" not in session:
+            if request.is_json or request.path in ["/open-cs2-case", "/spin"]:
+                return jsonify({"success": False, "error": "Bu işlemi yapmak için lütfen giriş yapın!"}), 401
             flash("Bu işlemi gerçekleştirmek için lütfen giriş yapın!", "warning")
             return redirect(url_for("login"))
         return f(*args, **kwargs)
@@ -494,6 +498,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# --- BANKA VE POS KART DOĞRULAMA ---
 TURKISH_BINS = {
     "454671": ("Ziraat Bankası", "Visa"), "542374": ("Ziraat Bankası", "Mastercard"), "979201": ("Ziraat Bankası", "Troy"),
     "454359": ("Türkiye İş Bankası", "Visa"), "454360": ("Türkiye İş Bankası", "Visa"), "589283": ("Türkiye İş Bankası", "Mastercard"),
@@ -572,6 +577,7 @@ def send_discord_log(title, description, color):
     except Exception as e:
         print(f"Discord Hatası: {e}")
 
+# --- CANLI DESTEK ---
 SUPPORT_AGENTS = {
     "erkek": ["Ahmet K.", "Murat Y.", "Emre T.", "Can B.", "Burak D.", "Kaan S."],
     "kadin": ["Elif S.", "Zeynep T.", "Ayşe M.", "Seda B.", "Merve K.", "Gizem A."]
@@ -625,6 +631,8 @@ def support_message():
 
     if any(k in user_msg for k in ["bakiye", "yükle", "kart", "para", "ödeme", "pos"]):
         reply = "Bakiye yükleme işlemleriniz 3D Secure onayının ardından anında hesabınıza yansımaktadır. Herhangi bir gecikme durumunda işlem ID numaranızı iletebilirsiniz."
+    elif any(k in user_msg for k in ["kasa", "cs2", "çark", "skin"]):
+        reply = "Kasalarımız ve şans çarkımız anlık rastgele algoritmalarla çalışmakta olup, çıkan skin/kodlar anında siparişlerinize teslim edilir."
     elif any(k in user_msg for k in ["kod", "gelmedi", "çalışmıyor", "hatalı", "vp", "uc", "steam", "hesap"]):
         reply = "Satın aldığınız ürünün bilgileri ve teslimat kodları 'Siparişlerim' sayfasına anında yansıtılmaktadır."
     elif any(k in user_msg for k in ["ilan", "talep", "onay", "3 ilan"]):
@@ -636,117 +644,7 @@ def support_message():
 
     return jsonify({"success": True, "reply": reply})
 
-# --- CS2 KASA SİSTEMİ VERİLERİ VE ROTALARI ---
-CS2_CASES_DATA = {
-    "cs2_kasa_1": {
-        "id": "cs2_kasa_1",
-        "name": "Armory Kasası (Giriş Seviyesi)",
-        "price": 35.0,
-        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f",
-        "items": [
-            {"name": "P250 | Sand Dune", "type": "Tüketici Kalitesi", "price": 2.5, "color": "#b0c3d9", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"},
-            {"name": "MP9 | Storm", "type": "Endüstri Sınıfı", "price": 6.0, "color": "#5e98d9", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"},
-            {"name": "Nova | Candy Apple", "type": "Seçkin", "price": 14.0, "color": "#4b69ff", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposr-kLAtl7PLZTjlH_9mkgL-OmuXwDLjQglRd4cJ5nqeW8Iqz3wO3-kRoMGD6JtSQJ1M9aV3U-FftwLrth8S-uJjMyHtr7nR35X3cnBHhn1gSPOZxh-uV/360fx360f"},
-            {"name": "AWP | Safari Mesh", "type": "Gizli", "price": 45.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f"}
-        ]
-    },
-    "cs2_kasa_2": {
-        "id": "cs2_kasa_2",
-        "name": "Remsi Endüstriyel Kasa",
-        "price": 80.0,
-        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAJf0Ob3djFN79eJmY-OguHxPYTdn2xZ_IpOhuDG_Zi73wDjrhBpNm31JtCQJgFoYFjUrFO6l-e9hce9vprMzXU16yMg5n3fnxW30x5Ka-lrj6WACQLJc7Vb8Bw/360fx360f",
-        "items": [
-            {"name": "Glock-18 | Groundwater", "type": "Endüstri Sınıfı", "price": 18.0, "color": "#5e98d9", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAJf0Ob3djFN79eJmY-OguHxPYTdn2xZ_IpOhuDG_Zi73wDjrhBpNm31JtCQJgFoYFjUrFO6l-e9hce9vprMzXU16yMg5n3fnxW30x5Ka-lrj6WACQLJc7Vb8Bw/360fx360f"},
-            {"name": "USP-S | Forest Leaves", "type": "Seçkin", "price": 35.0, "color": "#4b69ff", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_bGcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"},
-            {"name": "M4A4 | Urban DDPAT", "type": "Gizli", "price": 120.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"}
-        ]
-    },
-    "cs2_kasa_3": {
-        "id": "cs2_kasa_3",
-        "name": "Prismatik Popüler Kasa",
-        "price": 150.0,
-        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f",
-        "items": [
-            {"name": "AK-47 | Safari Mesh", "type": "Seçkin", "price": 45.0, "color": "#4b69ff", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"},
-            {"name": "M4A1-S | Night Terror", "type": "Gizli", "price": 280.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"},
-            {"name": "Karambit | Vanilla (Bıçak)", "type": "Efsanevi Bıçak ⭐", "price": 1800.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"}
-        ]
-    },
-    "cs2_kasa_4": {
-        "id": "cs2_kasa_4",
-        "name": "Karanlık Operasyon Kasası",
-        "price": 350.0,
-        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f",
-        "items": [
-            {"name": "AWP | Atheris", "type": "Gizli", "price": 390.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f"},
-            {"name": "M9 Bayonet | Doppler (Bıçak)", "type": "Efsanevi Bıçak ⭐", "price": 4200.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"}
-        ]
-    },
-    "cs2_kasa_5": {
-        "id": "cs2_kasa_5",
-        "name": "Efsanevi VIP Bıçak ve Silah Kasası",
-        "price": 750.0,
-        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f",
-        "items": [
-            {"name": "AK-47 | Redline", "type": "Gizli", "price": 950.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"},
-            {"name": "Kelebek Bıçak | Fade (Bıçak)", "type": "Gizli Bıçak ⭐", "price": 15000.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"}
-        ]
-    }
-}
-
-@app.route("/cs2-cases")
-@login_required
-def cs2_cases_page():
-    user = get_current_user()
-    balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
-    username = user["username"] if user else None
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
-    settings = get_site_settings()
-    
-    return render_template("cs2_cases.html", balance=balance, username=username, is_admin=is_admin, cases=CS2_CASES_DATA, settings=settings)
-
-@app.route("/api/cs2-spin", methods=["POST"])
-@login_required
-def cs2_spin():
-    user = get_current_user()
-    data = request.get_json() or {}
-    case_id = data.get("case_id")
-    
-    if case_id not in CS2_CASES_DATA:
-        return jsonify({"success": False, "error": "Geçersiz kasa seçimi!"}), 400
-        
-    case_info = CS2_CASES_DATA[case_id]
-    cost = case_info["price"]
-    current_balance = float(user["balance"] or 0.0)
-    
-    if current_balance < cost:
-        return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen bakiye yükleyin."}), 400
-        
-    chosen_item = random.choice(case_info["items"])
-    code = f"CS2-{''.join(random.choices('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', k=12))}"
-    
-    conn = get_db()
-    cursor = conn.cursor()
-    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    
-    cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (cost, user["id"]))
-    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
-    cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, {p}, {p}, {p})",
-                   (user["id"], f"CS2 Kasa: {chosen_item['name']}", cost, code, now))
-                   
-    cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
-    row = cursor.fetchone()
-    new_balance = row["balance"] if isinstance(row, dict) else row[0]
-    conn.commit()
-    cursor.close()
-    conn.close()
-    
-    return jsonify({
-        "success": True,
-        "item": chosen_item,
-        "code": code,
-        "new_balance": f"{new_balance:.2f}"
-    })
+# --- GENEL SAYFA ROTALARI ---
 
 @app.route("/")
 def home():
@@ -768,6 +666,7 @@ def home():
         
     return render_template("index.html", balance=balance, username=username, is_admin=is_admin, products=products, categories=categories, settings=settings)
 
+# --- ÇEKİLİŞLER SAYFASI ---
 @app.route("/giveaways")
 def giveaways():
     user = get_current_user()
@@ -850,6 +749,7 @@ def join_giveaway(giveaway_id):
     flash(f"🎉 '{gw['title']}' çekilişine başarıyla katıldınız!", "success")
     return redirect(url_for("giveaways"))
 
+# --- KULLANICI İLAN EKLEME (3 İLAN SINIRI & ONAY SİSTEMİ) ---
 @app.route("/user/add-listing", methods=["GET", "POST"])
 @login_required
 def user_add_listing():
@@ -1039,6 +939,7 @@ def logout():
     flash("Hesaptan çıkış yapıldı.", "info")
     return redirect(url_for("login"))
 
+# --- ŞANS ÇARKI SAYFASI VE ROTASI ---
 @app.route("/wheel")
 @login_required
 def wheel():
@@ -1051,105 +952,251 @@ def wheel():
 @app.route("/spin", methods=["POST"])
 @login_required
 def spin():
-    user = get_current_user()
-    data = request.get_json() or {}
-    tier = data.get("tier", "bronze")
-    is_simulation = bool(data.get("simulation", False))
-    
-    tier_costs = {"bronze": 50.0, "silver": 150.0, "gold": 300.0}
-    cost = tier_costs.get(tier, 50.0)
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({"success": False, "error": "Oturum süreniz dolmuş, lütfen tekrar giriş yapın."}), 401
 
-    current_balance = float(user["balance"] or 0.0)
-    if not is_simulation and current_balance < cost:
-        return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen önce bakiye yükleyin veya Deneme Modunu kullanın."}), 400
+        data = request.get_json(silent=True) or {}
+        tier = data.get("tier", "bronze")
+        is_simulation = bool(data.get("simulation", False))
+        
+        tier_costs = {"bronze": 50.0, "silver": 150.0, "gold": 300.0}
+        cost = tier_costs.get(tier, 50.0)
 
-    if tier == "gold":
-        options = [
-            {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu"},
-            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"},
-            {"reward": "25$ Steam USD", "label": "Steam 25 USD Cüzdan Kodu"},
-            {"reward": "2480 VP", "label": "2480 Valorant Points"},
-            {"reward": "1800 PUBG UC", "label": "PUBG Mobile 1800 UC"},
-            {"reward": "50$ Steam USD", "label": "Steam 50 USD Cüzdan Kodu (Nadir)"},
-            {"reward": "5350 VP", "label": "5350 Valorant Points"},
-            {"reward": "3850 PUBG UC", "label": "PUBG Mobile 3850 UC"},
-            {"reward": "100$ Steam USD", "label": "Steam 100 USD Cüzdan Kodu (BÜYÜK ÖDÜL)"},
-            {"reward": "8100 PUBG UC", "label": "PUBG Mobile 8100 UC (BÜYÜK ÖDÜL)"},
-            {"reward": "11000 VP", "label": "11000 Valorant Points (BÜYÜK ÖDÜL)"}
-        ]
-        weights = [25, 20, 15, 12, 10, 6, 5, 4, 1.5, 1, 0.5]
-    elif tier == "silver":
-        options = [
-            {"reward": "5$ Steam USD", "label": "Steam 5 USD Cüzdan Kodu"},
-            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC"},
-            {"reward": "600 VP", "label": "600 Valorant Points"},
-            {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu"},
-            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC"},
-            {"reward": "1200 VP", "label": "1200 Valorant Points"},
-            {"reward": "20$ Steam USD", "label": "Steam 20 USD Cüzdan Kodu"},
-            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"},
-            {"reward": "30$ Steam USD", "label": "Steam 30 USD Cüzdan Kodu (Büyük)"},
-            {"reward": "2480 VP", "label": "2480 Valorant Points"}
-        ]
-        weights = [25, 20, 18, 12, 10, 7, 4, 2, 1.5, 0.5]
-    else:
-        options = [
-            {"reward": "1$ Steam USD", "label": "Steam 1 USD Cüzdan Kodu"},
-            {"reward": "150 VP", "label": "150 Valorant Points"},
-            {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC"},
-            {"reward": "2.5$ Steam USD", "label": "Steam 2.5 USD Cüzdan Kodu"},
-            {"reward": "600 VP", "label": "600 Valorant Points"},
-            {"reward": "5$ Steam USD", "label": "Steam 5 USD Cüzdan Kodu"},
-            {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC"},
-            {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu (Büyük)"},
-            {"reward": "1200 VP", "label": "1200 Valorant Points"},
-            {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"}
-        ]
-        weights = [30, 25, 18, 10, 8, 4, 2.5, 1.5, 0.7, 0.3]
+        current_balance = float(user["balance"] or 0.0)
+        if not is_simulation and current_balance < cost:
+            return jsonify({"success": False, "error": "Yetersiz bakiye! Lütfen önce bakiye yükleyin veya Deneme Modunu kullanın."}), 400
 
-    chosen = random.choices(options, weights=weights, k=1)[0]
-    code = generate_game_code(chosen["label"])
+        if tier == "gold":
+            options = [
+                {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu"},
+                {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"},
+                {"reward": "25$ Steam USD", "label": "Steam 25 USD Cüzdan Kodu"},
+                {"reward": "2480 VP", "label": "2480 Valorant Points"},
+                {"reward": "1800 PUBG UC", "label": "PUBG Mobile 1800 UC"},
+                {"reward": "50$ Steam USD", "label": "Steam 50 USD Cüzdan Kodu (Nadir)"},
+                {"reward": "5350 VP", "label": "5350 Valorant Points"},
+                {"reward": "3850 PUBG UC", "label": "PUBG Mobile 3850 UC"},
+                {"reward": "100$ Steam USD", "label": "Steam 100 USD Cüzdan Kodu (BÜYÜK ÖDÜL)"},
+                {"reward": "8100 PUBG UC", "label": "PUBG Mobile 8100 UC (BÜYÜK ÖDÜL)"},
+                {"reward": "11000 VP", "label": "11000 Valorant Points (BÜYÜK ÖDÜL)"}
+            ]
+            weights = [25, 20, 15, 12, 10, 6, 5, 4, 1.5, 1, 0.5]
+        elif tier == "silver":
+            options = [
+                {"reward": "5$ Steam USD", "label": "Steam 5 USD Cüzdan Kodu"},
+                {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC"},
+                {"reward": "600 VP", "label": "600 Valorant Points"},
+                {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu"},
+                {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC"},
+                {"reward": "1200 VP", "label": "1200 Valorant Points"},
+                {"reward": "20$ Steam USD", "label": "Steam 20 USD Cüzdan Kodu"},
+                {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"},
+                {"reward": "30$ Steam USD", "label": "Steam 30 USD Cüzdan Kodu (Büyük)"},
+                {"reward": "2480 VP", "label": "2480 Valorant Points"}
+            ]
+            weights = [25, 20, 18, 12, 10, 7, 4, 2, 1.5, 0.5]
+        else:
+            options = [
+                {"reward": "1$ Steam USD", "label": "Steam 1 USD Cüzdan Kodu"},
+                {"reward": "150 VP", "label": "150 Valorant Points"},
+                {"reward": "60 PUBG UC", "label": "PUBG Mobile 60 UC"},
+                {"reward": "2.5$ Steam USD", "label": "Steam 2.5 USD Cüzdan Kodu"},
+                {"reward": "600 VP", "label": "600 Valorant Points"},
+                {"reward": "5$ Steam USD", "label": "Steam 5 USD Cüzdan Kodu"},
+                {"reward": "325 PUBG UC", "label": "PUBG Mobile 325 UC"},
+                {"reward": "10$ Steam USD", "label": "Steam 10 USD Cüzdan Kodu (Büyük)"},
+                {"reward": "1200 VP", "label": "1200 Valorant Points"},
+                {"reward": "660 PUBG UC", "label": "PUBG Mobile 660 UC"}
+            ]
+            weights = [30, 25, 18, 10, 8, 4, 2.5, 1.5, 0.7, 0.3]
 
-    if is_simulation:
+        chosen = random.choices(options, weights=weights, k=1)[0]
+        code = generate_game_code(chosen["label"])
+
+        if is_simulation:
+            return jsonify({
+                "success": True,
+                "simulation": True,
+                "reward": chosen["reward"],
+                "reward_label": chosen["label"],
+                "code": "TEST-SIMULASYON-KODU",
+                "new_balance": f"{current_balance:.2f}"
+            })
+
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+        
+        cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (cost, user["id"]))
+        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+        cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, {p}, {p}, {p})",
+                       (user["id"], f"Slot: {chosen['label']}", cost, code, now))
+        cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
+        row = cursor.fetchone()
+        new_balance = row["balance"] if isinstance(row, dict) else row[0]
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        send_discord_log(
+            title="🎰 Şans Slotu Çevrildi!",
+            description=f"**Kullanıcı:** `{user['username']}`\n**Kasa:** {tier.upper()} ({cost:.2f} TL)\n**Kazanılan:** 🎉 {chosen['reward']}\n**Kod:** `{code}`",
+            color=15844367
+        )
+
         return jsonify({
             "success": True,
-            "simulation": True,
+            "simulation": False,
             "reward": chosen["reward"],
             "reward_label": chosen["label"],
-            "code": "TEST-SIMULASYON-KODU",
-            "new_balance": f"{current_balance:.2f}"
+            "code": code,
+            "new_balance": f"{float(new_balance):.2f}"
         })
 
-    conn = get_db()
-    cursor = conn.cursor()
-    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    
-    cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (cost, user["id"]))
-    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
-    cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, {p}, {p}, {p})",
-                   (user["id"], f"Slot: {chosen['label']}", cost, code, now))
-    cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
-    row = cursor.fetchone()
-    new_balance = row["balance"] if isinstance(row, dict) else row[0]
-    conn.commit()
-    cursor.close()
-    conn.close()
+    except Exception as e:
+        print(f"Slot çevirme hatası: {e}")
+        return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500
 
-    send_discord_log(
-        title="🎰 Şans Slotu Çevrildi!",
-        description=f"**Kullanıcı:** `{user['username']}`\n**Kasa:** {tier.upper()} ({cost:.2f} TL)\n**Kazanılan:** 🎉 {chosen['reward']}\n**Kod:** `{code}`",
-        color=15844367
-    )
+# --- CS2 KASA VERİLERİ (SKİNLER & FİYATLAR & İHTİMALLER) ---
+CS2_CASES = {
+    "revolution": {
+        "name": "Devrim Kasası (Revolution Case)",
+        "price": 85.0,
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQxnaPLJz5H74y1xtTcz6etNumIx29U6ZUpj72T94iti1Wy_hBsMTj6INedewU4M1rT-VO4xO_vjcLptcnInXJj6XYn7XbUnAv3308bbZI-gA/360fx360f",
+        "items": [
+            {"name": "AK-47 | Head Shot", "rarity": "covert", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV15S5h7-GkvP9Jrafw2lU6ccp0rqV942s2w23_kFkZ2DwLdSRcwdsNAnRqAO7kue515fp75XPm3VrvSQn43ndmgv3308eK203sw/360fx360f", "weight": 2.5},
+            {"name": "M4A4 | Temukau", "rarity": "covert", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhjxszFJTwW09izh4-GkvP9Jrafw2lU6ccp0rqV942s2w23_kFkZ2DwLdSRcwdsNAnRqAO7kue515fp75XPm3VrvSQn43ndmgv3308eK203sw/360fx360f", "weight": 2.5},
+            {"name": "AWP | Duality", "rarity": "classified", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0n_L1JaKfzzoGuJ102eyVp9-k31Dk-RE6amGlcNCScVdtYQuBqVO4k7vp15Du7czKm3Rh7Cgg7SndnAv330-wM_Wj4w/360fx360f", "weight": 10.0},
+            {"name": "P90 | Neoqueen", "rarity": "restricted", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpopuLwDwZt7P3JYzJB5c63lo-GkvP9Jrafw2lU6ccp0rqV942s2w23_kFkZ2DwLdSRcwdsNAnRqAO7kue515fp75XPm3VrvSQn43ndmgv3308eK203sw/360fx360f", "weight": 25.0},
+            {"name": "Glock-18 | Umbral Rabbit", "rarity": "restricted", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAxf0v73fyhB4Nm3hr-Yksj4OrzZglRd6dd2j6eT9Nms2w23_kFkZ2DwLdSRcwdsNAnRqAO7kue515fp75XPm3VrvSQn43ndmgv3308eK203sw/360fx360f", "weight": 25.0},
+            {"name": "MP9 | Featherweight", "rarity": "mil-spec", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou6r8FA957P3dcjtO_9W3m5a0n_L1JaKfwzkH6pwoj7yUrNus3wLi_0VqZmChcoTAcgc-M17W-Vi4ye_p15Pu6pjIzncx6yEm53fanAv3309jX80tJw/360fx360f", "weight": 35.0}
+        ]
+    },
+    "knife_glove": {
+        "name": "★ Bıçak & Eldiven Özel Kasası",
+        "price": 280.0,
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFUxnaPLJz5H74y1xtTcz6etNumIx29U6ZUpj72T94iti1Wy_hBsMTj6INedewU4M1rT-VO4xO_vjcLptcnInXJj6XYn7XbUnAv3308bbZI-gA/360fx360f",
+        "items": [
+            {"name": "★ Kelebek Bıçak | Doppler", "rarity": "special", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf1fLEcjVL49KJlY20k_jkI7fUhGJP68BAC-jb84T0jVG3_0drYmyncIDAcQc5ZAmF8wK3wb27hZ6_6sydm3M27HIh4irUmAv3309kFv6z4Q/360fx360f", "weight": 1.0},
+            {"name": "★ Karambit | Fade", "rarity": "special", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2PLacDBA5ciJlY20k_jkI7fUhGJP68BAC-jb84T0jVG3_0drYmyncIDAcQc5ZAmF8wK3wb27hZ6_6sydm3M27HIh4irUmAv3309kFv6z4Q/360fx360f", "weight": 1.5},
+            {"name": "★ M9 Bayonet | Gamma Doppler", "rarity": "special", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf3qr3czhx5c6jkpm0m_7zO6-fzj9V7cAl2eyVpN2k2AXk-kZsYm-id9STcgZvN1_X_1W4yO3oh5Dou87Om3FjvCMh4H6JmAv330-9xeqy7Q/360fx360f", "weight": 3.0},
+            {"name": "★ Spor Eldivenler | Pandora'nın Kutusu", "rarity": "special", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf0ebcZThH_9m7h5C0mfvhP4Tck29Y_cg_3bmV84323wW3qUU4Y2mncIDEdQE-YQzV-ge5wO_s0ZTu6sufySc37CMm-z-DyP99HqY/360fx360f", "weight": 4.5},
+            {"name": "★ Avcı Bıçağı | Tiger Tooth", "rarity": "special", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf0ODbTjxP09m5h7-GkvP9Jrafw2lU6ccp0rqV942s2w23_kFkZ2DwLdSRcwdsNAnRqAO7kue515fp75XPm3VrvSQn43ndmgv3308eK203sw/360fx360f", "weight": 20.0},
+            {"name": "AWP | Asiimov", "rarity": "covert", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0n_L1JaKfzzoGuJ102eyVp9-k31Dk-RE6amGlcNCScVdtYQuBqVO4k7vp15Du7czKm3Rh7Cgg7SndnAv330-wM_Wj4w/360fx360f", "weight": 70.0}
+        ]
+    },
+    "dreams_nightmares": {
+        "name": "Düşler ve Kâbuslar Kasası",
+        "price": 65.0,
+        "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFU1nfbOJz5H74y1xtTcz6etNumIx29U6ZUpj72T94iti1Wy_hBsMTj6INedewU4M1rT-VO4xO_vjcLptcnInXJj6XYn7XbUnAv3308bbZI-gA/360fx360f",
+        "items": [
+            {"name": "AK-47 | Gece Dileği (Nightwish)", "rarity": "covert", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV15S5h7-GkvP9Jrafw2lU6ccp0rqV942s2w23_kFkZ2DwLdSRcwdsNAnRqAO7kue515fp75XPm3VrvSQn43ndmgv3308eK203sw/360fx360f", "weight": 3.0},
+            {"name": "MP9 | Starlight Protector", "rarity": "covert", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou6r8FA957P3dcjtO_9W3m5a0n_L1JaKfwzkH6pwoj7yUrNus3wLi_0VqZmChcoTAcgc-M17W-Vi4ye_p15Pu6pjIzncx6yEm53fanAv3309jX80tJw/360fx360f", "weight": 5.0},
+            {"name": "Dual Berettas | Melondrama", "rarity": "classified", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpos7asPwJf0Ob3dShF5dG7kZOfm_LmO6-fw2kH65N12-2Yp46j21DkqENuZzuid4ecdwZsN1qE-1K-k-q805S07ZXPn3dgsiVw7GGdwULeI8nCBA/360fx360f", "weight": 15.0},
+            {"name": "FAMAS | Rapid Eye Movement", "rarity": "classified", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposLuoKhRf1OD3fDJR-927lo-GkvP9Jrafw2lU6ccp0rqV942s2w23_kFkZ2DwLdSRcwdsNAnRqAO7kue515fp75XPm3VrvSQn43ndmgv3308eK203sw/360fx360f", "weight": 25.0},
+            {"name": "USP-S | Ticket to Hell", "rarity": "restricted", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_bGcjhQ09-jq5WYh8j_OrfdqWhe5sN4mOTE8bP4jVC9vh5yYWyncI6cdQE-aF-D_1W8yLq5gZ686MzPn3swuiAh7XmJnx3hn1xSZvM9m7XAHvO1D38A/360fx360f", "weight": 52.0}
+        ]
+    }
+}
 
-    return jsonify({
-        "success": True,
-        "simulation": False,
-        "reward": chosen["reward"],
-        "reward_label": chosen["label"],
-        "code": code,
-        "new_balance": f"{new_balance:.2f}"
-    })
+# --- CS2 KASA AÇMA SAYFASI ---
+@app.route("/cs2-case")
+@login_required
+def cs2_case_page():
+    user = get_current_user()
+    balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
+    username = user["username"] if user else None
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    settings = get_site_settings()
+    return render_template("cs2_case.html", balance=balance, username=username, is_admin=is_admin, cases=CS2_CASES, settings=settings)
 
+# --- CS2 KASA AÇMA MOTORU (API) ---
+@app.route("/open-cs2-case", methods=["POST"])
+@login_required
+def open_cs2_case():
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({"success": False, "error": "Oturum süreniz dolmuş, lütfen tekrar giriş yapın."}), 401
+
+        data = request.get_json(silent=True) or {}
+        case_id = data.get("case_id", "revolution")
+        is_simulation = bool(data.get("simulation", False))
+
+        if case_id not in CS2_CASES:
+            return jsonify({"success": False, "error": "Geçersiz kasa seçimi!"}), 400
+
+        selected_case = CS2_CASES[case_id]
+        cost = float(selected_case["price"])
+        current_balance = float(user["balance"] or 0.0)
+
+        if not is_simulation and current_balance < cost:
+            return jsonify({"success": False, "error": f"Yetersiz bakiye! Bu kasa için {cost:.2f} TL gerekiyor."}), 400
+
+        items = selected_case["items"]
+        weights = [float(it["weight"]) for it in items]
+        chosen_item = random.choices(items, weights=weights, k=1)[0]
+        skin_code = generate_game_code(chosen_item["name"])
+
+        if is_simulation:
+            return jsonify({
+                "success": True,
+                "simulation": True,
+                "reward": chosen_item["name"],
+                "rarity": chosen_item["rarity"],
+                "image": chosen_item["image"],
+                "code": "DEMO-CS2-SKIN-KODU",
+                "new_balance": f"{current_balance:.2f}"
+            })
+
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+
+        cursor.execute(f"UPDATE users SET balance = balance - {p} WHERE id = {p}", (cost, user["id"]))
+        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+        cursor.execute(f'''
+            INSERT INTO orders (user_id, product_title, price, delivered_code, created_at)
+            VALUES ({p}, {p}, {p}, {p}, {p})
+        ''', (user["id"], f"CS2 Kasa: {chosen_item['name']}", cost, skin_code, now))
+
+        cursor.execute(f"SELECT balance FROM users WHERE id = {p}", (user["id"],))
+        row = cursor.fetchone()
+        new_balance = row["balance"] if isinstance(row, dict) else row[0]
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        send_discord_log(
+            title="🔫 CS2 Kasası Açıldı!",
+            description=(
+                f"**Kullanıcı:** `{user['username']}`\n"
+                f"**Kasa:** {selected_case['name']} ({cost:.2f} TL)\n"
+                f"**Kazanılan:** 🎁 `{chosen_item['name']}`\n"
+                f"**Kod:** `{skin_code}`\n"
+                f"**Kalan Bakiye:** {float(new_balance):.2f} TL"
+            ),
+            color=16753920
+        )
+
+        return jsonify({
+            "success": True,
+            "simulation": False,
+            "reward": chosen_item["name"],
+            "rarity": chosen_item["rarity"],
+            "image": chosen_item["image"],
+            "code": skin_code,
+            "new_balance": f"{float(new_balance):.2f}"
+        })
+
+    except Exception as e:
+        print(f"CS2 Kasa Hatası: {e}")
+        return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500
+
+# --- DİĞER ROTALAR ---
 @app.route("/deposit", methods=["GET", "POST"])
 @login_required
 def deposit():
@@ -1187,6 +1234,8 @@ def deposit():
         cursor.close()
         conn.close()
 
+        clean_num = re.sub(r"\D", "", card_number)
+        trx_id = f"TRX{random.randint(100000, 999999)}"
         send_discord_log(
             title="💳 Bakiye Yüklendi",
             description=f"**Kullanıcı:** `{user['username']}`\n**Banka:** `{bank_name}`\n**Yüklenen:** {amount_val:.2f} TL\n**Güncel Bakiye:** {new_balance:.2f} TL",
@@ -1263,6 +1312,7 @@ def orders():
     
     return render_template("orders.html", balance=balance, username=user["username"], is_admin=is_admin, orders=order_list, settings=get_site_settings())
 
+# --- SÜPER ADMIN & YÖNETİCİ PANELİ ---
 @app.route("/admin")
 @admin_required
 def admin_panel():
@@ -1316,6 +1366,7 @@ def admin_panel():
                            giveaways=admin_giveaways,
                            settings=get_site_settings())
 
+# --- İLAN ONAYLAMA & REDDETME ---
 @app.route("/admin/listing/approve/<int:product_id>", methods=["POST"])
 @admin_required
 def admin_approve_listing(product_id):
@@ -1342,6 +1393,7 @@ def admin_reject_listing(product_id):
     flash("❌ İlan talebi reddedildi.", "info")
     return redirect(url_for("admin_panel"))
 
+# --- YENİ KATEGORİ EKLEME & SİLME ---
 @app.route("/admin/category/add", methods=["POST"])
 @admin_required
 def admin_add_category():
@@ -1383,6 +1435,7 @@ def admin_delete_category(cat_id):
     flash("Kategori silindi.", "info")
     return redirect(url_for("admin_panel"))
 
+# --- GÖRÜNÜM AYARLARI ---
 @app.route("/admin/settings/update", methods=["POST"])
 @admin_required
 def admin_update_settings():
@@ -1439,6 +1492,7 @@ def admin_update_settings():
     flash("🎨 Görünüm ayarları başarıyla kaydedildi!", "success")
     return redirect(url_for("admin_panel"))
 
+# --- ÇEKİLİŞLER ---
 @app.route("/admin/giveaway/add", methods=["POST"])
 @admin_required
 def admin_add_giveaway():
@@ -1447,7 +1501,6 @@ def admin_add_giveaway():
     image = request.form.get("image", "").strip()
     is_paid = 1 if request.form.get("is_paid") == "1" else 0
     ticket_price = float(request.form.get("ticket_price", 0.0)) if is_paid else 0.0
-    winner_count = int(request.form.get("winner_count", 1))
 
     if not title or not reward:
         flash("Çekiliş başlığı ve ödül adı zorunludur!", "danger")
@@ -1457,8 +1510,8 @@ def admin_add_giveaway():
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    cursor.execute(f"INSERT INTO giveaways (title, reward, image, is_paid, ticket_price, winner_count, status, created_at) VALUES ({p}, {p}, {p}, {p}, {p}, {p}, 'Aktif', {p})",
-                   (title, reward, image, is_paid, ticket_price, winner_count, now))
+    cursor.execute(f"INSERT INTO giveaways (title, reward, image, is_paid, ticket_price, status, created_at) VALUES ({p}, {p}, {p}, {p}, {p}, 'Aktif', {p})",
+                   (title, reward, image, is_paid, ticket_price, now))
     conn.commit()
     cursor.close()
     conn.close()
@@ -1524,33 +1577,23 @@ def admin_draw_giveaway(giveaway_id):
         flash("Bu çekilişe henüz hiç kimse katılmadı!", "danger")
         return redirect(url_for("admin_panel"))
 
-    target_winner_count = int(gw["winner_count"] if isinstance(gw, dict) else gw[6]) if "winner_count" in gw.keys() or len(gw) > 6 else 1
-    actual_winner_count = min(target_winner_count, len(participants))
+    winner = random.choice(participants)
+    winner_name = winner["username"] if isinstance(winner, dict) else winner[0]
+    winner_id = winner["user_id"] if isinstance(winner, dict) else winner[1]
 
-    winners = random.sample(participants, actual_winner_count)
-    winner_names = []
-    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
-
-    for winner in winners:
-        w_name = winner["username"] if isinstance(winner, dict) else winner[0]
-        w_id = winner["user_id"] if isinstance(winner, dict) else winner[1]
-        winner_names.append(w_name)
-
-        reward_code = generate_game_code(gw["reward"])
-        cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, 0.0, {p}, {p})",
-                       (w_id, f"🎁 Çekiliş Ödülü: {gw['reward']}", reward_code, now))
-
-    winners_str = ", ".join(winner_names)
-    final_code_summary = f"{len(winner_names)} Kişi Kazandı"
+    reward_code = generate_game_code(gw["reward"])
 
     cursor.execute(f"UPDATE giveaways SET status = 'Tamamlandı', winner_username = {p}, delivered_code = {p} WHERE id = {p}",
-                   (winners_str, final_code_summary, giveaway_id))
+                   (winner_name, reward_code, giveaway_id))
     
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
+    cursor.execute(f"INSERT INTO orders (user_id, product_title, price, delivered_code, created_at) VALUES ({p}, {p}, 0.0, {p}, {p})",
+                   (winner_id, f"🎁 Çekiliş Ödülü: {gw['reward']}", reward_code, now))
     conn.commit()
     cursor.close()
     conn.close()
 
-    flash(f"🎉 Çekiliş sonuçlandı! Kazananlar: {winners_str}", "success")
+    flash(f"🎉 Çekiliş çekildi! Kazanan: '{winner_name}'", "success")
     return redirect(url_for("admin_panel"))
 
 @app.route("/admin/giveaway/delete/<int:giveaway_id>", methods=["POST"])
@@ -1559,7 +1602,7 @@ def admin_delete_giveaway(giveaway_id):
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    cursor.execute(f"DELETE FROM giveaway_participants WHERE giveaway_id = {p}", (giveaway_id,))
+    cursor.execute(f"DELETE FROM giveaway_participants WHERE id = {p}", (giveaway_id,))
     cursor.execute(f"DELETE FROM giveaways WHERE id = {p}", (giveaway_id,))
     conn.commit()
     cursor.close()
@@ -1567,6 +1610,7 @@ def admin_delete_giveaway(giveaway_id):
     flash("Çekiliş silindi.", "info")
     return redirect(url_for("admin_panel"))
 
+# --- MANUEL İLAN EKLEME (ADMİN) ---
 @app.route("/admin/product/add", methods=["POST"])
 @admin_required
 def admin_add_product():
@@ -1705,6 +1749,7 @@ def admin_set_balance():
     flash("Bakiye güncellendi.", "success")
     return redirect(url_for("admin_panel"))
 
+# --- ÇEŞİTLİ RASTGELE İLAN OLUŞTURMA ---
 @app.route("/admin/product/generate-random", methods=["POST"])
 @admin_required
 def admin_generate_random_product():
