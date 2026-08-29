@@ -7,10 +7,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- GOOGLE FONTS & 8-BIT HAVUZU -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@500;600;700;800;900&family=Orbitron:wght@700;900&family=Poppins:wght@600;800&family=Press+Start+2P&family=Righteous&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@500;600;700;800&family=Orbitron:wght@700;900&family=Poppins:wght@600;800&family=Press+Start+2P&family=Righteous&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -23,256 +22,90 @@
             --accent-green: #10b981;
         }
 
-        *, *::before, *::after { 
-            box-sizing: border-box; 
-        }
+        *, *::before, *::after { box-sizing: border-box; }
 
         html, body {
-            width: 100%; 
-            max-width: 100%; 
-            overflow-x: hidden !important;
-            background-color: var(--bg-dark); 
-            color: #f3f4f6;
-            font-family: 'Montserrat', sans-serif; 
-            letter-spacing: -0.2px;
-            margin: 0; 
-            padding: 0;
+            width: 100%; max-width: 100%; overflow-x: hidden !important;
+            background-color: var(--bg-dark); color: #f3f4f6;
+            font-family: 'Montserrat', sans-serif; letter-spacing: -0.2px;
+            margin: 0; padding: 0;
         }
 
-        .container { 
-            width: 100%; 
-            max-width: 100%; 
-            padding-right: 12px; 
-            padding-left: 12px; 
-            overflow: hidden; 
-        }
+        .container { width: 100%; max-width: 100%; padding-right: 12px; padding-left: 12px; overflow: hidden; }
+        @media (min-width: 1200px) { .container { max-width: 1140px; } }
 
-        @media (min-width: 1200px) { 
-            .container { 
-                max-width: 1140px; 
-            } 
-        }
-
-        /* 1. ÜST HEADER NAVBAR */
-        .top-navbar { 
-            background-color: #0b0f19; 
-            border-bottom: 1px solid var(--border-color); 
-            padding: 10px 0; 
-            width: 100%; 
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .search-container { 
-            width: 100%; 
-            position: relative; 
-        }
-
+        .top-navbar { background-color: #0b0f19; border-bottom: 1px solid var(--border-color); padding: 10px 0; width: 100%; }
+        .search-container { width: 100%; position: relative; }
         .search-input {
-            background-color: #151d2e; 
-            border: 1px solid #243048; 
-            color: #fff;
-            border-radius: 8px; 
-            padding: 8px 14px 8px 36px; 
-            font-size: 0.85rem; 
-            width: 100%;
-            transition: border-color 0.2s, background-color 0.2s;
+            background-color: #151d2e; border: 1px solid #243048; color: #fff;
+            border-radius: 8px; padding: 8px 14px 8px 36px; font-size: 0.85rem; width: 100%;
         }
+        .search-input:focus { outline: none; border-color: var(--accent-blue); background-color: #182238; color: #fff; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 0.85rem; }
 
-        .search-input:focus { 
-            outline: none; 
-            border-color: var(--accent-blue); 
-            background-color: #182238; 
-            color: #fff; 
-        }
-
-        .search-icon { 
-            position: absolute; 
-            left: 12px; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            color: #64748b; 
-            font-size: 0.85rem; 
-        }
-
-        /* 2. KATEGORİ ŞERİDİ & SUB BAR */
-        .sub-bar { 
-            background-color: #0d1322; 
-            border-bottom: 1px solid var(--border-color); 
-            padding: 6px 0; 
-            width: 100%; 
-            overflow: hidden; 
-        }
-
+        .sub-bar { background-color: #0d1322; border-bottom: 1px solid var(--border-color); padding: 6px 0; width: 100%; overflow: visible !important; }
         .scroll-categories {
-            display: flex; 
-            align-items: center; 
-            gap: 6px; 
-            overflow-x: auto; 
-            white-space: nowrap; 
-            width: 100%; 
-            padding-bottom: 2px;
-            scrollbar-width: none; 
-            -webkit-overflow-scrolling: touch;
+            display: flex; align-items: center; gap: 6px; overflow-x: auto; white-space: nowrap; width: 100%; padding-bottom: 2px;
+            scrollbar-width: none; -webkit-overflow-scrolling: touch;
         }
-
-        .scroll-categories::-webkit-scrollbar { 
-            display: none; 
-        }
-
+        .scroll-categories::-webkit-scrollbar { display: none; }
         .cat-badge-btn {
-            background-color: transparent; 
-            color: #94a3b8; 
-            border: 1px solid transparent; 
-            font-size: 0.78rem; 
-            font-weight: 600;
-            padding: 5px 10px; 
-            border-radius: 6px; 
-            transition: 0.2s; 
-            display: inline-flex; 
-            align-items: center; 
-            gap: 5px; 
-            flex-shrink: 0; 
-            text-decoration: none;
-            cursor: pointer;
+            background-color: transparent; color: #94a3b8; border: 1px solid transparent; font-size: 0.78rem; font-weight: 600;
+            padding: 5px 10px; border-radius: 6px; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; text-decoration: none;
+        }
+        .cat-badge-btn:hover, .cat-badge-btn.active { color: #fff; background-color: #1e293b; border-color: #334155; }
+        .btn-kategoriler-menu { background-color: #2563eb; color: #fff; font-weight: 700; border-radius: 6px; padding: 5px 12px; font-size: 0.78rem; flex-shrink: 0; border: none; }
+
+        .dropdown-hover-container { position: relative; display: inline-block; overflow: visible !important; }
+        .custom-dropdown-menu {
+            display: none; position: absolute; top: 105%; left: 0; background-color: #111827;
+            border: 1px solid #334155; min-width: 220px; z-index: 99999 !important; flex-direction: column; gap: 3px;
+        }
+        .dropdown-hover-container:hover .custom-dropdown-menu { display: flex; }
+        .dropdown-cat-item {
+            color: #cbd5e1; padding: 8px 12px; font-size: 0.8rem; text-decoration: none;
+            border-radius: 6px; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+        }
+        .dropdown-cat-item:hover { background-color: #1e293b; color: #fff; }
+        
+        .pulse-giveaway-link {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(220, 38, 38, 0.25));
+            border: 1px dashed #eab308;
+            animation: glowPulse 2s infinite;
+        }
+        @keyframes glowPulse {
+            0% { box-shadow: 0 0 5px rgba(234, 179, 8, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(234, 179, 8, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(234, 179, 8, 0.3); }
         }
 
-        .cat-badge-btn:hover, .cat-badge-btn.active { 
-            color: #fff; 
-            background-color: #1e293b; 
-            border-color: #334155; 
-        }
-
-        .btn-kategoriler-menu { 
-            background-color: #2563eb; 
-            color: #fff; 
-            font-weight: 700; 
-            border-radius: 6px; 
-            padding: 5px 12px; 
-            font-size: 0.78rem; 
-            flex-shrink: 0; 
-            border: none;
-            transition: background-color 0.2s;
-        }
-
-        .btn-kategoriler-menu:hover {
-            background-color: #1d4ed8;
-        }
-
-        /* 3. HERO BANNER */
         .hero-banner {
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #1d4ed8 100%);
-            border-radius: 12px; 
-            padding: 20px; 
-            width: 100%; 
-            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+            border-radius: 12px; padding: 20px; width: 100%; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
         }
+        .filter-sidebar { background-color: var(--sidebar-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; width: 100%; }
 
-        /* 4. SOL FİLTRELEME ALANI */
-        .filter-sidebar { 
-            background-color: var(--sidebar-bg); 
-            border: 1px solid var(--border-color); 
-            border-radius: 10px; 
-            padding: 14px; 
-            width: 100%; 
-        }
-
-        /* 5. İLAN KARTLARI */
-        .product-card { 
-            background-color: var(--card-bg); 
-            border: 1px solid var(--border-color); 
-            border-radius: 10px; 
-            overflow: hidden; 
-            width: 100%; 
-            position: relative;
-            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .product-card:hover {
-            transform: translateY(-4px);
-            border-color: #3b82f6;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-        }
-
-        .card-banner-img { 
-            height: 140px; 
-            width: 100%; 
-            object-fit: cover; 
-        }
-
+        .product-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; width: 100%; position: relative; }
+        .card-banner-img { height: 140px; width: 100%; object-fit: cover; }
         .coksatan-badge {
-            position: absolute; 
-            top: 6px; 
-            left: 6px; 
-            background: rgba(0,0,0,0.8); 
-            border: 1px solid #f43f5e;
-            color: #fb7185; 
-            font-size: 0.6rem; 
-            font-weight: 800; 
-            padding: 2px 5px; 
-            border-radius: 4px;
-            letter-spacing: 0.5px;
+            position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.8); border: 1px solid #f43f5e;
+            color: #fb7185; font-size: 0.6rem; font-weight: 800; padding: 2px 5px; border-radius: 4px;
         }
-
         .seller-avatar {
-            width: 20px; 
-            height: 20px; 
-            border-radius: 4px; 
-            background-color: #3b82f6;
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 0.65rem; 
-            font-weight: bold;
-            color: #fff;
+            width: 20px; height: 20px; border-radius: 4px; background-color: #3b82f6;
+            display: inline-flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold;
         }
+        .buy-action-btn { background-color: #1e293b; border: 1px solid #334155; color: #38bdf8; border-radius: 6px; padding: 4px 8px; font-weight: 700; font-size: 0.75rem; }
 
-        .buy-action-btn { 
-            background-color: #1e293b; 
-            border: 1px solid #334155; 
-            color: #38bdf8; 
-            border-radius: 6px; 
-            padding: 4px 8px; 
-            font-weight: 700; 
-            font-size: 0.75rem; 
-            transition: background-color 0.2s, color 0.2s;
-        }
+        @keyframes rainbowWave { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+        .anim-rainbow span { display: inline-block; animation: rainbowWave 2.5s linear infinite; }
 
-        .buy-action-btn:hover {
-            background-color: #38bdf8;
-            color: #000;
-        }
+        @keyframes neonPulse { 0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 8px currentColor); } 50% { opacity: 0.5; transform: scale(0.96); filter: drop-shadow(0 0 2px currentColor); } }
+        .anim-pulse span { display: inline-block; animation: neonPulse 1.5s ease-in-out infinite alternate; }
 
-        /* CANLI HARF ANİMASYONLARI */
-        @keyframes rainbowWave { 
-            0% { filter: hue-rotate(0deg); } 
-            100% { filter: hue-rotate(360deg); } 
-        }
-        .anim-rainbow span { 
-            display: inline-block; 
-            animation: rainbowWave 2.5s linear infinite; 
-        }
+        @keyframes waveChaser { 0%, 100% { transform: translateY(0px); filter: brightness(1); } 50% { transform: translateY(-5px); filter: brightness(1.7); } }
+        .anim-chaser span { display: inline-block; animation: waveChaser 1.2s ease-in-out infinite; }
 
-        @keyframes neonPulse { 
-            0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 8px currentColor); } 
-            50% { opacity: 0.5; transform: scale(0.96); filter: drop-shadow(0 0 2px currentColor); } 
-        }
-        .anim-pulse span { 
-            display: inline-block; 
-            animation: neonPulse 1.5s ease-in-out infinite alternate; 
-        }
-
-        @keyframes waveChaser { 
-            0%, 100% { transform: translateY(0px); filter: brightness(1); } 
-            50% { transform: translateY(-5px); filter: brightness(1.7); } 
-        }
-        .anim-chaser span { 
-            display: inline-block; 
-            animation: waveChaser 1.2s ease-in-out infinite; 
-        }
-
-        /* MOBİL UYUMLULUK */
         @media (max-width: 768px) {
             .card-banner-img { height: 110px; }
             .product-card .card-body { padding: 8px !important; }
@@ -284,38 +117,18 @@
             #support-modal { width: calc(100vw - 30px) !important; right: 15px !important; left: 15px !important; bottom: 80px !important; }
         }
 
-        /* CANLI DESTEK */
-        .typing-bubble { 
-            background-color: #334155; 
-            display: inline-flex; 
-            align-items: center; 
-            gap: 4px; 
-            padding: 6px 12px; 
-            border-radius: 12px; 
-            width: fit-content; 
-        }
-        .typing-dot { 
-            width: 5px; 
-            height: 5px; 
-            background-color: #94a3b8; 
-            border-radius: 50%; 
-            animation: typingBounce 1.4s infinite ease-in-out both; 
-        }
+        .typing-bubble { background-color: #334155; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 12px; width: fit-content; }
+        .typing-dot { width: 5px; height: 5px; background-color: #94a3b8; border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes typingBounce { 
-            0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 
-            40% { transform: scale(1); opacity: 1; } 
-        }
+        @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-<!-- 1. ÜST HEADER -->
 <header class="top-navbar">
     <div class="container d-flex justify-content-between align-items-center gap-2">
         
-        <!-- LOGO & ANİMASYONLU BAŞLIK -->
         <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none m-0 p-0" href="/" style="max-width: 55%;">
             {% if settings.logo %}
                 <img src="{{ settings.logo }}" alt="Logo" style="height: {{ settings.logo_height }}px !important; width: auto !important; object-fit: contain;" class="rounded">
@@ -331,13 +144,11 @@
             </span>
         </a>
 
-        <!-- MASAÜSTÜ ARAMA ÇUBUĞU -->
         <div class="search-container d-none d-lg-block">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
             <input type="text" class="search-input" placeholder="Oyun, epin, ilan ara..." oninput="onSearchFilter(this.value)">
         </div>
 
-        <!-- SAĞ BUTONLAR -->
         <div class="d-flex align-items-center gap-1">
             {% if username %}
                 <a href="/user/add-listing" class="btn btn-warning btn-sm fw-bold px-2 py-1 text-dark" style="font-size: 0.75rem;">
@@ -354,12 +165,11 @@
                 <a href="/orders" class="btn btn-outline-light btn-sm px-2 py-1"><i class="fa-solid fa-box"></i></a>
                 <a href="/logout" class="btn btn-outline-danger btn-sm px-2 py-1"><i class="fa-solid fa-right-from-bracket"></i></a>
             {% else %}
-                <a href="/login" class="btn btn-warning btn-sm fw-bold px-3 py-1 text-dark" style="font-size: 0.75rem;">Giriş Yap</a>
+                <a href="/login" class="btn btn-warning btn-sm fw-bold px-2 py-1 text-dark" style="font-size: 0.75rem;">Giriş Yap</a>
             {% endif %}
         </div>
     </div>
 
-    <!-- MOBİL ARAMA ÇUBUĞU -->
     <div class="container mt-2 d-block d-lg-none">
         <div class="search-container">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -368,29 +178,59 @@
     </div>
 </header>
 
-<!-- 2. KATEGORİ ŞERİDİ & ÇEKİLİŞ / CS2 BUTONLARI -->
-<nav class="sub-bar">
-    <div class="container">
-        <div class="scroll-categories">
-            <button class="btn-kategoriler-menu" onclick="filterMain('all', this)">
-                <i class="fa-solid fa-bars"></i> Menü
+<nav class="sub-bar" style="overflow: visible !important;">
+    <div class="container d-flex align-items-center gap-2" style="overflow: visible !important;">
+        
+        <div class="dropdown-hover-container position-relative">
+            <button class="btn-kategoriler-menu dropdown-toggle" type="button" id="catMenuBtn">
+                <i class="fa-solid fa-bars"></i> Tüm Kategoriler
             </button>
+            <div class="custom-dropdown-menu shadow-lg rounded p-2" id="catDropdownContent">
+                <a href="#" class="dropdown-cat-item active" onclick="filterMain('all', this); closeCatMenu();">
+                    <i class="fa-solid fa-border-all text-secondary"></i> Tümü
+                </a>
+                {% for cat in categories %}
+                <a href="#" class="dropdown-cat-item" onclick="filterMain('{{ cat.slug }}', this); closeCatMenu();">
+                    <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
+                </a>
+                {% endfor %}
+                <div class="dropdown-divider my-1 border-secondary"></div>
+                <a href="/cs2-cases" class="dropdown-cat-item text-warning fw-bold pulse-giveaway-link">
+                    <i class="fa-solid fa-box-open text-warning fa-bounce"></i> 📦 CS2 Kasa Açma
+                </a>
+                <a href="/giveaways" class="dropdown-cat-item text-warning fw-bold">
+                    <i class="fa-solid fa-gift text-warning"></i> 🎁 Topluluk Çekilişleri
+                </a>
+                <a href="/wheel" class="dropdown-cat-item text-info fw-bold">
+                    <i class="fa-solid fa-dharmachakra text-info"></i> Şans Çarkı / Kasa
+                </a>
+            </div>
+        </div>
+
+        <div class="scroll-categories">
             <button class="cat-badge-btn active" onclick="filterMain('all', this)">
                 <i class="fa-solid fa-border-all"></i> Tümü
             </button>
             {% for cat in categories %}
-            <button class="cat-badge-btn" onclick="filterMain('{{ cat.slug }}', this)">
-                <i class="{{ cat.icon }}" style="color: {{ cat.color }};"></i> {{ cat.name }}
-            </button>
+                {% if cat.slug in ['valorant', 'pubg', 'lol'] %}
+                <button class="cat-badge-btn" onclick="filterMain('{{ cat.slug }}', this)">
+                    <i class="{{ cat.icon }} text-info"></i> {{ cat.name }}
+                </button>
+                {% endif %}
             {% endfor %}
-            <a href="/cs2-case" class="cat-badge-btn text-warning fw-bold"><i class="fa-solid fa-crosshairs"></i> CS2 Kasa Aç</a>
-            <a href="/giveaways" class="cat-badge-btn text-info fw-bold"><i class="fa-solid fa-gift"></i> Çekilişler</a>
-            <a href="/wheel" class="cat-badge-btn text-light"><i class="fa-solid fa-dharmachakra"></i> Çark</a>
+            <a href="/cs2-cases" class="cat-badge-btn text-warning fw-bold border border-warning px-2 py-1" style="background: rgba(234, 179, 8, 0.1);">
+                <i class="fa-solid fa-box-open"></i> CS2 Kasa
+            </a>
+            <a href="/giveaways" class="cat-badge-btn text-warning fw-bold border border-warning px-2 py-1" style="background: rgba(234, 179, 8, 0.1);">
+                <i class="fa-solid fa-gift"></i> Çekilişler
+            </a>
+            <a href="/wheel" class="cat-badge-btn text-info fw-bold">
+                <i class="fa-solid fa-dharmachakra"></i> Çark
+            </a>
         </div>
     </div>
 </nav>
 
-<!-- 3. ANA İÇERİK ALANI -->
 <div class="container py-3">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -403,12 +243,11 @@
       {% endif %}
     {% endwith %}
 
-    <!-- HERO MAVİ DUYURU BANNER'I -->
     <div class="hero-banner mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h3 class="fw-bold text-white mb-1" id="heroTitle" style="font-size: 1.25rem;">Oyun & Hesap İlanları Pazarı</h3>
             <p class="text-light opacity-90 small mb-0 d-none d-sm-block">
-                Uygun bütçeyle envanterli hesaplara ve anında teslim e-pinlere hemen ulaşın.
+                Uygun bütçeyle hesaplara ve e-pinlere hemen ulaşın.
             </p>
         </div>
         <a href="/user/add-listing" class="btn btn-light btn-sm fw-bold text-primary px-3 py-1 shadow">
@@ -416,16 +255,13 @@
         </a>
     </div>
 
-    <!-- MOBİL FİLTRE AÇ/KAPA BUTONU -->
     <div class="d-block d-lg-none mb-2">
         <button class="btn btn-outline-secondary btn-sm w-100 fw-bold py-1 text-light" type="button" data-bs-toggle="collapse" data-bs-target="#mobileFilterCollapse">
             <i class="fa-solid fa-filter text-info"></i> Filtreleri Göster / Gizle
         </button>
     </div>
 
-    <!-- 4. FİLTRELER & İLAN GRID'İ -->
     <div class="row g-2 g-md-3">
-        <!-- SOL FİLTRELER SÜTUNU -->
         <div class="col-lg-3">
             <div class="collapse d-lg-block" id="mobileFilterCollapse">
                 <div class="filter-sidebar">
@@ -449,7 +285,6 @@
             </div>
         </div>
 
-        <!-- SAĞ İLAN GRID'İ -->
         <div class="col-lg-9">
             <div class="row g-2" id="products-grid">
                 {% for p in products %}
@@ -492,14 +327,12 @@
     </div>
 </div>
 
-<!-- CANLI DESTEK BUTONU -->
 <div id="live-support-btn" style="position: fixed; bottom: 15px; right: 15px; z-index: 1000;">
     <button class="btn btn-primary rounded-circle p-2 shadow-lg fw-bold" onclick="toggleSupportModal()" style="width: 48px; height: 48px; background-color: #2563eb; border: none;">
         <i class="fa-solid fa-headset fa-lg text-white"></i>
     </button>
 </div>
 
-<!-- CANLI DESTEK PENCERESİ -->
 <div id="support-modal" style="display: none; position: fixed; bottom: 75px; right: 15px; width: 320px; z-index: 1000; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background-color: #1e293b; border: 1px solid #334155;">
     <div class="bg-dark p-2 text-white d-flex justify-content-between align-items-center border-bottom border-secondary">
         <div>
@@ -514,12 +347,12 @@
         <p class="small text-secondary mb-2" style="font-size: 0.7rem;">Uzmanın bağlanabilmesi için konuyu seçin.</p>
         
         <div class="mb-2">
-            <label class="form-label small text-secondary mb-1" style="font-size: 0.7rem;">Adınız</label>
+            <label class="form-label small text-secondary mb-1">Adınız</label>
             <input type="text" id="survey-name" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Adınız" value="{{ username or '' }}">
         </div>
 
         <div class="mb-3">
-            <label class="form-label small text-secondary mb-1" style="font-size: 0.7rem;">Konu</label>
+            <label class="form-label small text-secondary mb-1">Konu</label>
             <select id="survey-topic" class="form-select form-select-sm bg-dark text-white border-secondary">
                 <option value="odeme">💳 Bakiye & Ödeme</option>
                 <option value="epin">🎮 E-Pin & Hesap Teslimatı</option>
@@ -553,6 +386,12 @@
 </div>
 
 <script>
+function closeCatMenu() {
+    const menu = document.getElementById('catDropdownContent');
+    menu.style.display = 'none';
+    setTimeout(() => { menu.style.display = ''; }, 300);
+}
+
 let currentMainCategory = 'all';
 let searchKeyword = '';
 
@@ -565,8 +404,6 @@ function filterMain(slug, btn) {
         'all': 'Tüm Oyun & İlan Pazarı',
         'pubg': 'PUBG Mobile Hesap & UC Pazarı',
         'valorant': 'Valorant VP & Hesap Pazarı',
-        'cs2': 'Counter Strike 2 Skin & Hesap Pazarı',
-        'steam': 'Steam Cüzdan & Oyun Kodları',
         'sosyal': 'Sosyal Medya Hizmetleri Pazarı',
         'hile': 'Oyun Yazılımları & VIP Paketler'
     };
@@ -601,7 +438,7 @@ function applyAdvancedFilters() {
     });
 }
 
-// CANLI DESTEK JAVASCRIPT MOTORU
+// CANLI DESTEK
 let currentAgent = null;
 let currentTopic = null;
 let inactivityTimer = null;
