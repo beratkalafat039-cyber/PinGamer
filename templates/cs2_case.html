@@ -3,320 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CS2 Kasa Açma Simülasyonu - {{ settings.title }}</title>
+    <title>CS2 Kasa Açma - {{ settings.title }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
-        body { background-color: #090c14; color: #f8fafc; font-family: 'Montserrat', sans-serif; overflow-x: hidden; }
-        
-        .case-selector-card {
-            background-color: #111827; border: 2px solid #1f293d; border-radius: 12px;
-            cursor: pointer; transition: 0.25s;
-        }
-        .case-selector-card:hover, .case-selector-card.active {
-            border-color: #f59e0b; transform: translateY(-4px); box-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
+        :root {
+            --bg-dark: #090c14;
+            --card-bg: #111827;
+            --border-color: #1f293d;
+            --accent-blue: #3b82f6;
+            --accent-gold: #eab308;
         }
 
-        /* CS2 KASA ROULETTE / ŞERİT ALANI */
-        .case-roulette-wrapper {
-            background: radial-gradient(circle, #1a2234 0%, #0c111d 100%);
-            border: 2px solid #2b384e;
-            border-radius: 16px;
-            position: relative;
+        * { box-sizing: border-box; }
+        html, body {
+            width: 100%; max-width: 100%; overflow-x: hidden !important;
+            background-color: var(--bg-dark); color: #f3f4f6;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0; padding: 0;
+        }
+
+        .container { width: 100%; max-width: 1140px; margin: 0 auto; padding: 15px; }
+
+        .top-bar {
+            background-color: #0b0f19; border-bottom: 1px solid var(--border-color);
+            padding: 12px 0; margin-bottom: 20px;
+        }
+
+        .case-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
             overflow: hidden;
-            height: 210px;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
-        }
-        .roulette-pointer {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            width: 4px;
-            background: #ef4444;
-            transform: translateX(-50%);
-            z-index: 20;
-            box-shadow: 0 0 12px #ef4444;
-        }
-        .roulette-pointer::before {
-            content: ''; position: absolute; top: 0; left: -6px; width: 0; height: 0;
-            border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 10px solid #ef4444;
-        }
-        .roulette-pointer::after {
-            content: ''; position: absolute; bottom: 0; left: -6px; width: 0; height: 0;
-            border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 10px solid #ef4444;
-        }
-
-        .roulette-track {
-            display: flex;
-            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
             height: 100%;
-            position: absolute;
-            left: 0;
-            top: 0;
-            will-change: transform;
         }
-        .roulette-item {
-            width: 170px;
-            height: 180px;
-            margin: 0 5px;
-            background: #111827;
-            border-radius: 10px;
-            border-bottom: 5px solid #64748b;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
-            flex-shrink: 0;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        .case-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border-color: var(--accent-gold);
         }
-        .item-rarity-covert { border-bottom-color: #eb4b4b !important; }
-        .item-rarity-classified { border-bottom-color: #d32ce6 !important; }
-        .item-rarity-restricted { border-bottom-color: #8847ff !important; }
-        .item-rarity-mil-spec { border-bottom-color: #4b69ff !important; }
-        .item-rarity-special { border-bottom-color: #ffd700 !important; }
+        .case-image {
+            width: 100%; height: 180px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+        }
+        .case-body { padding: 15px; }
+        .case-price {
+            font-size: 1.2rem; font-weight: 800;
+            color: var(--accent-gold);
+        }
+        .open-btn {
+            background: linear-gradient(135deg, #eab308, #f59e0b);
+            color: #000; font-weight: 800;
+            border: none; border-radius: 8px;
+            padding: 10px 20px; width: 100%;
+            transition: all 0.2s;
+        }
+        .open-btn:hover { transform: scale(1.02); }
 
-        .item-img {
-            width: 120px;
-            height: 90px;
-            object-fit: contain;
-            transition: 0.2s;
+        .case-items-preview {
+            display: flex; gap: 5px;
+            margin: 10px 0;
+            overflow-x: auto;
+            padding-bottom: 5px;
         }
-        .item-name {
-            font-size: 0.72rem;
-            font-weight: 700;
+        .case-item-thumb {
+            width: 40px; height: 40px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .spin-result-modal {
+            display: none;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 9999;
+            align-items: center; justify-content: center;
+        }
+        .spin-result-modal.show { display: flex; }
+
+        .result-box {
+            background: var(--card-bg);
+            border: 2px solid var(--accent-gold);
+            border-radius: 16px;
+            padding: 30px;
             text-align: center;
-            color: #e2e8f0;
-            margin-top: 6px;
+            max-width: 400px;
+            width: 90%;
+            animation: popIn 0.5s ease;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .result-item-image {
+            width: 120px; height: 120px;
+            object-fit: contain;
+            margin: 15px auto;
+            display: block;
+        }
+        .result-code {
+            background: #0f172a;
+            border: 1px dashed var(--accent-gold);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            color: #fbbf24;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .case-image { height: 130px; }
+            .case-body { padding: 10px; }
+            .case-price { font-size: 1rem; }
         }
     </style>
 </head>
-<body class="py-4">
+<body>
 
-<div class="container" style="max-width: 960px;">
-    <!-- ÜST BAŞLIK & BAKİYE -->
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
-        <div>
-            <h3 class="fw-bold text-warning mb-0"><i class="fa-solid fa-crosshairs"></i> CS2 Kasa Açma Arenası</h3>
-            <small class="text-secondary">Seçtiğin kasayı aç, bıçak veya nadir skin kazan!</small>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-            <span class="badge bg-dark border border-secondary text-info fs-6 py-2 px-3">
-                <i class="fa-solid fa-wallet"></i> <span id="userBalance">{{ "%.2f"|format(balance) }}</span> TL
-            </span>
-            <a href="/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Mağaza</a>
-        </div>
+<div class="top-bar">
+    <div class="container d-flex justify-content-between align-items-center">
+        <a href="/" class="btn btn-outline-light btn-sm">
+            <i class="fa-solid fa-arrow-left"></i> Geri
+        </a>
+        <h5 class="m-0 fw-bold">
+            <i class="fa-solid fa-box-open text-warning"></i> CS2 KASA AÇMA
+        </h5>
+        <a href="/deposit" class="btn btn-success btn-sm fw-bold">
+            💰 {{ "%.2f"|format(balance) }} TL
+        </a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="text-center mb-4">
+        <h1 class="fw-bold text-warning" style="font-size: 1.5rem;">
+            <i class="fa-solid fa-cube"></i> KASA SEÇ
+        </h1>
+        <p class="text-secondary">Bir kasa seç, şansını dene! Bıçaklar ve efsanevi silahlar seni bekliyor.</p>
     </div>
 
-    <!-- KASA SEÇİM KARTLARI -->
-    <div class="row g-3 mb-4">
-        {% for cid, cinfo in cases.items() %}
-        <div class="col-md-4">
-            <div class="case-selector-card p-3 text-center {% if loop.first %}active{% endif %}" onclick="selectCase('{{ cid }}', {{ cinfo.price }}, this)">
-                <img src="{{ cinfo.image }}" style="height: 100px; object-fit: contain;" class="mb-2">
-                <h6 class="fw-bold text-light mb-1">{{ cinfo.name }}</h6>
-                <span class="badge bg-warning text-dark fw-bold mb-2">{{ "%.2f"|format(cinfo.price) }} TL</span>
+    <div class="row g-3" id="cases-container">
+        {% for case_id, case in cases.items() %}
+        <div class="col-6 col-md-4">
+            <div class="case-card">
+                <img src="{{ case.image }}" class="case-image" alt="{{ case.name }}" onerror="this.src='https://via.placeholder.com/400x180?text=CS2+Kasa'">
+                <div class="case-body">
+                    <h6 class="fw-bold text-white mb-1 text-truncate">{{ case.name }}</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="case-price">₺{{ "%.2f"|format(case.price) }}</span>
+                        <span class="badge bg-dark text-warning">
+                            <i class="fa-solid fa-gift"></i> {{ case.items|length }} Ödül
+                        </span>
+                    </div>
+
+                    <div class="case-items-preview">
+                        {% for item in case.items %}
+                        <img src="{{ item.image }}" class="case-item-thumb" alt="{{ item.name }}" title="{{ item.name }} ({{ item.type }})" onerror="this.src='https://via.placeholder.com/40'">
+                        {% endfor %}
+                    </div>
+
+                    <button class="open-btn" onclick="openCase('{{ case.id }}')">
+                        <i class="fa-solid fa-dice"></i> KASAYI AÇ
+                    </button>
+                </div>
             </div>
         </div>
         {% endfor %}
     </div>
+</div>
 
-    <!-- KASA ŞERİT AÇILIŞ ALANI (CS2 ROULETTE) -->
-    <div class="case-roulette-wrapper mb-4">
-        <div class="roulette-pointer"></div>
-        <div class="roulette-track" id="rouletteTrack">
-            <!-- JS İLE DOLDURULUR -->
-        </div>
-    </div>
-
-    <!-- AÇMA BUTONLARI -->
-    <div class="text-center mb-4">
-        <button id="openCaseBtn" class="btn btn-warning btn-lg fw-bold px-5 py-3 shadow text-dark me-2" onclick="startCaseOpening(false)">
-            <i class="fa-solid fa-unlock-keyhole"></i> KASAYI AÇ (<span id="casePriceDisplay">85.00</span> TL)
+<!-- SONUÇ MODAL -->
+<div class="spin-result-modal" id="resultModal">
+    <div class="result-box">
+        <h4 class="fw-bold text-warning mb-2">
+            <i class="fa-solid fa-star"></i> KASA SONUCU
+        </h4>
+        <div id="result-content"></div>
+        <button class="btn btn-outline-light w-100 mt-3" onclick="closeResult()">
+            Kapat
         </button>
-        <button id="simCaseBtn" class="btn btn-outline-info btn-lg fw-bold px-4 py-3" onclick="startCaseOpening(true)">
-            <i class="fa-solid fa-flask"></i> Deneme Aç (Ücretsiz)
-        </button>
-    </div>
-
-    <!-- KAZANILAN ÖDÜL KUTUSU -->
-    <div id="rewardBox" class="card bg-dark border-warning p-4 text-center shadow" style="display: none;">
-        <h4 class="text-success fw-bold mb-2" id="rewardTitle">🎉 Tebrikler! Yeni Bir Skin Kazandın!</h4>
-        <img id="rewardImg" src="" style="height: 140px; object-fit: contain;" class="mx-auto mb-3">
-        <h5 class="fw-bold text-warning mb-2" id="rewardName"></h5>
-        <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
-            <span class="badge bg-dark border border-secondary text-info fs-6 p-2 font-monospace" id="rewardCode"></span>
-        </div>
-        <small class="text-secondary" id="rewardSubtext">Skin teslimat kodunuz Siparişlerim sayfasına anında eklendi.</small>
     </div>
 </div>
 
 <script>
-const CASES_DATA = {{ cases|tojson }};
-let currentCaseId = "revolution";
-let currentPrice = 85.0;
-let isSpinning = false;
+function openCase(caseId) {
+    if (!confirm('Bu kasayı açmak istediğinize emin misiniz?')) return;
 
-let audioCtx;
-function initAudio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
-function playTick() {
-    try {
-        initAudio();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(320, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.03);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.03);
-    } catch(e){}
-}
-
-function selectCase(cid, price, el) {
-    if (isSpinning) return;
-    document.querySelectorAll('.case-selector-card').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    currentCaseId = cid;
-    currentPrice = price;
-    document.getElementById('casePriceDisplay').innerText = price.toFixed(2);
-    document.getElementById('rewardBox').style.display = 'none';
-    populateRouletteTrack();
-}
-
-function populateRouletteTrack() {
-    const track = document.getElementById('rouletteTrack');
-    track.style.transition = 'none';
-    track.style.transform = 'translateX(0px)';
-    track.innerHTML = '';
-
-    const items = CASES_DATA[currentCaseId].items;
-    for (let i = 0; i < 50; i++) {
-        const item = items[i % items.length];
-        track.innerHTML += `
-            <div class="roulette-item item-rarity-${item.rarity}">
-                <img src="${item.image}" class="item-img">
-                <span class="item-name text-truncate w-100">${item.name}</span>
-            </div>
-        `;
-    }
-}
-populateRouletteTrack();
-
-function startCaseOpening(isSim = false) {
-    if (isSpinning) return;
-    
-    const openBtn = document.getElementById('openCaseBtn');
-    const simBtn = document.getElementById('simCaseBtn');
-    const rewardBox = document.getElementById('rewardBox');
-    
-    isSpinning = true;
-    openBtn.disabled = true;
-    simBtn.disabled = true;
-    rewardBox.style.display = 'none';
-
-    fetch('/open-cs2-case', {
+    fetch('/api/cs2-spin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ case_id: currentCaseId, simulation: isSim })
+        body: JSON.stringify({ case_id: caseId })
     })
-    .then(res => {
-        if (!res.ok) {
-            return res.json().then(j => { throw new Error(j.error || "Hata oluştu."); });
-        }
-        return res.json();
-    })
+    .then(res => res.json())
     .then(data => {
         if (data.success) {
-            animateRouletteToWinner(data, isSim);
+            showResult(data);
         } else {
-            alert(data.error);
-            isSpinning = false;
-            openBtn.disabled = false;
-            simBtn.disabled = false;
+            alert('❌ ' + (data.error || 'Bir hata oluştu!'));
         }
     })
     .catch(err => {
-        alert(err.message || "İşlem sırasında bir hata oluştu.");
-        isSpinning = false;
-        openBtn.disabled = false;
-        simBtn.disabled = false;
+        alert('Bağlantı hatası! Lütfen tekrar deneyin.');
     });
 }
 
-function animateRouletteToWinner(data, isSim) {
-    const track = document.getElementById('rouletteTrack');
-    track.style.transition = 'none';
-    track.style.transform = 'translateX(0px)';
+function showResult(data) {
+    const item = data.item;
+    const content = document.getElementById('result-content');
+    
+    content.innerHTML = `
+        <img src="${item.image}" class="result-item-image" alt="${item.name}" onerror="this.src='https://via.placeholder.com/120'">
+        <h5 class="text-white fw-bold mb-1">${item.name}</h5>
+        <p class="text-secondary mb-1">${item.type}</p>
+        <p class="fw-bold text-success">Değer: ₺${item.price.toFixed(2)}</p>
+        <div class="result-code">
+            <i class="fa-solid fa-key text-warning"></i> ${data.code}
+        </div>
+        <p class="text-secondary small">Yeni Bakiye: ₺${data.new_balance}</p>
+    `;
+    
+    document.getElementById('resultModal').classList.add('show');
+}
 
-    const items = CASES_DATA[currentCaseId].items;
-    const targetIndex = 36;
-
-    track.innerHTML = '';
-    for (let i = 0; i < 50; i++) {
-        let it;
-        if (i === targetIndex) {
-            it = { name: data.reward, rarity: data.rarity, image: data.image };
-        } else {
-            it = items[Math.floor(Math.random() * items.length)];
-        }
-        track.innerHTML += `
-            <div class="roulette-item item-rarity-${it.rarity}">
-                <img src="${it.image}" class="item-img">
-                <span class="item-name text-truncate w-100">${it.name}</span>
-            </div>
-        `;
-    }
-
-    const itemWidth = 180;
-    const randomOffset = Math.floor(Math.random() * 80) - 40;
-    const wrapperWidth = document.querySelector('.case-roulette-wrapper').offsetWidth;
-    const stopPosition = (targetIndex * itemWidth) - (wrapperWidth / 2) + (itemWidth / 2) + randomOffset;
-
-    setTimeout(() => {
-        track.style.transition = 'transform 5s cubic-bezier(0.12, 0.8, 0.25, 1)';
-        track.style.transform = `translateX(-${stopPosition}px)`;
-
-        let tickInterval = setInterval(() => {
-            playTick();
-        }, 120);
-
-        setTimeout(() => {
-            clearInterval(tickInterval);
-        }, 3800);
-
-        setTimeout(() => {
-            isSpinning = false;
-            document.getElementById('openCaseBtn').disabled = false;
-            document.getElementById('simCaseBtn').disabled = false;
-
-            document.getElementById('rewardName').innerText = data.reward;
-            document.getElementById('rewardImg').src = data.image;
-            document.getElementById('rewardCode').innerText = data.code;
-            
-            if (isSim) {
-                document.getElementById('rewardTitle').innerText = "🧪 Deneme Kasa Açılışı";
-                document.getElementById('rewardSubtext').innerText = "Simülasyon modunda bakiyeniz eksilmez ve test kodu verilir.";
-            } else {
-                document.getElementById('rewardTitle').innerText = "🎉 Tebrikler! Envanterine Eklendi!";
-                document.getElementById('rewardSubtext').innerText = "Skin teslimat kodunuz 'Siparişlerim' sayfasına kaydedildi.";
-                document.getElementById('userBalance').innerText = data.new_balance;
-            }
-
-            document.getElementById('rewardBox').style.display = 'block';
-        }, 5100);
-    }, 50);
+function closeResult() {
+    document.getElementById('resultModal').classList.remove('show');
+    setTimeout(() => location.reload(), 300);
 }
 </script>
 
