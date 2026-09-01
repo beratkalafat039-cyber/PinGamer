@@ -12,16 +12,15 @@
             --bg-dark: #090c14;
             --card-bg: #111827;
             --border-color: #1f293d;
-            --accent-blue: #3b82f6;
             --accent-gold: #eab308;
+            --accent-blue: #3b82f6;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
             width: 100%; max-width: 100%; overflow-x: hidden !important;
             background-color: var(--bg-dark); color: #f3f4f6;
-            font-family: 'Montserrat', sans-serif;
-            margin: 0; padding: 0;
+            font-family: 'Montserrat', 'Segoe UI', sans-serif;
         }
 
         .container { width: 100%; max-width: 1140px; margin: 0 auto; padding: 15px; }
@@ -47,7 +46,7 @@
             border-color: var(--accent-gold);
         }
         .case-image {
-            width: 100%; height: 180px;
+            width: 100%; height: 160px;
             object-fit: cover;
             background: linear-gradient(135deg, #1e293b, #0f172a);
         }
@@ -61,6 +60,7 @@
             color: #000; font-weight: 800;
             border: none; border-radius: 8px;
             padding: 10px 20px; width: 100%;
+            cursor: pointer;
             transition: all 0.2s;
         }
         .open-btn:hover { transform: scale(1.02); }
@@ -77,9 +77,14 @@
             object-fit: cover;
             border: 2px solid var(--border-color);
             flex-shrink: 0;
+            cursor: pointer;
+        }
+        .case-item-thumb:hover {
+            border-color: var(--accent-gold);
+            transform: scale(1.1);
         }
 
-        .spin-result-modal {
+        .modal-overlay {
             display: none;
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -87,7 +92,7 @@
             z-index: 9999;
             align-items: center; justify-content: center;
         }
-        .spin-result-modal.show { display: flex; }
+        .modal-overlay.show { display: flex; }
 
         .result-box {
             background: var(--card-bg);
@@ -106,7 +111,7 @@
         }
 
         .result-item-image {
-            width: 120px; height: 120px;
+            width: 100px; height: 100px;
             object-fit: contain;
             margin: 15px auto;
             display: block;
@@ -122,10 +127,21 @@
             margin: 10px 0;
         }
 
+        .spin-animation {
+            animation: spinAnim 1.5s ease-in-out infinite;
+        }
+        @keyframes spinAnim {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            75% { transform: rotate(-5deg); }
+            100% { transform: rotate(0deg); }
+        }
+
         @media (max-width: 768px) {
-            .case-image { height: 130px; }
+            .case-image { height: 120px; }
             .case-body { padding: 10px; }
             .case-price { font-size: 1rem; }
+            .case-card .fw-bold { font-size: 0.8rem; }
         }
     </style>
 </head>
@@ -146,6 +162,14 @@
 </div>
 
 <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} p-2 small mb-3">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
     <div class="text-center mb-4">
         <h1 class="fw-bold text-warning" style="font-size: 1.5rem;">
             <i class="fa-solid fa-cube"></i> KASA SEÇ
@@ -157,7 +181,10 @@
         {% for case_id, case in cases.items() %}
         <div class="col-6 col-md-4">
             <div class="case-card">
-                <img src="{{ case.image }}" class="case-image" alt="{{ case.name }}" onerror="this.src='https://via.placeholder.com/400x180?text=CS2+Kasa'">
+                <img src="{{ case.image }}" class="case-image" alt="{{ case.name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="case-image" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e293b, #0f172a);">
+                    <i class="fa-solid fa-box-open text-warning" style="font-size: 3rem;"></i>
+                </div>
                 <div class="case-body">
                     <h6 class="fw-bold text-white mb-1 text-truncate">{{ case.name }}</h6>
                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -169,11 +196,11 @@
 
                     <div class="case-items-preview">
                         {% for item in case.items %}
-                        <img src="{{ item.image }}" class="case-item-thumb" alt="{{ item.name }}" title="{{ item.name }} ({{ item.type }})" onerror="this.src='https://via.placeholder.com/40'">
+                        <img src="{{ item.image }}" class="case-item-thumb" alt="{{ item.name }}" title="{{ item.name }} ({{ item.type }}) - ₺{{ "%.2f"|format(item.price) }}" onerror="this.style.display='none'">
                         {% endfor %}
                     </div>
 
-                    <button class="open-btn" onclick="openCase('{{ case.id }}')">
+                    <button class="open-btn" onclick="openCase('{{ case.id }}', '{{ case.name }}')">
                         <i class="fa-solid fa-dice"></i> KASAYI AÇ
                     </button>
                 </div>
@@ -184,7 +211,7 @@
 </div>
 
 <!-- SONUÇ MODAL -->
-<div class="spin-result-modal" id="resultModal">
+<div class="modal-overlay" id="resultModal">
     <div class="result-box">
         <h4 class="fw-bold text-warning mb-2">
             <i class="fa-solid fa-star"></i> KASA SONUCU
@@ -197,8 +224,12 @@
 </div>
 
 <script>
-function openCase(caseId) {
-    if (!confirm('Bu kasayı açmak istediğinize emin misiniz?')) return;
+function openCase(caseId, caseName) {
+    if (!confirm(`'${caseName}' kasasını açmak istediğinize emin misiniz?`)) return;
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AÇILIYOR...';
 
     fetch('/api/cs2-spin', {
         method: 'POST',
@@ -207,6 +238,9 @@ function openCase(caseId) {
     })
     .then(res => res.json())
     .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-dice"></i> KASAYI AÇ';
+
         if (data.success) {
             showResult(data);
         } else {
@@ -214,7 +248,10 @@ function openCase(caseId) {
         }
     })
     .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-dice"></i> KASAYI AÇ';
         alert('Bağlantı hatası! Lütfen tekrar deneyin.');
+        console.error(err);
     });
 }
 
@@ -223,7 +260,8 @@ function showResult(data) {
     const content = document.getElementById('result-content');
     
     content.innerHTML = `
-        <img src="${item.image}" class="result-item-image" alt="${item.name}" onerror="this.src='https://via.placeholder.com/120'">
+        <img src="${item.image}" class="result-item-image" alt="${item.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <i class="fa-solid fa-box-open text-warning" style="font-size: 3rem; display: none;"></i>
         <h5 class="text-white fw-bold mb-1">${item.name}</h5>
         <p class="text-secondary mb-1">${item.type}</p>
         <p class="fw-bold text-success">Değer: ₺${item.price.toFixed(2)}</p>
