@@ -20,7 +20,7 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "webp", "ico"}
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1544354342440542298/CBVnA0fXV0bzvzNZEhOuEqHlHxVkvSM5ga_vAXvFpRjryZy-RLN4CP4dztLJiZAiDxwr"
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1544356922164125830/TU6QZYe0keUfIvkj86yniFx0v7KI84ZNveAmtkc3nWhVFE-2ij2fYAYZ7uNmlXCocgEt"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 SUPER_ADMIN_USERNAME = "Lvbelc5baba"
