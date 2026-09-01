@@ -21,7 +21,7 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "webp", "ico"}
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1544354342440542298/CBVnA0fXV0bzvzNZEhOuEqHlHxVkvSM5ga_vAXvFpRjryZy-RLN4CP4dztLJiZAiDxwr"
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1544359368718426112/F1R4X1gt5qeN92KGLxa5FBk2NlSIfQBZj_mBKv7hF69ZPh_VPTmLn5J4IDkFSse85r6j"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 SUPER_ADMIN_USERNAME = "Lvbelc5baba"
@@ -493,6 +493,16 @@ def admin_required(f):
         if not (is_super or is_adm):
             flash("⛔ Yetkisiz Erişim: Bu alana yalnızca yöneticiler erişebilir!", "danger")
             return redirect(url_for("home"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def super_admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user or user["username"] != SUPER_ADMIN_USERNAME:
+            flash("⛔ Bu işlem yalnızca Süper Admin tarafından yapılabilir!", "danger")
+            return redirect(url_for("admin_panel"))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -1670,7 +1680,7 @@ def admin_add_product():
     return redirect(url_for("admin_panel"))
 
 @app.route("/admin/user/delete/<int:user_id>", methods=["POST"])
-@admin_required
+@super_admin_required
 def admin_delete_user(user_id):
     conn = get_db()
     cursor = conn.cursor()
@@ -1690,7 +1700,7 @@ def admin_delete_user(user_id):
     return redirect(url_for("admin_panel"))
 
 @app.route("/admin/user/reset-password", methods=["POST"])
-@admin_required
+@super_admin_required
 def admin_reset_user_password():
     target_username = request.form.get("username")
     new_password = request.form.get("new_password", "").strip()
@@ -1713,13 +1723,8 @@ def admin_reset_user_password():
     return redirect(url_for("admin_panel"))
 
 @app.route("/admin/user/toggle-admin/<int:user_id>", methods=["POST"])
-@admin_required
+@super_admin_required
 def admin_toggle_role(user_id):
-    current = get_current_user()
-    if current["username"] != SUPER_ADMIN_USERNAME:
-        flash("⛔ Yalnızca Süper Admin yetki verebilir!", "danger")
-        return redirect(url_for("admin_panel"))
-
     conn = get_db()
     cursor = conn.cursor()
     p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
@@ -1732,6 +1737,23 @@ def admin_toggle_role(user_id):
         flash(f"'{target['username']}' yetkisi güncellendi.", "success")
     cursor.close()
     conn.close()
+    return redirect(url_for("admin_panel"))
+
+@app.route("/admin/user/set-balance", methods=["POST"])
+@super_admin_required
+def admin_set_balance():
+    user_id = request.form.get("user_id")
+    new_balance = float(request.form.get("balance", 0.0))
+
+    conn = get_db()
+    cursor = conn.cursor()
+    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
+    cursor.execute(f"UPDATE users SET balance = {p} WHERE id = {p}", (new_balance, user_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash("Bakiye güncellendi.", "success")
     return redirect(url_for("admin_panel"))
 
 @app.route("/admin/product/update/<int:product_id>", methods=["POST"])
@@ -1761,23 +1783,6 @@ def admin_delete_product(product_id):
     cursor.close()
     conn.close()
     flash("İlan silindi.", "info")
-    return redirect(url_for("admin_panel"))
-
-@app.route("/admin/user/set-balance", methods=["POST"])
-@admin_required
-def admin_set_balance():
-    user_id = request.form.get("user_id")
-    new_balance = float(request.form.get("balance", 0.0))
-
-    conn = get_db()
-    cursor = conn.cursor()
-    p = "%s" if (HAS_POSTGRES and DATABASE_URL) else "?"
-    cursor.execute(f"UPDATE users SET balance = {p} WHERE id = {p}", (new_balance, user_id))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    flash("Bakiye güncellendi.", "success")
     return redirect(url_for("admin_panel"))
 
 @app.route("/admin/product/generate-random", methods=["POST"])
