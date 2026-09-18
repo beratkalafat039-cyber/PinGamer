@@ -1862,10 +1862,9 @@ def admin_generate_random_product():
     flash(f"🎲 Rastgele İlan Oluşturuldu: '{item['title']}'", "success")
     return redirect(url_for("admin_panel"))
     
-@app.before_request
-def keep_alive():
-    """Render'da uygulamayı uyanık tut"""
-    pass
+@app.route('/health')
+def health():
+    return "OK", 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
