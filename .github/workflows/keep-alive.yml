@@ -1,1 +1,22 @@
+name: Render Keep Alive
 
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Site
+        run: |
+          echo "Ping atılıyor: $(date)"
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://epin-projesi1.onrender.com/health)
+          echo "Yanıt Kodu: $response"
+          if [ "$response" != "200" ]; then
+            echo "⚠️ Site yanıt vermedi! Kod: $response"
+            exit 1
+          else
+            echo "✅ Site aktif!"
+          fi
