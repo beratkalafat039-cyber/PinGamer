@@ -1255,6 +1255,7 @@ def deposit():
             threading.Thread(
     target=send_discord_log,
     args=("💳 Bakiye Yüklendi", f"**Kullanıcı:** `{user['username']}`\n**Banka:** `{bank_name}`\n**Yüklenen:** {amount_val:.2f} TL\n**Güncel Bakiye:** {new_balance:.2f} TL", 3066993)
+    )
 ).start()
 
         flash(f"🎉 Ödeme onaylandı! {amount_val:.2f} TL bakiyenize başarıyla yüklendi.", "success")
